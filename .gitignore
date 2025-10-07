@@ -1,0 +1,51 @@
+# 依赖目录
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 构建产物
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 测试覆盖率
+coverage/
+.coverage
+htmlcov/
+
+# Vite
+.vite/
+vite.config.js.timestamp-*
+
+# 临时文件和文档（不上传到GitHub）
+docs/
+frontend/
+backend/tests/
+backend/websocket.py
+claude对话记录1.md
+claude对话记录2.md
+prompt.txt
+README.md
