@@ -89,3 +89,55 @@ class Ted_Shadows_Result(BaseModel):
                 raise ValueError(f"词汇'{key}'的同义词列表至少包含1个词")
         return v
 
+
+# ============ API请求/响应模型 ============
+
+class SearchRequest(BaseModel):
+    """搜索TED演讲请求"""
+    topic: str = Field(..., min_length=1, max_length=200, description="搜索主题")
+    user_id: Optional[str] = Field(default="default", description="用户ID")
+
+
+class TEDCandidate(BaseModel):
+    """TED演讲候选"""
+    title: str = Field(..., description="演讲标题")
+    speaker: str = Field(..., description="演讲者")
+    url: str = Field(..., description="TED URL")
+    duration: str = Field(default="", description="时长")
+    views: Optional[str] = Field(default=None, description="观看次数")
+    description: Optional[str] = Field(default="", description="简介")
+    relevance_score: Optional[float] = Field(default=0.0, description="相关性评分")
+
+
+class SearchResponse(BaseModel):
+    """搜索响应"""
+    success: bool = Field(..., description="是否成功")
+    candidates: List[TEDCandidate] = Field(default_factory=list, description="候选列表")
+    search_context: Dict = Field(default_factory=dict, description="搜索上下文")
+    total: int = Field(default=0, description="结果总数")
+
+
+class BatchProcessRequest(BaseModel):
+    """批量处理请求"""
+    urls: List[str] = Field(..., min_items=1, max_items=10, description="TED URL列表（1-10个）")
+    user_id: Optional[str] = Field(default="default", description="用户ID")
+
+
+class BatchProcessResponse(BaseModel):
+    """批量处理响应"""
+    success: bool = Field(..., description="是否成功")
+    task_id: str = Field(..., description="任务ID")
+    total: int = Field(..., description="URL总数")
+    message: str = Field(..., description="提示信息")
+
+
+class TaskStatusResponse(BaseModel):
+    """任务状态响应"""
+    task_id: str
+    status: str  # "pending" | "processing" | "completed" | "failed"
+    total: int
+    current: int
+    urls: List[str]
+    results: List[Dict]
+    errors: List[str]
+    current_url: Optional[str] = None

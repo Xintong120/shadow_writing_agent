@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+  # -*- coding: utf-8 -*-
 """
 TED文本文件解析器
 负责解析TED演讲的txt文件格式

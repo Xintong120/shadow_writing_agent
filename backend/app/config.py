@@ -12,6 +12,7 @@ import os
 class settings(BaseSettings):
     groq_api_key: str = ""
     groq_api_keys: list[str] = []
+    tavily_api_key: str = ""  # Tavily API Key
     model_name: str = "llama-3.3-70b-versatile"  # 12K TPM (2倍于3.1-8b)，更强大的70B模型
     system_prompt: str = "You are a helpful assistant."
     temperature: float = 0.1
@@ -24,8 +25,14 @@ class settings(BaseSettings):
     debug: bool = True
     # CORS配置
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    # TED文件管理
+    ted_cache_dir: str = "./data/ted_cache"
+    auto_delete_ted_files: bool = False
+    max_cache_size_mb: int = 500
     
     class Config:
+        env_file = ".env"  # 自动加载.env文件
+        env_file_encoding = "utf-8"  # 文件编码
         case_sensitive = False  # 环境变量不区分大小写
         extra = "allow"  # 允许额外的环境变量（用于 GROQ_API_KEY_1, GROQ_API_KEY_2 等）
 

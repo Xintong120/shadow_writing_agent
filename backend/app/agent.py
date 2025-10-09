@@ -1,73 +1,11 @@
 # agent.py
 # 作用：TED Agent核心逻辑封装
 # 功能：
-#   - 集成news-agent-TED-9.0代码
-#   - 调用Groq API执行LangGraph工作流
-#   - 包装SemanticChunkingAgent、句子改写、质量检查等节点
+#   - 提供process_ted_text()函数供main.py调用
+#   - 使用workflows.py中定义的工作流
 #   - 返回结构化结果
 
-# TODO: 实现TED Agent
-# 1. 从news-agent-TED-9.0.py迁移核心逻辑
-# 2. 替换本地模型为Groq API调用
-# 3. 包装LangGraph工作流
-# 4. 添加进度回调接口
-
-from langgraph.graph import StateGraph, END , START
-from app.state import Shadow_Writing_State
-from app.agents.semantic_chunking import Semantic_Chunking_Agent
-from app.agents.sentence_shadow_writing import TED_shadow_writing_agent
-from app.agents.validation import validation_agent
-from app.agents.quality import quality_agent
-from app.agents.correction import correction_agent
-from app.agents.finalize import finalize_agent
-
-def create_shadow_writing_workflow():
-    """创建sentence shadow writing 工作流"""
-
-    # 创建StateGraph
-    builder = StateGraph(Shadow_Writing_State)
-
-    # 添加节点
-    builder.add_node("semantic_chunking", Semantic_Chunking_Agent())
-    builder.add_node("sentence_shadow_writing", TED_shadow_writing_agent)
-    builder.add_node("validation", validation_agent)
-    builder.add_node("quality", quality_agent)
-    builder.add_node("correction", correction_agent)
-    builder.add_node("finalize", finalize_agent)
-
-    # 条件路由函数
-    def should_correct(state: Shadow_Writing_State) -> str:
-        """决定是否需要修正"""
-        validated_chunks = state.get("validated_shadow_chunks", [])
-        quality_chunks = state.get("quality_shadow_chunks", [])
-        
-        # 如果有被拒绝的语块，进入修正流程
-        if len(validated_chunks) > len(quality_chunks):
-            return "correction"
-        else:
-            return "finalize"
-    
-    # 设置工作流路径
-    builder.add_edge(START, "semantic_chunking")
-    builder.add_edge("semantic_chunking", "sentence_shadow_writing")
-    builder.add_edge("sentence_shadow_writing", "validation")
-    builder.add_edge("validation", "quality")
-    
-    # 条件路由：quality -> correction 或 finalize
-    builder.add_conditional_edges(
-        "quality",
-        should_correct,
-        {
-            "correction": "correction",
-            "finalize": "finalize"
-        }
-    )
-    
-    # correction 后回到 finalize
-    builder.add_edge("correction", "finalize")
-    builder.add_edge("finalize", END)
-    
-    return builder.compile()
+from app.workflows import create_shadow_writing_workflow
 
 
 # 暴露给main.py的处理函数

@@ -150,11 +150,12 @@ def initialize_key_manager(cooldown_seconds: int = 60):
 
 # ==================== LLM 调用函数 ====================
 
-def create_llm_function(system_prompt: Optional[str] = None) -> Callable:
+def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str] = None) -> Callable:
     """创建 LLM 调用函数
     
     Args:
         system_prompt: 系统提示词（可选）
+        model: 模型名称（可选，默认使用settings.model_name）
         
     Returns:
         callable: LLM 调用函数
@@ -188,7 +189,7 @@ def create_llm_function(system_prompt: Optional[str] = None) -> Callable:
             
             # 调用参数
             kwargs = {
-                "model": f"groq/{settings.model_name}",
+                "model": f"groq/{model or settings.model_name}",  # 使用传入的model或默认值
                 "messages": messages,
                 "temperature": temperature if temperature is not None else settings.temperature,
                 "api_key": current_key,  # 使用当前 Key
@@ -244,7 +245,63 @@ def create_llm_function(system_prompt: Optional[str] = None) -> Callable:
 def create_llm_function_native() -> Callable:
     """创建原生 LLM 函数（兼容旧代码）
     
+    使用 settings.model_name 配置的默认模型
+    
     Returns:
         callable: LLM 调用函数
     """
     return create_llm_function(system_prompt=settings.system_prompt)
+
+
+def create_llm_function_light(system_prompt: Optional[str] = None) -> Callable:
+    """创建轻量级 LLM 调用函数（llama-3.1-8b-instant）
+    
+    适用场景：
+    - 关键词提取和优化
+    - 简单文本转换
+    - 快速分类任务
+    - 不需要复杂推理的任务
+    
+    优势：
+    - 响应快（约0.5秒）
+    - 成本低
+    - TPM消耗少
+    
+    Args:
+        system_prompt: 系统提示词（可选）
+        
+    Returns:
+        callable: LLM 调用函数
+        
+    Example:
+        >>> llm = create_llm_function_light()
+        >>> result = llm("Translate to English: 人工智能", {"translation": "str"})
+    """
+    return create_llm_function(system_prompt=system_prompt, model="llama-3.1-8b-instant")
+
+
+def create_llm_function_advanced(system_prompt: Optional[str] = None) -> Callable:
+    """创建高级 LLM 调用函数（llama-3.3-70b-versatile）
+    
+    适用场景：
+    - 复杂推理任务
+    - 质量评估和打分
+    - 错误修正和改进
+    - 需要深度理解的任务
+    
+    特点：
+    - 推理能力强
+    - 适合复杂任务
+    - 响应较慢（约2-3秒）
+    
+    Args:
+        system_prompt: 系统提示词（可选）
+        
+    Returns:
+        callable: LLM 调用函数
+        
+    Example:
+        >>> llm = create_llm_function_advanced()
+        >>> result = llm(correction_prompt, correction_format)
+    """
+    return create_llm_function(system_prompt=system_prompt, model="llama-3.3-70b-versatile")
