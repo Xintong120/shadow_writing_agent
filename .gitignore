@@ -108,8 +108,13 @@ backend/QUICK_START.md
 
 # Backend 临时或调试文件
 backend/app/agents/serial
+
+# Backend 集成测试脚本（需要本地环境，不上传）
 backend/tests/test_all.py
 backend/tests/test_debug.py
+backend/tests/test_parser.py
+backend/tests/test_health.py
+backend/tests/test_upload.py
 
 # ========================================
 # 数据库文件
