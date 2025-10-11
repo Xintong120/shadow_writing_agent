@@ -108,6 +108,8 @@ backend/QUICK_START.md
 
 # Backend 临时或调试文件
 backend/app/agents/serial
+backend/tests/test_all.py
+backend/tests/test_debug.py
 
 # ========================================
 # 数据库文件
