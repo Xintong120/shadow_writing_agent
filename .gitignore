@@ -119,6 +119,7 @@ backend/tests/test_communication_agent.py
 backend/tests/test_memory_integration.py
 backend/tests/test_api_endpoints.py
 backend/tests/test_batch_processing.py
+backend/tests/test_memory_api.py
 
 # ========================================
 # 数据库文件
