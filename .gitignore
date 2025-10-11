@@ -115,6 +115,10 @@ backend/tests/test_debug.py
 backend/tests/test_parser.py
 backend/tests/test_health.py
 backend/tests/test_upload.py
+backend/tests/test_communication_agent.py
+backend/tests/test_memory_integration.py
+backend/tests/test_api_endpoints.py
+backend/tests/test_batch_processing.py
 
 # ========================================
 # 数据库文件
