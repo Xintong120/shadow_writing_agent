@@ -3,7 +3,6 @@
 负责 TED txt 文件的保存、缓存、删除
 """
 
-import os
 import hashlib
 from pathlib import Path
 from typing import Optional

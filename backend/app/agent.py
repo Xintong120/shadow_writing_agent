@@ -5,7 +5,7 @@
 #   - 使用workflows.py中定义的工作流
 #   - 返回结构化结果
 
-from app.workflows import create_shadow_writing_workflow
+from app.workflows import create_parallel_shadow_writing_workflow
 
 
 # 暴露给main.py的处理函数
@@ -30,10 +30,11 @@ def process_ted_text(
         dict: 包含处理结果的字典
     """
     
-    # 创建工作流
-    workflow = create_shadow_writing_workflow()
+    # 创建并行工作流（推荐）
+    workflow = create_parallel_shadow_writing_workflow()
+    # workflow = create_shadow_writing_workflow()  # 旧版串行（已弃用）
     
-    # 初始状态
+    # 初始状态（并行版本简化）
     initial_state = {
         "text": text,
         "target_topic": target_topic,
@@ -41,17 +42,12 @@ def process_ted_text(
         "ted_speaker": ted_speaker,
         "ted_url": ted_url,        
         "semantic_chunks": [],
-        "raw_shadows_chunks": [],
-        "validated_shadow_chunks": [],
-        "quality_shadow_chunks": [],
-        "failed_quality_chunks": [],
-        "corrected_shadow_chunks": [],
-        "final_shadow_chunks": [],
+        "final_shadow_chunks": [],  # 并行版本：operator.add自动汇总
         "current_node": "",
         "error_message": None
     }
     
-    # 运行工作流
+    # 运行并行工作流
     result = workflow.invoke(initial_state)
     
     # 提取最终结果

@@ -1,4 +1,3 @@
-import os
 import re
 from typing import List
 from app.state import Shadow_Writing_State
@@ -46,7 +45,7 @@ class Semantic_Chunking_Agent:
     
     def process_transcript(self, transcript: str) -> List[str]:
         """处理完整的transcript，返回语义块列表"""
-        print(f"\n开始智能语义分块处理...")
+        print("\n开始智能语义分块处理...")
         print(f"原始文本长度: {len(transcript)} 字符")
         
         chunks = self.split_into_chunks(transcript)
@@ -68,7 +67,7 @@ class Semantic_Chunking_Agent:
         """
         text = state.get("text", "")
         
-        print(f"\n [SEMANTIC CHUNKING NODE] 开始语义分块")
+        print("\n [SEMANTIC CHUNKING NODE] 开始语义分块")
         
         if not text:
             return {

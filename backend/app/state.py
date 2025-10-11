@@ -1,6 +1,7 @@
 # state.py - 工作流状态定义
 
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional, Annotated
+import operator
 from app.models import Ted_Shadows
 
 class Shadow_Writing_State(TypedDict):
@@ -26,18 +27,37 @@ class Shadow_Writing_State(TypedDict):
     # 语义分块结果
     semantic_chunks: List[str]             # 语义块列表
     
-    # shadow结果
-    raw_shadows_chunks: List[dict]             # 原始LLM输出
-    validated_shadow_chunks: List[Ted_Shadows]  # 验证通过的
-    quality_shadow_chunks: List[Ted_Shadows]    # 质量合格的
-    failed_quality_chunks: List[dict]           # 质量检查失败的（含详细评分）
-    corrected_shadow_chunks: List[Ted_Shadows]  # 修正后的
-    
-    # 最终结果
-    final_shadow_chunks: List[Ted_Shadows]   # 最终输出
+    # 并行处理：使用operator.add自动汇总所有chunk的结果
+    final_shadow_chunks: Annotated[List[Ted_Shadows], operator.add]  # 自动合并结果
     
     # 元数据
     current_node: str                      # 当前节点名称
     processing_logs: Optional[List[str]]   # 处理日志
     errors: Optional[List[str]]            # 错误列表
     error_message: Optional[str]           # 错误信息
+
+
+# 新增：单个Chunk的处理状态（用于子图）
+class ChunkProcessState(TypedDict):
+    """单个语义块的处理状态
+    
+    【重要】不要包含与主State重复的字段（如ted_url），避免并发写入冲突
+    """
+    
+    # 输入
+    chunk_text: str                        # 当前语义块文本
+    chunk_id: int                          # 块ID（用于日志追踪）
+    
+    # 处理流程中间状态
+    raw_shadow: Optional[dict]             # Shadow Writing原始结果
+    validated_shadow: Optional[Ted_Shadows] # 验证通过的结果
+    quality_passed: bool                   # 质量检查是否通过
+    quality_score: float                   # 质量分数
+    quality_detail: Optional[dict]         # 质量评估详情
+    corrected_shadow: Optional[Ted_Shadows] # 修正后的结果
+    
+    # 最终输出（会被operator.add合并到主State的final_shadow_chunks）
+    final_shadow_chunks: Annotated[List[Ted_Shadows], operator.add]  # 与主State同名！
+    
+    # 错误处理
+    error: Optional[str]                   # 错误信息

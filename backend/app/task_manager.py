@@ -1,16 +1,17 @@
-  # task_manager.py
+# task_manager.py
 # 作用：管理批量处理任务的状态和进度
 
 import uuid
 from typing import Dict, List, Optional
 from datetime import datetime
 from dataclasses import dataclass, field
+from app.enums import TaskStatus
 
 @dataclass
 class Task:
     """任务数据结构"""
     task_id: str
-    status: str  # "pending" | "processing" | "completed" | "failed"
+    status: TaskStatus  # 使用枚举类型
     total: int
     current: int
     urls: List[str]
@@ -24,7 +25,7 @@ class Task:
         """转换为字典"""
         return {
             "task_id": self.task_id,
-            "status": self.status,
+            "status": self.status.value,  # 转换枚举为字符串
             "total": self.total,
             "current": self.current,
             "urls": self.urls,
@@ -56,7 +57,7 @@ class TaskManager:
         task_id = str(uuid.uuid4())
         task = Task(
             task_id=task_id,
-            status="pending",
+            status=TaskStatus.PENDING,
             total=len(urls),
             current=0,
             urls=urls,
@@ -71,18 +72,18 @@ class TaskManager:
         """获取任务"""
         return self.tasks.get(task_id)
     
-    def update_status(self, task_id: str, status: str):
+    def update_status(self, task_id: str, status: TaskStatus):
         """更新任务状态"""
         if task_id in self.tasks:
             self.tasks[task_id].status = status
-            print(f"[TASK MANAGER] 任务 {task_id} 状态: {status}")
+            print(f"[TASK MANAGER] 任务 {task_id} 状态: {status.value}")
     
     def update_progress(self, task_id: str, current: int, current_url: str = None):
         """更新任务进度"""
         if task_id in self.tasks:
             self.tasks[task_id].current = current
             self.tasks[task_id].current_url = current_url
-            self.tasks[task_id].status = "processing"
+            self.tasks[task_id].status = TaskStatus.PROCESSING
             print(f"[TASK MANAGER] 任务 {task_id} 进度: {current}/{self.tasks[task_id].total}")
     
     def add_result(self, task_id: str, result: dict):
@@ -100,13 +101,13 @@ class TaskManager:
     def complete_task(self, task_id: str):
         """完成任务"""
         if task_id in self.tasks:
-            self.tasks[task_id].status = "completed"
+            self.tasks[task_id].status = TaskStatus.COMPLETED
             print(f"[TASK MANAGER] 任务 {task_id} 完成")
     
     def fail_task(self, task_id: str, error: str):
         """任务失败"""
         if task_id in self.tasks:
-            self.tasks[task_id].status = "failed"
+            self.tasks[task_id].status = TaskStatus.FAILED
             self.tasks[task_id].errors.append(error)
             print(f"[TASK MANAGER] 任务 {task_id} 失败: {error}")
     

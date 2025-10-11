@@ -52,7 +52,7 @@ class TEDTranscriptTool:
                 transcript=talk.transcript
             )
             
-            print(f"[SUCCESS] 提取成功")
+            print("[SUCCESS] 提取成功")
             print(f"  标题: {ted_data.title}")
             print(f"  演讲者: {ted_data.speaker}")
             print(f"  时长: {ted_data.duration}")

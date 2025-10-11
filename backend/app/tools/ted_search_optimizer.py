@@ -66,7 +66,7 @@ Output the optimized keywords as a string in JSON format.
             return keywords
         
         # 如果失败，返回原始输入
-        print(f"   [SEARCH OPTIMIZER] LLM返回空，使用原始输入")
+        print("   [SEARCH OPTIMIZER] LLM返回空，使用原始输入")
         return user_topic
         
     except Exception as e:
@@ -137,7 +137,7 @@ Output in JSON format with the key "alternatives".
                     print(f"   [SEARCH OPTIMIZER] 生成替代搜索词: {clean_alternatives}")
                     return clean_alternatives
         
-        print(f"   [SEARCH OPTIMIZER] 未生成替代搜索词")
+        print("   [SEARCH OPTIMIZER] 未生成替代搜索词")
         return []
         
     except Exception as e:

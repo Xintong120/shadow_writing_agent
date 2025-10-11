@@ -2,8 +2,8 @@
 # 作用：管理WebSocket连接，广播进度更新
 
 from fastapi import WebSocket
-from typing import Dict, List
-import json
+from typing import Dict, List, Union
+from app.enums import MessageType
 
 class WebSocketManager:
     """WebSocket连接管理器"""
@@ -69,23 +69,26 @@ class WebSocketManager:
         for connection in disconnected:
             self.disconnect(connection, task_id)
     
-    async def broadcast_progress(self, task_id: str, message_type: str, data: dict):
+    async def broadcast_progress(self, task_id: str, message_type: Union[MessageType, str], data: dict):
         """
         广播进度更新
         
         Args:
             task_id: 任务ID
-            message_type: 消息类型（progress, step, url_completed, error, completed等）
+            message_type: 消息类型枚举或字符串
             data: 消息数据
         """
+        # 如果是枚举类型，转换为字符串
+        msg_type = message_type.value if isinstance(message_type, MessageType) else message_type
+        
         message = {
-            "type": message_type,
+            "type": msg_type,
             "timestamp": self._get_timestamp(),
             **data
         }
         
         await self.send_json(task_id, message)
-        print(f"[WS MANAGER] 广播消息: task_id={task_id}, type={message_type}")
+        print(f"[WS MANAGER] 广播消息: task_id={task_id}, type={msg_type}")
     
     def _get_timestamp(self) -> str:
         """获取当前时间戳"""

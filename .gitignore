@@ -1,62 +1,127 @@
+# ========================================
 # Python
+# ========================================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 *.egg-info/
+*.egg
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.manifest
+*.spec
 
-# 环境变量
+# ========================================
+# 环境变量和敏感信息
+# ========================================
 .env
 .env.local
 .env.*.local
+*.env
 
-# IDE
+# ========================================
+# IDE 和编辑器
+# ========================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.sublime-project
+*.sublime-workspace
 
-# 日志
+# ========================================
+# 日志文件
+# ========================================
 *.log
 logs/
+*.log.*
 
-# OS
+# ========================================
+# 操作系统
+# ========================================
 .DS_Store
 Thumbs.db
+*.bak
 
 # ========================================
-# 只上传 backend 目录，忽略其他所有内容
+# 前端相关（不上传前端代码）
 # ========================================
-
-# 忽略前端目录
 frontend/
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# 忽略文档目录
+# ========================================
+# 文档目录（不上传文档）
+# ========================================
 docs/
 
-# 忽略对话记录和临时文件
-claude对话记录1.md
-claude对话记录2.md
+# ========================================
+# 临时文件和对话记录
+# ========================================
+claude对话记录*.md
 prompt.txt
 运行记录.txt
+PLAN.md
 README.md
 
-# 忽略项目管理文件
-PLAN.md
+# ========================================
+# Backend 缓存和生成文件
+# ========================================
+backend/.ruff_cache/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.mypy_cache/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
 
-# Backend 内部需要忽略的内容
-backend/data/
-backend/tests/
+# ========================================
+# Backend 数据和测试文件（可选）
+# ========================================
+# 如果不想上传数据缓存，取消下面的注释
+backend/data/ted_cache/
+# 如果不想上传测试文件，取消下面的注释
+# backend/tests/
+
+# Backend 临时文档（不上传）
 backend/EXECUTION_SUMMARY.md
 backend/IMPLEMENTATION_CHECKLIST.md
 backend/QUICK_START.md
 
-# 保留以下文件（不在忽略列表中）：
-# - backend/app/
-# - backend/requirements.txt
-# - backend/.env.example
-# - LICENSE
-# - .gitignore
+# Backend 临时或调试文件
+backend/app/agents/serial
+
+# ========================================
+# 数据库文件
+# ========================================
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ========================================
+# 归档和临时目录
+# ========================================
+archive/
+tmp/
+temp/

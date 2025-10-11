@@ -4,6 +4,7 @@ import json
 import time
 from collections import deque
 from typing import Callable, Optional, Dict, Any
+from app.monitoring.api_key_monitor import api_key_monitor
 
 def ensure_dependencies():
     """检查 API key 是否配置"""
@@ -39,6 +40,11 @@ class APIKeyManager:
         self.key_cooldown = {}  # 记录每个 Key 的冷却结束时间戳
         self.total_calls = 0  # 总调用次数
         self.total_switches = 0  # 总切换次数
+        
+        # 【监控集成】注册所有Key到监控器
+        for i, key in enumerate(keys):
+            key_id = f"KEY_{i+1}"
+            api_key_monitor.register_key(key_id, key)
         
         print(f"API Key 管理器初始化: {len(keys)} 个 Key, 冷却时间 {cooldown_seconds}秒")
     
@@ -97,18 +103,39 @@ class APIKeyManager:
             'rate', 'limit', 'quota', 'exceeded', 'too many'
         ])
         
+        # 【监控集成】获取Key ID
+        key_id = self._get_key_id(key)
+        
         if is_rate_limit:
             # 设置冷却时间
             cooldown_until = time.time() + self.cooldown_seconds
             self.key_cooldown[key] = cooldown_until
             
-            print(f" Key ***{key[-8:]} 达到速率限制，冷却 {self.cooldown_seconds}秒")
+            # 【监控集成】标记冷却状态
+            if key_id:
+                api_key_monitor.mark_cooling(key_id, self.cooldown_seconds)
+            
+            print(f"[WARNING] Key ***{key[-8:]} 达到速率限制，冷却 {self.cooldown_seconds}秒")
             print(f"失败次数: {self.key_failures[key]}")
             
             # 切换到下一个 Key
             self.rotate_key()
         else:
-            print(f" Key ***{key[-8:]} 调用失败（非速率限制）: {error_message[:100]}")
+            print(f"[ERROR] Key ***{key[-8:]} 调用失败（非速率限制）: {error_message[:100]}")
+    
+    def _get_key_id(self, key: str) -> Optional[str]:
+        """根据Key值获取Key ID
+        
+        Args:
+            key: API Key值
+            
+        Returns:
+            str: Key ID (如: KEY_1) 或 None
+        """
+        for i, k in enumerate(self.keys):
+            if k == key:
+                return f"KEY_{i+1}"
+        return None
     
     def get_stats(self) -> dict:
         """获取统计信息
@@ -139,13 +166,13 @@ def initialize_key_manager(cooldown_seconds: int = 60):
     
     if settings.groq_api_keys and len(settings.groq_api_keys) > 1:
         api_key_manager = APIKeyManager(settings.groq_api_keys, cooldown_seconds)
-        print(f"多 Key 轮换已启用")
+        print("多 Key 轮换已启用")
     else:
         api_key_manager = None
         if settings.groq_api_key:
-            print(f"只有 1 个 API Key，未启用轮换（建议配置多个 Key）")
+            print("只有 1 个 API Key，未启用轮换（建议配置多个 Key）")
         else:
-            print(f"未配置 API Key")
+            print("未配置 API Key")
 
 
 # ==================== LLM 调用函数 ====================
@@ -177,8 +204,12 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
         if api_key_manager:
             current_key = api_key_manager.get_key()
             api_key_manager.total_calls += 1
+            key_id = api_key_manager._get_key_id(current_key)
         else:
             current_key = settings.groq_api_key
+            key_id = None
+        
+        start_time = time.time()  # 【监控集成】记录开始时间
         
         try:
             # 构建消息列表
@@ -203,6 +234,19 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
             response = completion(**kwargs)
             content = response.choices[0].message.content
             
+            # 【监控集成】记录成功调用
+            if key_id:
+                response_time = time.time() - start_time
+                # 尝试从response中获取响应头（LiteLLM可能不提供）
+                response_headers = getattr(response, '_hidden_params', {}).get('response_headers', None)
+                api_key_monitor.record_call(
+                    key_id=key_id,
+                    success=True,
+                    response_time=response_time,
+                    rate_limited=False,
+                    response_headers=response_headers
+                )
+            
             # 解析 JSON
             if output_format:
                 return json.loads(content)
@@ -211,6 +255,15 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
             
         except json.JSONDecodeError as e:
             print(f"JSON parsing failed: {e}")
+            # 【监控集成】记录失败（JSON解析错误也算失败）
+            if key_id:
+                response_time = time.time() - start_time
+                api_key_monitor.record_call(
+                    key_id=key_id,
+                    success=False,
+                    response_time=response_time,
+                    rate_limited=False
+                )
             return None
             
         except Exception as e:
@@ -221,6 +274,16 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
                 'rate', 'limit', 'quota', 'exceeded', 'too many'
             ])
             
+            # 【监控集成】记录失败调用
+            if key_id:
+                response_time = time.time() - start_time
+                api_key_monitor.record_call(
+                    key_id=key_id,
+                    success=False,
+                    response_time=response_time,
+                    rate_limited=is_rate_limit
+                )
+            
             if is_rate_limit and api_key_manager:
                 # 标记当前 Key 失败
                 api_key_manager.mark_failure(current_key, error_msg)
@@ -228,11 +291,11 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
                 # 限制重试次数（最多重试 Key 数量次）
                 max_retries = len(api_key_manager.keys)
                 if _retry_count < max_retries:
-                    print(f"🔄 重试中... ({_retry_count + 1}/{max_retries})")
+                    print(f"[RETRY] 重试中... ({_retry_count + 1}/{max_retries})")
                     # 递归重试（会自动使用下一个 Key）
                     return call_llm(user_prompt, output_format, temperature, _retry_count + 1)
                 else:
-                    print(f"❌ 所有 API Key 都已尝试，仍然失败")
+                    print("[ERROR] 所有 API Key 都已尝试，仍然失败")
                     return None
             else:
                 # 非速率限制错误或没有管理器

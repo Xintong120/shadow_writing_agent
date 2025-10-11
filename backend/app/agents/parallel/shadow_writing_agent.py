@@ -1,29 +1,30 @@
-from app.state import Shadow_Writing_State
-from app.utils import ensure_dependencies, create_llm_function_native
-import time
+# shadow_writing_agent.py
+# 并行处理的Shadow Writing Agent
 
-def TED_shadow_writing_agent(state: Shadow_Writing_State) -> Shadow_Writing_State:
-    """TED句子迁移节点"""
-    # 从 state 获取语义块
-    semantic_chunks = state.get("semantic_chunks", [])
+from app.state import ChunkProcessState
+from app.utils import ensure_dependencies, create_llm_function_native
+
+
+def shadow_writing_single_chunk(state: ChunkProcessState) -> dict:
+    """
+    处理单个语义块的Shadow Writing（并行版本）
     
-    # 处理所有语义块（已启用多API Key轮换，可安全处理大量数据）
-    chunks_to_process = semantic_chunks
+    【重要】：移除 time.sleep(15) 强制等待
+    LangGraph的并发控制 + API Key轮换机制已足够
     
-    print(f"\n [SHADOW WRITING NODE] 开始处理 {len(chunks_to_process)} 个语义块")
-    print(f"   多API Key轮换已启用，可处理完整文本")
-      
-    if not chunks_to_process:
-        return {
-            "raw_shadows_chunks": [],
-            "errors": ["Shadow Writing节点: 无语义块可处理"]
-        }
+    【Prompt保持不变】：使用与原版完全相同的Shadow Writing prompt
+    """
+    chunk_text = state.get("chunk_text", "")
+    chunk_id = state.get("chunk_id", 0)
+    
+    print(f"\n[Pipeline {chunk_id}] Shadow Writing...")
+    
+    if not chunk_text:
+        return {"raw_shadow": None, "error": "Empty chunk"}
     
     try:
         ensure_dependencies()
         llm_function = create_llm_function_native()
-        
-        all_results = []
         
         output_format = {
             "original": "完整原句, str",
@@ -31,19 +32,8 @@ def TED_shadow_writing_agent(state: Shadow_Writing_State) -> Shadow_Writing_Stat
             "map": "词汇映射字典，键为原词，值为同义词列表, dict"
         }
         
-        # 遍历每个语义块（带速率限制处理）
-        for i, chunk_text in enumerate(chunks_to_process, 1):
-            print(f"\n处理语义块 [{i}/{len(chunks_to_process)}]...")
-            
-            # 添加延迟以避免速率限制（除了第一个块）
-            if i > 1:
-                delay = 15  # 等待15秒让速率限制重置
-                print(f"   等待 {delay} 秒以避免速率限制...")
-                time.sleep(delay)
-            
-            try:
-                # Shadow Writing prompt
-                shadow_prompt = f"""
+        # 【完全相同的Shadow Writing prompt - 不做任何修改】
+        shadow_prompt = f"""
 
 You are a Shadow Writing Coach, an expert in teaching authentic English expression through structural imitation.
 
@@ -90,17 +80,17 @@ You are NOT copying templates. You are learning to "tailor language" by experien
 - Logic: Time → Action → Setting → Atmosphere → Reflection
 
 **JSON Output:**
-{{
+{{{{
   "original": "Every morning, I take a short walk around my neighborhood. The air feels fresh, and the quiet streets give me time to clear my mind.",
   "imitation": "Every evening, I spend half an hour reading in my living room. The warm light makes the space calm, and the silence helps me forget the noise of the day.",
-  "map": {{
+  "map": {{{{
     "Time": ["morning", "evening"],
     "Action": ["take a short walk", "spend half an hour reading"],
     "Place": ["neighborhood", "living room"],
     "Atmosphere": ["air feels fresh / quiet streets", "warm light / silence"],
     "Mental_State": ["clear my mind", "forget the noise of the day"]
-  }}
-}}
+  }}}}
+}}}}
 
 ---
 
@@ -127,10 +117,10 @@ You are NOT copying templates. You are learning to "tailor language" by experien
 - Logic: Announcement → Description → Features → Official Statement → Benefits
 
 **JSON Output:**
-{{
+{{{{
   "original": "The city opened a new public library this week. The modern building offers more than just books—it has study rooms, a café, and free internet access. Officials say the library will give residents more opportunities to learn and connect with each other.",
   "imitation": "The town opened a new sports center this month. The bright facility offers more than just courts—it has a gym, a swimming pool, and free fitness classes. Coaches say the center will give young people more chances to train and build friendships.",
-  "map": {{
+  "map": {{{{
     "Location": ["city", "town"],
     "Facility": ["public library", "sports center"],
     "Time": ["this week", "this month"],
@@ -140,8 +130,8 @@ You are NOT copying templates. You are learning to "tailor language" by experien
     "Authority_Figure": ["officials", "coaches"],
     "Target_Audience": ["residents", "young people"],
     "Purpose": ["learn and connect", "train and build friendships"]
-  }}
-}}
+  }}}}
+}}}}
 
 ---
 
@@ -183,15 +173,15 @@ Text:
 - Each category shows: [original word/phrase, migrated word/phrase]
 
 # Output (JSON only)
-{{
+{{{{
   "original": "your extracted sentence (≥12 words)",
   "imitation": "your topic-migrated sentence with IDENTICAL structure (≥12 words)",
-  "map": {{
+  "map": {{{{
     "Your_Category_1": ["original_element", "migrated_element"],
     "Your_Category_2": ["original_element", "migrated_element"],
     "Your_Category_3": ["original_element", "migrated_element"]
-  }}
-}}
+  }}}}
+}}}}
 
 **Key Principles:**
 1. You are NOT filling a template—you are learning sentence craftsmanship
@@ -204,7 +194,7 @@ Text:
      - "public library" → "sports center" (noun phrase)
      - "learn and connect" → "train and build friendships" (verb phrase)
      - "air feels fresh" → "warm light" (descriptive phrase)
-   - ⚠️ **Important**: Replacements must be natural English collocations (符合英语表达习惯)
+   - [WARNING] **Important**: Replacements must be natural English collocations (符合英语表达习惯)
 5. Maintain grammatical correctness while keeping sentence structure:
    - Function words (articles, conjunctions) generally stay the same: the, a, and, but
    - BUT make necessary grammar adjustments:
@@ -215,7 +205,7 @@ Text:
      - **Articles**: May change for grammar
        Example: "a library" → "an auditorium" (a→an before vowel)
    - Core principle: Keep the LOGICAL STRUCTURE, adjust grammar for correctness
-   - ⚠️ Don't change structure-defining words like: not...but, either...or, not only...but also
+   - [WARNING] Don't change structure-defining words like: not...but, either...or, not only...but also
 6. **Create categories dynamically based on YOUR sentence—don't copy from examples**
 7. Map at least 4-8 key content transformations
 
@@ -223,41 +213,26 @@ Now extract ONE sentence and perform Shadow Writing migration.
 
 """
         
-                result = llm_function(shadow_prompt, output_format)
-                
-                if result and isinstance(result, dict):
-                    # 标准化结果
-                    standardized_result = {
-                        'original': str(result.get('original', '')).strip(),
-                        'imitation': str(result.get('imitation', '')).strip(),
-                        'map': result.get('map', {}),
-                        'paragraph': chunk_text
-                    }
-                    
-                    # 格式化显示提取结果
-                    print(f"[SUCCESS] [TEDTAILOR] 成功迁移:")
-                    print(f"   原句: {standardized_result['original']}")
-                    print(f"   迁移: {standardized_result['imitation']}")
-                    print(f"   映射: {len(standardized_result['map'])} 个词汇")
-                    print(f"   详细映射: {standardized_result['map']}")
-                    
-                    all_results.append(standardized_result)
-                else:
-                    print(f"[SKIP] 语义块 {i}: LLM返回无效结果")
-                    
-            except Exception as e:
-                print(f"[ERROR] 语义块 {i} 处理失败: {e}")
-                continue
+        # 直接调用LLM，不再强制等待
+        result = llm_function(shadow_prompt, output_format)
         
-        print(f"\n[SHADOW WRITING] 完成处理，成功生成 {len(all_results)}/{len(semantic_chunks)} 个结果")
-        
-        return {
-            "raw_shadows_chunks": all_results,
-            "processing_logs": [f"TED迁移节点: 成功迁移 {len(all_results)} 个句子"]
-        }
+        if result and isinstance(result, dict):
+            # 标准化结果（添加paragraph字段）
+            standardized_result = {
+                'original': str(result.get('original', '')).strip(),
+                'imitation': str(result.get('imitation', '')).strip(),
+                'map': result.get('map', {}),
+                'paragraph': chunk_text
+            }
             
+            print(f"[Pipeline {chunk_id}] [OK] Shadow Writing完成")
+            print(f"   原句: {standardized_result['original'][:60]}...")
+            
+            return {"raw_shadow": standardized_result}
+        else:
+            print(f"[Pipeline {chunk_id}] [ERROR] LLM返回无效结果")
+            return {"raw_shadow": None, "error": "Invalid LLM response"}
+        
     except Exception as e:
-        return {
-            "raw_shadows_chunks": [],
-            "errors": [f"Shadow Writing节点出错: {e}"]
-        }
+        print(f"[Pipeline {chunk_id}] [ERROR] Shadow Writing失败: {e}")
+        return {"raw_shadow": None, "error": str(e)}

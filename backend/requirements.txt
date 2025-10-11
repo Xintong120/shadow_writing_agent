@@ -15,6 +15,10 @@ python-multipart>=0.0.6
 # LLM相关
 litellm>=1.0.0
 
+# Memory持久化（PostgreSQL）
+psycopg[binary,pool]>=3.1.0
+langgraph-checkpoint-postgres>=1.0.0
+
 # TED相关工具
 tavily-python>=0.3.0
 git+https://github.com/Xintong120/ted-transcript-extractor.git

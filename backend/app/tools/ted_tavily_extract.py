@@ -30,7 +30,7 @@ def ted_tavily_extract(url: str) -> dict:
         if extract_response.get('results') and extract_response['results']:
             raw_content = extract_response['results'][0]['raw_content']
             
-            print(f"[SUCCESS] 内容提取成功")
+            print("[SUCCESS] 内容提取成功")
             print(f"  内容长度: {len(raw_content)} 字符")
             print(f"  预计单词数: {len(raw_content.split())} 词\n")
             
@@ -40,7 +40,7 @@ def ted_tavily_extract(url: str) -> dict:
                 "success": True
             }
         else:
-            print(f"[WARNING] 未能提取到内容")
+            print("[WARNING] 未能提取到内容")
             return {
                 "url": url,
                 "error": "No content extracted",

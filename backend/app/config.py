@@ -6,8 +6,18 @@
 #   - 系统参数配置
 
 from pydantic_settings import BaseSettings
-from typing import Optional, Any
+from typing import Any
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# 显式加载根目录的.env文件
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+    print(f"[OK] 已加载配置文件: {env_path}")
+else:
+    print(f"[WARNING] 未找到配置文件: {env_path}")
 
 class settings(BaseSettings):
     groq_api_key: str = ""
@@ -31,57 +41,49 @@ class settings(BaseSettings):
     max_cache_size_mb: int = 500
     
     class Config:
-        env_file = ".env"  # 自动加载.env文件
+        # .env文件在项目根目录（backend的父目录）
+        env_file = "../.env"
         env_file_encoding = "utf-8"  # 文件编码
         case_sensitive = False  # 环境变量不区分大小写
         extra = "allow"  # 允许额外的环境变量（用于 GROQ_API_KEY_1, GROQ_API_KEY_2 等）
 
     def model_post_init(self, __context: Any) -> None:
         """初始化后自动读取多个 API Key"""
-        # 方法1：从环境变量读取（如果已经加载到系统环境）
         keys = []
-        i = 1
-        while True:
-            key = os.getenv(f"GROQ_API_KEY_{i}")
-            if key:
-                keys.append(key)
-                i += 1
-            else:
-                break
         
-        # 方法2：从 .env 文件直接读取（如果环境变量中没有）
+        # 方法1: 尝试读取 GROQ_API_KEYS（逗号分隔格式，推荐）
+        api_keys_str = os.getenv("GROQ_API_KEYS", "")
+        if api_keys_str:
+            keys = [k.strip() for k in api_keys_str.split(",") if k.strip()]
+            print(f"从 GROQ_API_KEYS 读取到 {len(keys)} 个 API Key")
+        
+        # 方法2: 尝试读取 GROQ_API_KEY_1, GROQ_API_KEY_2... 格式（向后兼容）
         if not keys:
-            from pathlib import Path
-            env_path = Path(__file__).parent.parent / ".env"
-            if env_path.exists():
-                with open(env_path, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        line = line.strip()
-                        # 跳过注释和空行
-                        if not line or line.startswith('#'):
-                            continue
-                        # 解析 KEY=VALUE 格式
-                        if '=' in line:
-                            key_name, value = line.split('=', 1)
-                            key_name = key_name.strip()
-                            value = value.strip().strip('"').strip("'")  # 去除引号
-                            # 匹配 GROQ_API_KEY_1, GROQ_API_KEY_2 等
-                            if key_name.startswith('GROQ_API_KEY_') and key_name[-1].isdigit():
-                                keys.append(value)
+            i = 1
+            while True:
+                key = os.getenv(f"GROQ_API_KEY_{i}")
+                if key:
+                    keys.append(key)
+                    i += 1
+                else:
+                    break
+            if keys:
+                print(f"从 GROQ_API_KEY_* 读取到 {len(keys)} 个 API Key")
         
-        # 如果找到多个 Key，填充到 groq_api_keys
+        # 方法3: 尝试读取单个 GROQ_API_KEY（向后兼容）
+        if not keys and self.groq_api_key:
+            keys = [self.groq_api_key]
+            print("从 GROQ_API_KEY 读取到 1 个 API Key")
+        
+        # 设置API Keys
         if keys:
             self.groq_api_keys = keys
-            # 如果 groq_api_key 为空，使用第一个 Key 作为默认值（兼容旧代码）
+            # 设置默认Key（第一个）
             if not self.groq_api_key:
                 self.groq_api_key = keys[0]
-            print(f"读取到 {len(keys)} 个 GROQ API Key")
         else:
-            # 没有找到 GROQ_API_KEY_* 格式的配置，尝试使用单个 GROQ_API_KEY
-            if self.groq_api_key:
-                print(f"只找到 1 个 GROQ API Key（建议配置多个 Key 以避免速率限制）")
-            else:
-                print(f"未找到任何 GROQ API Key 配置")
+            print("[WARNING] 未找到任何 GROQ API Key 配置")
+            print("请在 .env 文件中配置: GROQ_API_KEYS=gsk_xxxxx1,gsk_xxxxx2")
 
 settings = settings()
 
