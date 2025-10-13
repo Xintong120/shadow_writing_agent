@@ -1,139 +1,142 @@
-# ========================================
-# Python
-# ========================================
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-*.egg
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.manifest
-*.spec
+ ========================================Python 环境========================================
+ __pycache__/
+ *.pyc
+ *.pyo
+ *.pyd
+ .Python
+ *.egg-info/
+ *.egg
+ *.so
+ .Python
+ build/
+ develop-eggs/
+ dist/
+ downloads/
+ eggs/
+ .eggs/
+ lib/
+ lib64/
+ parts/
+ sdist/
+ var/
+ wheels/
+ *.manifest
+ *.spec
 
-# ========================================
-# 环境变量和敏感信息
-# ========================================
-.env
-.env.local
-.env.*.local
-*.env
+ ========================================环境变量和敏感信息========================================
+ .env
+ .env.local
+ .env.*.local
+ *.env
 
-# ========================================
-# IDE 和编辑器
-# ========================================
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-*.sublime-project
-*.sublime-workspace
+ ========================================IDE 和编辑器========================================
+ .vscode/
+ .idea/
+ *.swp
+ *.swo
+ *~
+ *.sublime-project
+ *.sublime-workspace
 
-# ========================================
-# 日志文件
-# ========================================
-*.log
-logs/
-*.log.*
+ ========================================日志文件========================================
+ *.log
+ logs/
+ *.log.*
 
-# ========================================
-# 操作系统
-# ========================================
-.DS_Store
-Thumbs.db
-*.bak
+ ========================================操作系统========================================
+ .DS_Store
+ Thumbs.db
+ *.bak
 
-# ========================================
-# 前端相关（不上传前端代码）
-# ========================================
-frontend/
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# ========================================
-# 文档目录（不上传文档）
-# ========================================
-docs/
 
-# ========================================
-# 临时文件和对话记录
-# ========================================
-claude对话记录*.md
-prompt.txt
-运行记录.txt
-PLAN.md
-README.md
+ ========================================文档目录（不上传文档）======================================== 
+ docs/
 
-# ========================================
-# Backend 缓存和生成文件
-# ========================================
-backend/.ruff_cache/
-backend/.pytest_cache/
-backend/.coverage
-backend/htmlcov/
-backend/.mypy_cache/
-backend/__pycache__/
-backend/**/__pycache__/
-backend/**/*.pyc
+ ========================================临时文件和对话记录======================================== 
+ claude对话记录*.md
+ prompt.txt
+ 运行记录.txt
+ PLAN.md
+ README.md
 
-# ========================================
-# Backend 数据和测试文件（可选）
-# ========================================
-# 如果不想上传数据缓存，取消下面的注释
-backend/data/ted_cache/
-# 如果不想上传测试文件，取消下面的注释
-# backend/tests/
+ ========================================Backend 缓存和生成文本======================================== 
+ backend/cache/
+ backend/.ruff_cache/
+ backend/.pytest_cache/
+ backend/.coverage
+ backend/htmlcov/
+ backend/.mypy_cache/
+ backend/__pycache__/
+ backend/**/__pycache__/
+ backend/**/*.pyc
 
-# Backend 临时文档（不上传）
-backend/EXECUTION_SUMMARY.md
-backend/IMPLEMENTATION_CHECKLIST.md
-backend/QUICK_START.md
+ ========================================Backend 数据和测试文件（可选）========================================
+ 如果不想上传数据缓存，取消下面的注释
+ backend/data/ted_cache/
+ 如果不想上传测试文件，取消下面的注释
+ backend/tests/
 
-# Backend 临时或调试文件
-backend/app/agents/serial
+ Backend 临时文档（不上传�?# backend/EXECUTION_SUMMARY.md
+ backend/IMPLEMENTATION_CHECKLIST.md
+ backend/QUICK_START.md
 
-# Backend 集成测试脚本（需要本地环境，不上传）
-backend/tests/test_all.py
-backend/tests/test_debug.py
-backend/tests/test_parser.py
-backend/tests/test_health.py
-backend/tests/test_upload.py
-backend/tests/test_communication_agent.py
-backend/tests/test_memory_integration.py
-backend/tests/test_api_endpoints.py
-backend/tests/test_batch_processing.py
-backend/tests/test_memory_api.py
+ Backend 临时或调试文�?# backend/app/agents/serial
 
-# ========================================
-# 数据库文件
-# ========================================
-*.db
-*.db-journal
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite3
+ Backend 集成测试脚本（需要本地环境，不上传）
+ backend/tests/test_all.py
+ backend/tests/test_debug.py
+ backend/tests/test_parser.py
+ backend/tests/test_health.py
+ backend/tests/test_upload.py
+ backend/tests/test_communication_agent.py
+ backend/tests/test_memory_integration.py
+ backend/tests/test_api_endpoints.py
+ backend/tests/test_batch_processing.py
+ backend/tests/test_memory_api.py
 
-# ========================================
-# 归档和临时目录
-# ========================================
-archive/
-tmp/
-temp/
+ ========================================Frontend 临时或未完成文件========================================
+ # 包含敏感信息或API配置的文件
+ frontend/src/pages/SettingsPage.tsx
+ frontend/src/services/websocket.ts
+ frontend/src/services/client.ts
+ # 只有TODO注释，无实际实现的占位符文件
+ frontend/src/utils/logger.ts
+ frontend/src/utils/helpers.js
+ frontend/src/utils/cn.ts
+ frontend/src/hooks/useWebSocket.js
+ frontend/src/hooks/useDebounce.ts
+
+ # 开发计划文档和日志文件（不上传）
+ frontend/FRONTEND_PLAN_TODO.md
+ frontend/FRONTEND_PLAN.md
+ frontend/FRONTEND_LOGS.md
+
+ ========================================Frontend 构建产物和依赖========================================
+ # 构建产物（不上传）
+ frontend/dist/
+ # 依赖包（不上传）
+ frontend/node_modules/
+ # Electron 目录（暂时不需要桌面应用）
+ frontend/electron/
+
+ ========================================Frontend 脚本和工具========================================
+ # 脚本文件（如果不需要上传，取消注释）
+ # frontend/scripts/
+
+ ========================================Frontend CI/CD========================================
+ # GitHub Actions 工作流（如果不需要上传，取消注释）
+ # frontend/.github/workflows/
+
+ ========================================数据库文件 ========================================
+ *.db
+ *.db-journal
+ *.db-shm
+ *.db-wal
+ *.sqlite
+ *.sqlite3
+
+ ========================================归档和临时目录========================================
+ archive/
+ tmp/
+ temp/
