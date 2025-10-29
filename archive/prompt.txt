@@ -1,0 +1,133 @@
+shadow writing:
+Shadow Writing这是一种在西方语言学和写作教学中有理论支持、但在国内比较少人系统运用的方法，简单来说，就是找一篇地道的英文范文，逐段模仿写作，保持句式与逻辑的骨架不变，换掉具体的内容，最后再与原文对照。
+很多同学-听到 Shadow Writing(影子写作)，第一反应是:这不就是换汤不换药的“套模板"吗?其实，两者看似相似，实则却有着本质的差别。
+套模板的写法，更像是一种“速成技巧”，你记住几十个万能句型，比如There are many reasons for thisphenomenon...,在考试作文里遇到什么题目都能套上去，它的优点是快，能让没有写作思路的人迅速凑出一段看上去完整的英文，但问题也很明显就是很容易千篇一律。
+而Shadow Writing，它不是让你背下一个现成的句子，而是让你“站在作者的影子里”，体验别人是如何搭建句子和逻辑的，举个例子，原文:
+Officials believe the project will notonly benefit the environment butalso improve the quality of life forresidents.
+你在影子写作时会这样迁移:
+Teachers believe the policy will notonly support academicdevelopment but also strengthenstudents'sense of community.
+这个过程是你在学习逻辑框架(not only...but also..)、在尝试 迁移表达场景(环境 >教育)，同时提醒自己去这样组织信息"，这是一种“语言内化"的过程，而不是机械拼接。
+所以，套模板像是拿现成的衣服往身上硬套，能遮住身体，却总显得别扭Shadow Writing 则像是跟着裁缝学手艺，一边照着样子做，一边逐渐学会如何量体裁衣。
+为什么这种方法有效?因为它正好结合了几大二语习得的理论观点。
+Krashen的Input Hypothesis 里强调，学习必须建立在“可理解输入"之上。那么一篇简单新闻报道、随笔或短文，恰好提供了这种既能看懂又稍有挑战的输入。
+当你开始动笔模仿的时候，就进入了Swain 的 Output Hypothesis 里强调的“输出阶段”，写作时的卡顿，正是你发现知识空缺、逼迫自己寻找更准确表达的关键时刻，更重要的是，Schmidt的 Noticing Hypothesis 也在这里发挥作用，只有当我们真正“注意到"语言的形式，输入才能转化为习得
+影子写作过程，就是把自己的仿写和原文逐句比较进行一次刻意的“注意训练”，你会在这个过程中意识到哪些搭配自己漏掉了，哪些句式可以更自然，它让你从“看懂"走向“会用”.
+如果把整个过程放大，其实也契合Process Writing Approach(写作过程法)的理念，也就是说，写作不是一气呵成，而是一个循环，包括输入、起草、对照、修订，Shadow Writing 就是把这个循环缩小成可操作的微型训练。
+接下来，我们先找一个很小的短文，开始做一次Shadow Writing。
+短文范本
+Title: Morning Walk
+Every morning, l take a short walkaround my neighborhood.
+The air feels fresh, and the quietstreets give me time to clear mymind.
+Sometimes l notice little things, likea new flower blooming or a childriding a bike for the first time.
+These small moments remind methat even in ordinary days, there isbeauty to be found.
+影子写作(逐段仿写)Title: Evening Reading
+Every evening,l spend half an hourreading in my living room.The warm light makes the spacecalm, and the silence helps meforget the noise of the day.Sometimes l notice little things, likethe sound of pages turning or thecat curling up beside me.
+These small moments remind methat even in a busy life, there ispeace to be found.
+我们来解析一下这个写作的过程，我把改写点列在下面:
+时间:morning ->evening
+动作:take a short walk->spend half an hour reading
+场景:neighborhood-> living room
+环境:air feels fresh /quiet streets>warm light/silence
+心理状态:clear my mind> forget the noise of the day
+小细节:new flower blooming/childriding a bike
+->sound of pages turning /catcurling up
+日常价值:ordinary days/beauty-> busy life /peace
+从上面这个小例子，你是否就能清晰感受到Shadow Writing 不是套模板，而是把逻辑骨架 提炼出来，然后迁移到新的生活场景中。
+接下来，我们再来看一篇小的新闻片段，看我们怎样做影子写作。
+新闻范本
+Title: New Library Opens
+The city opened a new public librarythis week.
+The modern building offers morethan just books,it has study rooms,a café, and freeinternet accessOfficials say the library will giveresidents more opportunities tolearn and connect with each other.
+Many people visited on the first dayand the atmosphere was lively andwelcoming.
+影子写作Title: New Sports Center Opens
+The town opened a new sportscenter this month.
+The bright facility offers more thanjust courts,it has a gym,a swimmingpool, and free fitness
+classes.Coaches say the center willgive young people more chances totrain and build friendships.
+Many families came on the first dayand the atmosphere was energeticand cheerful.
+改写点清单
+主体:city>town
+场所:publiclibrary->sports center
+时间:this week ->this month
+环境描写:modern building-> bright facility
+提供内容:books→courts;studyrooms/café/internet -> gym/poolclasses
+发言人:officials→coaches
+受众:residents->young people
+活动:learn and connect ->train andbuild friendships
+人群:people→>families
+气氛:lively and welcoming ->energetic and cheerful
+其实我特别理解那种写英文时的挫败感，明明脑子里有话，却总觉得写出来怪怪的，要么句子僵硬，要么逻辑混乱，要么干脆就是“中文换英文"，没有那种流畅自然的感觉，写两行就停下来，删删改改，来回折腾，最后还是觉得不对。
+影子写作(Shadow Writing)，它的神奇之处在于，你不用硬逼自己憋句子而是先“站在别人的影子里”，体会别人是怎么搭建句子、怎么安排逻辑的，然后，你再试着把内容一点点替换成自己的，这个过程不需要天赋，不会有那种“硬撑”的痛苦，反而像是有人牵着你的手，让你先走起来，再逐渐学会独立奔跑。
+这种感觉很像学画画，你刚拿起铅笔时，老师不会让你立刻创作一幅属于自己的油画，而是让你先临摹，通过临摹，你练习了线条、阴影和构图，等到肌肉和眼睛熟悉了这些规律，你才有能力加入自己的笔触，画出自己的作品。
+影子写作就是写作里的“临摹”，先模仿，再迁移，最后慢慢发展出自己的表达风格。
+影子写作还有一个很大的优势，它能帮你积累“素材肌肉"，很多人觉得写作难，是因为他们脑子里储存的只是单词，没有句子和表达素材。每次写作时，只能把词拼在一起，所以就特别容易“中式英语”.
+当你经常做影子写作时，大脑会自然记住那些很完整的素材，下次你需要表达类似意思时，它就会自动浮现出来。那时候，你写出的句子会更顺畅，逻辑也更自然。
+写作不是天赋的问题，而是习惯的问题，影子写作，就是一个帮你养成习惯的好方法。
+
+
+
+
+
+
+# 基于Shadow Writing理念的质量评估prompt
+quality_prompt = f"""
+You are a Shadow Writing Quality Evaluator. You understand that Shadow Writing is NOT template filling, but learning sentence craftsmanship by "standing in the author's shadow."
+
+ORIGINAL SENTENCE: "{original}"
+MIGRATED SENTENCE: "{imitation}"
+WORD MAPPING: {word_map}
+SOURCE PARAGRAPH: "{paragraph[:200]}..."
+
+Evaluate this Shadow Writing attempt step by step:
+
+<thinking>
+Step 1 - Grammar Structure Preservation (0-3 points) 【骨架保持】
+- Does the migrated sentence have IDENTICAL grammar structure to the original?
+- Check: word order, clause structure, sentence pattern
+- Compare: [Original structure] vs [Migrated structure]
+- Are they 100% the same skeleton? [yes/no + details]
+- Score: [0-3]
+  * 3 points: Perfect structural match
+  * 2 points: Minor structural deviation
+  * 1 point: Significant structural change
+  * 0 points: Completely different structure
+
+Step 2 - Content Word/Phrase Replacement Quality (0-2 points) 【内容替换】
+- Were ONLY content words/phrases replaced? [yes/no]
+- Check each replacement:
+  * Is it a natural English collocation? (符合英语习惯)
+  * Does it maintain the same grammatical function?
+  * Examples: noun→noun, verb phrase→verb phrase
+- Were function words properly adjusted for grammar? (e.g., prepositions, verb forms)
+- Score: [0-2]
+  * 2 points: All replacements are natural and appropriate
+  * 1 point: Most replacements work, minor issues
+  * 0 points: Unnatural or grammatically incorrect replacements
+
+Step 3 - Topic Migration Success (0-2 points) 【话题迁移】
+- Is there a clear topic change? [original topic → new topic]
+- Does it feel like "standing in the author's shadow" (not template filling)?
+- Is the new topic coherent and meaningful?
+- Score: [0-2]
+  * 2 points: Clear, meaningful topic migration
+  * 1 point: Weak or unclear topic change
+  * 0 points: No real topic migration or nonsensical
+
+Step 4 - Learning Value (0-1 points) 【学习价值】
+- Can English learners learn from this migration?
+- Does it demonstrate a useful sentence pattern?
+- Is it practical and applicable?
+- Score: [0-1]
+
+Step 5 - Overall Assessment:
+- Total score: [sum: 0-8]
+- Pass threshold: ≥6 points
+- Key strengths: [what was done well]
+- Key issues: [what needs improvement, if any]
+- Is this Shadow Writing (✅) or Template Filling (❌)? [判断]
+</thinking>
+
+Based on Shadow Writing principles, my evaluation is:
+
+{{"score": <0-8>, "reasoning": "<summary of thinking>", "pass": <true/false>}}
+
+JSON:"""

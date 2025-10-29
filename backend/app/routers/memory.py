@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Any
 from app.memory import MemoryService, get_global_store
 from pydantic import BaseModel, Field
 
-router = APIRouter(prefix="/memory", tags=["memory"])
+router = APIRouter(prefix="/api/memory", tags=["memory"])
 
 # 全局Memory服务实例
 memory_service = MemoryService(store=get_global_store())

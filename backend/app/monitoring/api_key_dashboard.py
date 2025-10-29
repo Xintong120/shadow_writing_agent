@@ -6,7 +6,7 @@ from typing import Dict, List
 from app.monitoring.api_key_monitor import api_key_monitor
 from app.monitoring.api_key_stats import APIKeyStats, MonitoringSummary
 
-router = APIRouter(prefix="/monitoring", tags=["monitoring"])
+router = APIRouter(prefix="/api/monitoring", tags=["monitoring"])
 
 
 @router.get("/summary", response_model=MonitoringSummary)
