@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* BEGIN GENERATED: colors.js */
+  :root {
+    /* 🎨 统一颜色系统 - 自动从 colors.js 生成 */
+    /* Variables will be replaced at build time by scripts/generateCssVars.js */
+    --background: 0 0 100;       /* #FFFFFF */
+    --foreground: 215 26 17;     /* #1F2937 */
+
+    --primary: 249 77% 56%;      /* #6B46C1 (format: H S% L%) */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --secondary: 191 91% 46%;    /* #0891B2 */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --accent: 25 95% 53%;        /* #EA580C */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --success: 160 84% 39%;      /* #10B981 */
+    --warning: 43 96% 56%;       /* #F59E0B */
+    --error: 0 84% 60%;          /* #EF4444 */
+    --info: 217 91% 60%;         /* #3B82F6 */
+
+    --card: 0 0% 100%;           /* #FFFFFF */
+    --card-foreground: 215 26% 17%; /* #1F2937 */
+
+    --border: 214 32% 91%;       /* #E5E7EB */
+    --input: 210 40% 98%;        /* #F9FAFB */
+    --ring: 249 77% 56%;         /* #6B46C1 */
+
+    --muted: 210 40% 98%;        /* #F3F4F6 */
+    --muted-foreground: 215 16% 47%; /* #6B7280 */
+
+    --radius: 0.5rem;
+  }
+  /* END GENERATED: colors.js */
+  
+  .dark {
+    --background: 9 9 11;       /* #09090B */
+    --foreground: 250 250 250;
+    
+    --card: 24 24 27;           /* #18181B */
+    --card-foreground: 250 250 250;
+    
+    --border: 39 39 70;         /* #27272A */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
