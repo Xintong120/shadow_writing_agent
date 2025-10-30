@@ -22,7 +22,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious
-} from '@/components/atoms/carousel'
+} from '@/components/molecules/carousel'
 import { Button } from '@/components/atoms/button'
 import ShadowWritingCard from './ShadowWritingCard'
 import ProgressDots from '../molecules/ProgressDots'

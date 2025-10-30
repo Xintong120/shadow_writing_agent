@@ -158,3 +158,9 @@ scripts/
 
 frontend/electron/
 frontend/public/
+
+# ========================================
+# Development and guide files
+# ========================================
+frontend/src/dev/
+frontend/src/components/atoms/前端原子组件代码风格指南.md

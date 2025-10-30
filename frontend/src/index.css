@@ -7,8 +7,15 @@
 @layer base {
   /* BEGIN GENERATED: colors.js */
   :root {
-    /* 🎨 统一颜色系统 - 自动从 colors.js 生成 */
+    /* Unified color system - Auto generated from colors.js */
     /* Variables will be replaced at build time by scripts/generateCssVars.js */
+
+    /* Global scale factor for Mantine-style scaling */
+    --mantine-scale: 1;
+
+    /* Apply global scaling to root font size */
+    font-size: calc(1rem * var(--mantine-scale));
+
     --background: 0 0 100;       /* #FFFFFF */
     --foreground: 215 26 17;     /* #1F2937 */
 

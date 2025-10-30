@@ -9,7 +9,7 @@ import { handleError } from '@/utils/errorHandler'
 import type { TEDCandidate, Message } from '@/types'
 
 // 导入布局组件
-import { LayoutContainer, PageSection } from '@/components/templates/layout'
+import { LayoutContainer, PageSection } from '@/components/templates/Layout'
 
 // 导入已创建的组件
 import ChatInterface from '@/components/organisms/ChatInterface'
