@@ -11,9 +11,11 @@ import SettingsPage from '@/pages/SettingsPage'
 // Development test routes (only in development)
 let devRoutes = null;
 if (import.meta.env.DEV) {
-  const MantineButtonTest = await import('@/dev/MantineButtonTest');
+  const MantineThemeTest = await import('@/dev/MantineThemeTest');
   devRoutes = (
-    <Route path="/dev/button-test" element={<MantineButtonTest.default />} />
+    <>
+      <Route path="/dev/theme-test" element={<MantineThemeTest.default />} />
+    </>
   );
 }
 

@@ -1,12 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { MantineProvider } from '@mantine/core'
 import App from './App.jsx'
 import './index.css'
-// 在运行时注入 colors.js 中的 cssVariables，确保组件拿到最新的变量值
-import './styles/applyCssVariables.js'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <MantineProvider>
+      <App />
+    </MantineProvider>
   </React.StrictMode>,
 )

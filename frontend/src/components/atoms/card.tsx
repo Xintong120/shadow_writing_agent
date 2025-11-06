@@ -1,10 +1,11 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { componentSizes } from '@/styles/sizing';
 
 const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  React.HTMLAttributes<HTMLDivElement> 
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
@@ -19,11 +20,18 @@ Card.displayName = "Card"
 
 const CardHeader = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+  React.HTMLAttributes<HTMLDivElement> & 
+  {
+    size?: 'sm' | 'md' | 'lg'
+  }
+>(({ className,size = 'md', ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    className={cn("flex flex-col space-y-1.5",
+      // 使用设计系统间距
+      componentSizes.card.padding[size], // 如: p-4 (sm), p-6 (md), p-8 (lg)
+      componentSizes.card.gap[size],     // 如: gap-3 (sm), gap-4 (md), gap-6 (lg)
+      className)}
     {...props}
   />
 ))
@@ -55,9 +63,16 @@ CardDescription.displayName = "CardDescription"
 
 const CardContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  React.HTMLAttributes<HTMLDivElement>& {
+    size?: 'sm' | 'md' | 'lg'
+  }
+>(({ className,size = 'md', ...props }, ref) => (
+  <div 
+  ref={ref} 
+  className={cn("pt-0",
+      componentSizes.card.padding[size], className)
+  } {...props} 
+  />
 ))
 CardContent.displayName = "CardContent"
 

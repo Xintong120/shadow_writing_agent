@@ -13,9 +13,11 @@ export interface InputSizes {
 }
 
 export interface ButtonSizes {
+  xs: ComponentSize;
   sm: ComponentSize;
   md: ComponentSize;
   lg: ComponentSize;
+  xl: ComponentSize;
 }
 
 export interface CardSizes {
@@ -39,11 +41,107 @@ export interface AvatarSizes {
   xl: string;
 }
 
+export interface CheckboxSizes {
+  sm: string;
+  md: string;
+  lg: string;
+}
+
+export interface SwitchSizes {
+  sm: {
+    height: string;
+    width: string;
+    thumbSize: string;
+    translateX: string;
+  };
+  md: {
+    height: string;
+    width: string;
+    thumbSize: string;
+    translateX: string;
+  };
+  lg: {
+    height: string;
+    width: string;
+    thumbSize: string;
+    translateX: string;
+  };
+}
+
+export interface TabsSizes {
+  list: {
+    height: Record<string, string>;
+    padding: Record<string, string>;
+  };
+  trigger: {
+    padding: Record<string, string>;
+    fontSize: Record<string, string>;
+  };
+  content: {
+    marginTop: Record<string, string>;
+  };
+}
+
+export interface ToastSizes {
+  padding: Record<string, string>;
+  action: {
+    height: Record<string, string>;
+    padding: Record<string, string>;
+    fontSize: Record<string, string>;
+  };
+  close: {
+    position: Record<string, string>;
+    padding: Record<string, string>;
+    iconSize: Record<string, string>;
+  };
+  title: {
+    fontSize: Record<string, string>;
+  };
+  description: {
+    fontSize: Record<string, string>;
+  };
+}
+
+export interface DialogSizes {
+  content: {
+    maxWidth: Record<string, string>;
+    padding: Record<string, string>;
+    gap: Record<string, string>;
+  };
+  close: {
+    position: Record<string, string>;
+    iconSize: Record<string, string>;
+  };
+  title: {
+    fontSize: Record<string, string>;
+  };
+  description: {
+    fontSize: Record<string, string>;
+  };
+  header: {
+    gap: Record<string, string>;
+  };
+  footer: {
+    gap: Record<string, string>;
+  };
+}
+
+export interface ProgressSizes {
+  height: Record<string, string>;
+  radius: Record<string, string>;
+}
+
 export interface ComponentSizes {
   button: ButtonSizes;
   input: InputSizes;
   card: CardSizes;
   avatar: AvatarSizes;
+  checkbox: CheckboxSizes;
+  switch: SwitchSizes;
+  tabs: TabsSizes;
+  toast: ToastSizes;
+  dialog: DialogSizes;
+  progress: ProgressSizes;
 }
 
 export interface LayoutSystem {

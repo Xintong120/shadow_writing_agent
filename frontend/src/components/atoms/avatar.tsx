@@ -4,15 +4,21 @@ import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
 
 import { cn } from "@/lib/utils"
+import { componentSizes } from '@/styles/sizing';
 
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> & 
+  {
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  }
+>(({ className, size = 'md',  ...props }, ref) => (
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
-      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+      // 使用设计系统尺寸
+      componentSizes.avatar[size],
+      "relative flex shrink-0 overflow-hidden rounded-full",
       className
     )}
     {...props}

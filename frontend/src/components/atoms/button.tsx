@@ -1,60 +1,50 @@
 import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-
+import { Button as MantineButton } from "@mantine/core"
+import { ButtonProps as MantineButtonProps } from "@mantine/core"
 import { cn } from "@/lib/utils"
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-sm whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        // Updated to use Mantine sizing system (based on spacing scale)
-        xs: "h-7 px-2 text-xs",                    // Extra small button
-        sm: "h-8 px-3 text-xs",                    // Small: 32px height
-        md: "h-10 px-4 text-sm",                   // Medium: 40px height (default)
-        lg: "h-11 px-6 text-base",                 // Large: 44px height
-        xl: "h-12 px-8 text-lg",                   // Extra large: 48px height
-        icon: "h-10 w-10",                         // Icon button: 40px square
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "md",
-    },
-  }
-)
+// 使用Mantine Button组件的直接类型定义
+type ButtonVariant = "filled" | "outline" | "light" | "subtle" | "transparent" | "white" | "default" | "destructive" | "secondary" | "ghost" | "link"
+type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl" | "icon"
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+interface ButtonProps extends Omit<MantineButtonProps, 'variant' | 'size'> {
+  variant?: ButtonVariant | "destructive" | "secondary" | "ghost" | "link"
+  size?: ButtonSize
 }
 
+// 实现一个简单的Button组件，使用Mantine组件作为基础
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+  ({ className, variant = "filled", size = "md", children, ...props }, ref) => {
+    // 处理变体映射
+    let buttonVariant = variant
+    if (variant === "default") buttonVariant = "filled"
+    if (variant === "secondary") buttonVariant = "light"
+    if (variant === "ghost") buttonVariant = "subtle"
+    if (variant === "destructive") buttonVariant = "filled"
+    if (variant === "link") buttonVariant = "subtle"
+    
+    // 处理尺寸映射
+    let buttonSize = size
+    if (size === "xs") buttonSize = "xs"
+    if (size === "sm") buttonSize = "sm"
+    if (size === "md") buttonSize = "md"
+    if (size === "lg") buttonSize = "lg"
+    if (size === "xl") buttonSize = "xl"
+    if (size === "icon") buttonSize = "sm"
+    
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+      <MantineButton
+        className={className}
+        variant={buttonVariant}
+        size={buttonSize}
         ref={ref}
         {...props}
-      />
+      >
+        {children}
+      </MantineButton>
     )
   }
 )
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
+export { Button }
