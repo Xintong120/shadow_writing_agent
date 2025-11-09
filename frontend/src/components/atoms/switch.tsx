@@ -1,35 +1,146 @@
-"use client"
-
 import * as React from "react"
-import * as SwitchPrimitives from "@radix-ui/react-switch"
-
+import { Switch as MantineSwitch, SwitchGroup as MantineSwitchGroup } from '@mantine/core'
 import { cn } from "@/lib/utils"
-import { componentSizes } from '@/styles/sizing';
 
-const Switch = React.forwardRef<
-  React.ElementRef<typeof SwitchPrimitives.Root>,
-  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root> &
-  {
-    size?: 'sm' | 'md' | 'lg'
+// 简化的类型定义
+type SwitchSize = "xs" | "sm" | "md" | "lg" | "xl"
+type SwitchRadius = "xs" | "sm" | "md" | "lg" | "xl"
+type SwitchLabelPosition = "left" | "right"
+
+// 简化的核心接口
+interface SimpleSwitchProps {
+  size?: SwitchSize
+  radius?: SwitchRadius
+  color?: string
+  id?: string
+  offLabel?: React.ReactNode
+  onLabel?: React.ReactNode
+  thumbIcon?: React.ReactNode
+  withThumbIndicator?: boolean
+  description?: React.ReactNode
+  label?: React.ReactNode
+  labelPosition?: SwitchLabelPosition
+  disabled?: boolean
+  checked?: boolean
+  defaultChecked?: boolean
+  onChange?: (checked: boolean) => void
+  className?: string
+}
+
+// 简化的Switch组接口
+interface SimpleSwitchGroupProps {
+  children: React.ReactNode
+  description?: React.ReactNode
+  error?: React.ReactNode
+  id?: string
+  label?: React.ReactNode
+  onChange?: (value: string[]) => void
+  readOnly?: boolean
+  required?: boolean
+  withAsterisk?: boolean
+  size?: SwitchSize
+  value?: string[]
+  className?: string
+}
+
+// 主Switch组件
+const SwitchRoot = React.forwardRef<HTMLInputElement, SimpleSwitchProps>(
+  ({
+    size = "md",
+    radius = "sm",
+    color = "blue",
+    id,
+    offLabel,
+    onLabel,
+    thumbIcon,
+    withThumbIndicator,
+    description,
+    label,
+    labelPosition = "right",
+    disabled = false,
+    checked,
+    defaultChecked,
+    onChange,
+    className,
+    ...props
+  }, ref) => {
+    return (
+      <MantineSwitch
+        ref={ref}
+        size={size}
+        radius={radius}
+        color={color}
+        id={id}
+        offLabel={offLabel}
+        onLabel={onLabel}
+        thumbIcon={thumbIcon}
+        withThumbIndicator={withThumbIndicator}
+        description={description}
+        label={label}
+        labelPosition={labelPosition}
+        disabled={disabled}
+        checked={checked}
+        defaultChecked={defaultChecked}
+        onChange={onChange ? (event) => onChange(event.currentTarget.checked) : undefined}
+        className={cn(className)}
+        {...props}
+      />
+    )
   }
->(({ className, size = 'md', ...props }, ref) => (
-  <SwitchPrimitives.Root
-    className={cn(
-      // 使用设计系统尺寸
-      `peer inline-flex ${componentSizes.switch[size].height} ${componentSizes.switch[size].width} shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input`,
-      className
-    )}
-    {...props}
-    ref={ref}
-  >
-    <SwitchPrimitives.Thumb
-      className={cn(
-        // 使用设计系统尺寸
-        `pointer-events-none block ${componentSizes.switch[size].thumbSize} rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-${componentSizes.switch[size].translateX.split('rem')[0]} data-[state=unchecked]:translate-x-0`
-      )}
-    />
-  </SwitchPrimitives.Root>
-))
-Switch.displayName = SwitchPrimitives.Root.displayName
+)
+SwitchRoot.displayName = "Switch"
 
+// 简化的Switch组组件
+const SwitchGroup = React.forwardRef<HTMLDivElement, SimpleSwitchGroupProps>(
+  ({
+    children,
+    description,
+    error,
+    id,
+    label,
+    onChange,
+    readOnly = false,
+    required = false,
+    withAsterisk = false,
+    size = "md",
+    value,
+    className,
+    ...props
+  }, ref) => {
+    return (
+      <MantineSwitchGroup
+        ref={ref}
+        description={description}
+        error={error}
+        id={id}
+        label={label}
+        onChange={onChange}
+        readOnly={readOnly}
+        required={required}
+        withAsterisk={withAsterisk}
+        size={size}
+        value={value}
+        className={cn(className)}
+        {...props}
+      >
+        {children}
+      </MantineSwitchGroup>
+    )
+  }
+)
+SwitchGroup.displayName = "SwitchGroup"
+
+// 组合导出
+const Switch = Object.assign(SwitchRoot, {
+  Group: SwitchGroup,
+})
+
+// 导出组件和类型
 export { Switch }
+export type {
+  SimpleSwitchProps as SwitchProps,
+  SimpleSwitchGroupProps as SwitchGroupProps,
+  SwitchSize,
+  SwitchRadius,
+  SwitchLabelPosition,
+}

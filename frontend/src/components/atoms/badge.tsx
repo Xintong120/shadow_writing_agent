@@ -1,11 +1,10 @@
 import * as React from "react"
 import { Badge as MantineBadge, Box, Text } from "@mantine/core"
-import { MantineSize } from "@mantine/core"
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
 type BadgeVariant = "filled" | "outline"
-type BadgeSize = "sm" | "md" | "lg"
+type BadgeSize = "xs" | "sm" | "md" | "lg" | "xl"
 
 // 简化的核心接口
 interface SimpleBadgeProps {
@@ -21,7 +20,7 @@ interface SimpleBadgeProps {
 // 简化的徽章组接口
 interface SimpleBadgeGroupProps {
   children: React.ReactNode
-  spacing?: MantineSize | number
+  spacing?: string | number
   className?: string
 }
 
@@ -50,33 +49,18 @@ interface SimpleBadgeNotificationProps {
   style?: React.CSSProperties
 }
 
-// 尺寸映射函数
-const getSizeProps = (size: BadgeSize) => {
-  const sizeMap: Record<BadgeSize, MantineSize> = {
-    sm: 'sm',
-    md: 'md',
-    lg: 'lg',
-  }
-  
-  return {
-    size: sizeMap[size]
-  }
-}
-
 // 简化的Badge组件
 const BadgeRoot = React.forwardRef<HTMLDivElement, SimpleBadgeProps>(
-  ({ 
+  ({
     children,
     variant = "filled",
-    size = "md", 
+    size = "md",
     color = "blue",
     onClick,
     className,
     disabled = false,
-    ...props 
+    ...props
   }, ref) => {
-    const sizeProps = getSizeProps(size)
-    
     return (
       <MantineBadge
         ref={ref}
@@ -87,8 +71,8 @@ const BadgeRoot = React.forwardRef<HTMLDivElement, SimpleBadgeProps>(
         )}
         variant={variant}
         color={color}
+        size={size}
         onClick={disabled ? undefined : onClick}
-        {...sizeProps}
         {...props}
       >
         {children}

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 
 // 简化的类型定义
 type CardVariant = "default" | "outline"
-type CardSize = "sm" | "md" | "lg"
+type CardSize = "xs" | "sm" | "md" | "lg" | "xl"
 
 // 简化的核心接口
 interface SimpleCardProps {

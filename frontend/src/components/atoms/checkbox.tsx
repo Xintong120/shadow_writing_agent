@@ -4,7 +4,7 @@ import { MantineSize } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
-type CheckboxSize = "sm" | "md" | "lg"
+type CheckboxSize = "xs" | "sm" | "md" | "lg" | "xl"
 
 // 简化的核心接口
 interface SimpleCheckboxProps {

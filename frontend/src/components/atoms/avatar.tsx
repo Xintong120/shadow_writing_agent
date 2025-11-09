@@ -1,11 +1,11 @@
 import * as React from "react"
 import { Avatar as MantineAvatar, Text, Tooltip, Group } from '@mantine/core'
-import { MantineColor, MantineRadius, MantineSize } from '@mantine/core'
+import { MantineColor } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
 type AvatarVariant = "filled" | "outline"
-type AvatarSize = "sm" | "md" | "lg"
+type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl"
 type AvatarRadius = "xs" | "sm" | "md" | "lg" | "xl"
 type AvatarColor = MantineColor | "initials"
 
@@ -26,7 +26,7 @@ interface SimpleAvatarProps {
 // 简化的组接口
 interface SimpleAvatarGroupProps {
   children: React.ReactNode
-  spacing?: MantineSize | number
+  spacing?: string | number
   max?: number
   className?: string
 }
@@ -40,23 +40,6 @@ const getInitials = (name: string) => {
   return parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
 }
 
-// 简化的尺寸映射
-const getSizeProps = (size: AvatarSize) => {
-  const sizeMap: Record<AvatarSize, MantineSize> = {
-    sm: 'sm',
-    md: 'md',
-    lg: 'lg',
-  }
-  
-  return {
-    size: sizeMap[size]
-  }
-}
-
-// 简化的半径映射
-const getRadiusProps = (radius: AvatarRadius) => {
-  return radius
-}
 
 // 主Avatar组件
 const AvatarRoot = React.forwardRef<HTMLDivElement, SimpleAvatarProps>(
@@ -76,18 +59,14 @@ const AvatarRoot = React.forwardRef<HTMLDivElement, SimpleAvatarProps>(
     // 获取首字母
     const initials = name ? getInitials(name) : "??"
     
-    // 简化的尺寸和半径属性
-    const sizeProps = getSizeProps(size)
-    const radiusProps = getRadiusProps(radius)
-    
     return (
       <MantineAvatar
         ref={ref}
         src={src}
         alt={alt || name || "User avatar"}
         color={color}
-        size={sizeProps.size}
-        radius={radiusProps}
+        size={size}
+        radius={radius}
         className={cn(
           onClick && "cursor-pointer hover:opacity-80 transition-opacity",
           className
