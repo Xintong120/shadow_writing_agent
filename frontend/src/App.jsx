@@ -11,10 +11,22 @@ import SettingsPage from '@/pages/SettingsPage'
 // Development test routes (only in development)
 let devRoutes = null;
 if (import.meta.env.DEV) {
-  const MantineThemeTest = await import('@/dev/MantineThemeTest');
+  const ButtonTest = await import('@/dev/ButtonRefactorTest');
+  const CardTest = await import('@/dev/CardRefactorTest');
+  const InputTest = await import('@/dev/InputRefactorTest');
+  const AvatarTest = await import('@/dev/AvatarRefactorTest');
+  const BadgeTest = await import('@/dev/BadgeRefactorTest');
+  const CheckboxTest = await import('@/dev/CheckboxTest');
+ 
+
   devRoutes = (
     <>
-      <Route path="/dev/theme-test" element={<MantineThemeTest.default />} />
+      <Route path="/dev/button-test" element={<ButtonTest.default />} />
+      <Route path="/dev/card-test" element={<CardTest.default />}  />
+      <Route path="/dev/input-test" element={<InputTest.default />} />
+      <Route path="/dev/avatar-test" element={<AvatarTest.default />} />
+      <Route path="/dev/badge-test" element={<BadgeTest.default />} />
+      <Route path="/dev/checkbox-test" element={<CheckboxTest.default />} />
     </>
   );
 }

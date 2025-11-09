@@ -65,6 +65,14 @@ export const theme = createTheme({
       defaultProps: {
         radius: 'md',
       }
-    }
+    },
+    Card: {
+      defaultProps: {
+        radius: 'md',
+        withBorder: true,
+        shadow: 'sm',
+        padding: 'md',
+      },
+    },
   }
 });

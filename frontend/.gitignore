@@ -166,3 +166,8 @@ frontend/src/dev/
 frontend/src/components/atoms/前端原子组件代码风格指南.md
 
 frontend/plan/
+
+# ========================================
+# Documentation and development directories
+# ========================================
+frontend/docs/

@@ -1,10 +1,13 @@
 "use client"
 
 import * as React from "react"
-import * as ProgressPrimitive from "@radix-ui/react-progress"
-
+import { Progress } from '@mantine/core'
+import { MantineSize } from '@mantine/core'
 import { cn } from "@/lib/utils"
-import { componentSizes } from '@/styles/sizing';
+
+
+type ProgressSize = "xs" | "sm" | "md" | "lg" | "xl" | "icon"
+type ProgressRadius = "xs" | "sm" | "md" | "lg" | "xl"  
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,

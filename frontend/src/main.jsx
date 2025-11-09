@@ -1,12 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { MantineProvider } from '@mantine/core'
+import { theme } from './theme/mantine-theme'
 import App from './App.jsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <MantineProvider>
+    <MantineProvider theme={theme}>
       <App />
     </MantineProvider>
   </React.StrictMode>,

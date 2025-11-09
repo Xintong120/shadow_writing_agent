@@ -1,56 +1,182 @@
-"use client"
-
 import * as React from "react"
-import * as AvatarPrimitive from "@radix-ui/react-avatar"
-
+import { Avatar as MantineAvatar, Text, Tooltip, Group } from '@mantine/core'
+import { MantineColor, MantineRadius, MantineSize } from '@mantine/core'
 import { cn } from "@/lib/utils"
-import { componentSizes } from '@/styles/sizing';
 
-const Avatar = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> & 
-  {
-    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+// 简化的类型定义
+type AvatarVariant = "filled" | "outline"
+type AvatarSize = "sm" | "md" | "lg"
+type AvatarRadius = "xs" | "sm" | "md" | "lg" | "xl"
+type AvatarColor = MantineColor | "initials"
+
+// 简化的核心接口
+interface SimpleAvatarProps {
+  src?: string | null
+  name?: string
+  size?: AvatarSize
+  radius?: AvatarRadius
+  variant?: AvatarVariant
+  color?: AvatarColor
+  alt?: string
+  onClick?: () => void
+  className?: string
+  children?: React.ReactNode
+}
+
+// 简化的组接口
+interface SimpleAvatarGroupProps {
+  children: React.ReactNode
+  spacing?: MantineSize | number
+  max?: number
+  className?: string
+}
+
+// 获取首字母的简化函数
+const getInitials = (name: string) => {
+  if (!name) return "??"
+  const parts = name.split(" ").filter(Boolean)
+  if (parts.length === 0) return "??"
+  if (parts.length === 1) return parts[0].substring(0, 2)
+  return parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+}
+
+// 简化的尺寸映射
+const getSizeProps = (size: AvatarSize) => {
+  const sizeMap: Record<AvatarSize, MantineSize> = {
+    sm: 'sm',
+    md: 'md',
+    lg: 'lg',
   }
->(({ className, size = 'md',  ...props }, ref) => (
-  <AvatarPrimitive.Root
-    ref={ref}
-    className={cn(
-      // 使用设计系统尺寸
-      componentSizes.avatar[size],
-      "relative flex shrink-0 overflow-hidden rounded-full",
-      className
-    )}
-    {...props}
-  />
-))
-Avatar.displayName = AvatarPrimitive.Root.displayName
+  
+  return {
+    size: sizeMap[size]
+  }
+}
 
-const AvatarImage = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
-    {...props}
-  />
-))
-AvatarImage.displayName = AvatarPrimitive.Image.displayName
+// 简化的半径映射
+const getRadiusProps = (radius: AvatarRadius) => {
+  return radius
+}
 
-const AvatarFallback = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Fallback>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Fallback
-    ref={ref}
-    className={cn(
-      "flex h-full w-full items-center justify-center rounded-full bg-muted",
-      className
-    )}
-    {...props}
-  />
-))
-AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
+// 主Avatar组件
+const AvatarRoot = React.forwardRef<HTMLDivElement, SimpleAvatarProps>(
+  ({
+    src = null,
+    name,
+    size = "md",
+    radius = "sm",
+    variant = "filled",
+    color = "blue",
+    alt = "",
+    onClick,
+    className,
+    children,
+    ...props
+  }, ref) => {
+    // 获取首字母
+    const initials = name ? getInitials(name) : "??"
+    
+    // 简化的尺寸和半径属性
+    const sizeProps = getSizeProps(size)
+    const radiusProps = getRadiusProps(radius)
+    
+    return (
+      <MantineAvatar
+        ref={ref}
+        src={src}
+        alt={alt || name || "User avatar"}
+        color={color}
+        size={sizeProps.size}
+        radius={radiusProps}
+        className={cn(
+          onClick && "cursor-pointer hover:opacity-80 transition-opacity",
+          className
+        )}
+        onClick={onClick}
+        variant={variant}
+        {...props}
+      >
+        {children || <Text size="sm" fw={700}>{initials}</Text>}
+      </MantineAvatar>
+    )
+  }
+)
+AvatarRoot.displayName = "Avatar"
 
-export { Avatar, AvatarImage, AvatarFallback }
+// 简化的Avatar组组件
+const AvatarGroup = React.forwardRef<HTMLDivElement, SimpleAvatarGroupProps>(
+  ({ children, spacing = "sm", max = 5, className, ...props }, ref) => {
+    const childrenArray = React.Children.toArray(children)
+    const visibleItems = childrenArray.slice(0, max)
+    const overflowCount = childrenArray.length - max
+
+    return (
+      <Group
+        ref={ref}
+        gap={typeof spacing === 'number' ? `${spacing}px` : spacing}
+        className={cn("inline-flex", className)}
+        {...props}
+      >
+        {visibleItems}
+        {overflowCount > 0 && (
+          <Tooltip label={`+${overflowCount} more`}>
+            <MantineAvatar size="sm" variant="filled" color="gray" radius="sm">
+              +{overflowCount}
+            </MantineAvatar>
+          </Tooltip>
+        )}
+      </Group>
+    )
+  }
+)
+AvatarGroup.displayName = "AvatarGroup"
+
+// 简化的AvatarImage组件
+const AvatarImage = React.forwardRef<HTMLImageElement, React.ComponentPropsWithoutRef<"img">>(
+  ({ className, ...props }, ref) => (
+    <img
+      ref={ref}
+      className={cn("aspect-square h-full w-full object-cover", className)}
+      {...props}
+    />
+  )
+)
+AvatarImage.displayName = "AvatarImage"
+
+// 简化的AvatarFallback组件
+const AvatarFallback = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn("flex h-full w-full items-center justify-center rounded-full bg-gray-100", className)}
+      {...props}
+    />
+  )
+)
+AvatarFallback.displayName = "AvatarFallback"
+
+// 组合导出 - 保持API兼容性
+const Avatar = Object.assign(AvatarRoot, {
+  Group: AvatarGroup,
+  Image: AvatarImage,
+  Fallback: AvatarFallback,
+})
+
+// 导出组件
+export {
+  Avatar as Avatar,
+  AvatarRoot,
+  AvatarGroup,
+  AvatarImage,
+  AvatarFallback,
+}
+
+// 导出简化的类型
+export type {
+  SimpleAvatarProps as AvatarProps,
+  SimpleAvatarGroupProps as AvatarGroupProps,
+  AvatarVariant,
+  AvatarSize,
+  AvatarRadius,
+  AvatarColor,
+}
