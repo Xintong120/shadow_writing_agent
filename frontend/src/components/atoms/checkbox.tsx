@@ -41,22 +41,10 @@ interface SimpleCheckboxItemProps {
   className?: string
 }
 
-// 尺寸映射函数
-const getSizeProps = (size: CheckboxSize) => {
-  const sizeMap: Record<CheckboxSize, MantineSize> = {
-    sm: 'sm',
-    md: 'md',
-    lg: 'lg',
-  }
-  
-  return {
-    size: sizeMap[size]
-  }
-}
 
 // 简化的Checkbox组件
 const CheckboxRoot = React.forwardRef<HTMLInputElement, SimpleCheckboxProps>(
-  ({ 
+  ({
     label,
     checked,
     defaultChecked,
@@ -66,10 +54,8 @@ const CheckboxRoot = React.forwardRef<HTMLInputElement, SimpleCheckboxProps>(
     size = "md",
     indeterminate = false,
     className,
-    ...props 
+    ...props
   }, ref) => {
-    const sizeProps = getSizeProps(size)
-    
     return (
       <Box className={cn("flex items-center", className)}>
         <Group gap="xs" wrap="nowrap" align="center">
@@ -81,12 +67,12 @@ const CheckboxRoot = React.forwardRef<HTMLInputElement, SimpleCheckboxProps>(
             defaultChecked={defaultChecked}
             indeterminate={indeterminate}
             onChange={(event) => onChange?.(event.currentTarget.checked)}
-            {...sizeProps}
+            size={size}
             {...props}
           />
           {label && (
-            <Text 
-              size={sizeProps.size}
+            <Text
+              size={size}
               style={{
                 color: disabled ? 'var(--mantine-color-gray-5)' : 'var(--mantine-color-gray-7)',
                 cursor: disabled ? 'not-allowed' : 'default',

@@ -1,36 +1,55 @@
-"use client"
-
 import * as React from "react"
-import { Progress } from '@mantine/core'
-import { MantineSize } from '@mantine/core'
+import { Progress as MantineProgress, MantineColor } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
+// 简化的类型定义
+type ProgressSize = "xs" | "sm" | "md" | "lg" | "xl"
+type ProgressRadius = "xs" | "sm" | "md" | "lg" | "xl"
 
-type ProgressSize = "xs" | "sm" | "md" | "lg" | "xl" | "icon"
-type ProgressRadius = "xs" | "sm" | "md" | "lg" | "xl"  
+// 简化的核心接口
+interface SimpleProgressProps {
+  value?: number
+  animated?: boolean
+  size?: ProgressSize
+  radius?: ProgressRadius
+  color?: MantineColor
+  className?: string
+}
 
-const Progress = React.forwardRef<
-  React.ElementRef<typeof ProgressPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> &
-  {
-    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+// 主Progress组件
+const ProgressRoot = React.forwardRef<HTMLDivElement, SimpleProgressProps>(
+  ({
+    value = 0,
+    animated = false,
+    size = "md",
+    radius = "sm",
+    color = "blue",
+    className,
+    ...props
+  }, ref) => {
+    return (
+      <MantineProgress
+        ref={ref}
+        value={value}
+        animated={animated}
+        color={color}
+        radius={radius}
+        size={size}
+        className={cn(className)}
+        {...props}
+      />
+    )
   }
->(({ className, value, size = 'md', ...props }, ref) => (
-  <ProgressPrimitive.Root
-    ref={ref}
-    className={cn(
-      // 使用设计系统尺寸
-      `relative ${componentSizes.progress.height[size]} w-full overflow-hidden ${componentSizes.progress.radius[size]} bg-primary/20`,
-      className
-    )}
-    {...props}
-  >
-    <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-primary transition-all"
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
-    />
-  </ProgressPrimitive.Root>
-))
-Progress.displayName = ProgressPrimitive.Root.displayName
+)
+ProgressRoot.displayName = "Progress"
 
+// 组合导出
+const Progress = ProgressRoot
+
+// 导出组件和类型
 export { Progress }
+export type {
+  SimpleProgressProps as ProgressProps,
+  ProgressSize,
+  ProgressRadius,
+}
