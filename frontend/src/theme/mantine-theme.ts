@@ -4,6 +4,10 @@ import { createTheme } from '@mantine/core';
 export const theme = createTheme({
   // 基本颜色配置
   colors: {
+    base: [
+      '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd',
+      '#6c757d', '#495057', '#343a40', '#212529', '#121416'
+    ],
     primary: [
       '#e7f0ff', '#d1e0ff', '#a3c2ff', '#74a3ff', '#4685ff',
       '#1d6aff', '#0052cc', '#003d99', '#002966', '#001a33'
@@ -73,6 +77,16 @@ export const theme = createTheme({
         shadow: 'sm',
         padding: 'md',
       },
+    },
+    Notification: {
+      defaultProps: {
+        radius: 'sm',
+      },
+      styles: {
+        root: {
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        }
+      }
     },
   }
 });
