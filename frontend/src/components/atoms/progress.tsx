@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Progress as MantineProgress, MantineColor } from '@mantine/core'
+import { Progress as MantineProgress, MantineColor, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -23,16 +23,19 @@ const ProgressRoot = React.forwardRef<HTMLDivElement, SimpleProgressProps>(
     animated = false,
     size = "md",
     radius = "sm",
-    color = "blue",
+    color,
     className,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.primary[6]
+
     return (
       <MantineProgress
         ref={ref}
         value={value}
         animated={animated}
-        color={color}
+        color={defaultColor}
         radius={radius}
         size={size}
         className={cn(className)}

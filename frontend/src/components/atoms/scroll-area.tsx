@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ScrollArea as MantineScrollArea } from '@mantine/core'
+import { ScrollArea as MantineScrollArea, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { TextInput, NumberInput as MantineNumberInput, Group, Text, Input as MantineInput, Box } from "@mantine/core"
+import { TextInput, NumberInput as MantineNumberInput, Group, Text, Input as MantineInput, Box, useMantineTheme } from "@mantine/core"
 import { MantineRadius } from "@mantine/core"
 import { cn } from "@/lib/utils"
 
@@ -57,10 +57,13 @@ const InputRoot = React.forwardRef<HTMLInputElement, SimpleInputProps>(
     className,
     variant = "default",
     size = "md",
-    radius = "sm",
+    radius,
     withAsterisk = false,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultRadius = radius || theme.radius.sm
+
     return (
       <MantineInput.Wrapper
         label={label}
@@ -78,7 +81,7 @@ const InputRoot = React.forwardRef<HTMLInputElement, SimpleInputProps>(
           disabled={disabled}
           error={!!error}
           size={size}
-          radius={radius}
+          radius={defaultRadius}
           variant={variant}
           {...props}
         />
@@ -102,10 +105,13 @@ const CustomNumberInput = React.forwardRef<HTMLInputElement, SimpleNumberInputPr
     className,
     variant = "default",
     size = "md",
-    radius = "sm",
+    radius,
     withAsterisk = false,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultRadius = radius || theme.radius.sm
+
     return (
       <MantineInput.Wrapper
         label={label}
@@ -123,7 +129,7 @@ const CustomNumberInput = React.forwardRef<HTMLInputElement, SimpleNumberInputPr
           disabled={disabled}
           error={!!error}
           size={size}
-          radius={radius}
+          radius={defaultRadius}
           variant={variant}
           {...props}
         />

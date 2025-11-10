@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Avatar as MantineAvatar, Text, Tooltip, Group } from '@mantine/core'
+import { Avatar as MantineAvatar, Text, Tooltip, Group, useMantineTheme } from '@mantine/core'
 import { MantineColor } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
@@ -49,22 +49,26 @@ const AvatarRoot = React.forwardRef<HTMLDivElement, SimpleAvatarProps>(
     size = "md",
     radius = "sm",
     variant = "filled",
-    color = "blue",
+    color,
     alt = "",
     onClick,
     className,
     children,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
     // 获取首字母
     const initials = name ? getInitials(name) : "??"
-    
+
+    // 使用主题颜色作为默认值
+    const defaultColor = color || theme.colors.primary[6]
+
     return (
       <MantineAvatar
         ref={ref}
         src={src}
         alt={alt || name || "User avatar"}
-        color={color}
+        color={defaultColor}
         size={size}
         radius={radius}
         className={cn(
@@ -85,6 +89,7 @@ AvatarRoot.displayName = "Avatar"
 // 简化的Avatar组组件
 const AvatarGroup = React.forwardRef<HTMLDivElement, SimpleAvatarGroupProps>(
   ({ children, spacing = "sm", max = 5, className, ...props }, ref) => {
+    const theme = useMantineTheme()
     const childrenArray = React.Children.toArray(children)
     const visibleItems = childrenArray.slice(0, max)
     const overflowCount = childrenArray.length - max
@@ -99,7 +104,7 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, SimpleAvatarGroupProps>(
         {visibleItems}
         {overflowCount > 0 && (
           <Tooltip label={`+${overflowCount} more`}>
-            <MantineAvatar size="sm" variant="filled" color="gray" radius="sm">
+            <MantineAvatar size="sm" variant="filled" color={theme.colors.base[5]} radius="sm">
               +{overflowCount}
             </MantineAvatar>
           </Tooltip>
@@ -124,13 +129,17 @@ AvatarImage.displayName = "AvatarImage"
 
 // 简化的AvatarFallback组件
 const AvatarFallback = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("flex h-full w-full items-center justify-center rounded-full bg-gray-100", className)}
-      {...props}
-    />
-  )
+  ({ className, ...props }, ref) => {
+    const theme = useMantineTheme()
+    return (
+      <div
+        ref={ref}
+        className={cn("flex h-full w-full items-center justify-center rounded-full", className)}
+        style={{ backgroundColor: theme.colors.base[1] }}
+        {...props}
+      />
+    )
+  }
 )
 AvatarFallback.displayName = "AvatarFallback"
 

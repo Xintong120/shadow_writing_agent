@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Card as MantineCard, Text, Title, Group, Box } from "@mantine/core"
+import { Card as MantineCard, Text, Title, Group, Box, useMantineTheme } from "@mantine/core"
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -46,11 +46,13 @@ interface SimpleMediaProps {
 // 主Card组件
 const CardRoot = React.forwardRef<HTMLDivElement, SimpleCardProps>(
   ({ variant = "default", size = "md", onClick, className, children, ...props }, ref) => {
-    // 修复阴影问题的样式映射
+    const theme = useMantineTheme()
+
+    // 使用主题阴影和圆角
     const styles = {
       default: {
         withBorder: false,
-        className: "bg-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),_0_2px_4px_-1px_rgba(0,0,0,0.06)] hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),_0_4px_6px_-2px_rgba(0,0,0,0.05)] transition-shadow"
+        className: "bg-white shadow-lg"
       },
       outline: {
         withBorder: false,  // 改为false避免与阴影冲突
@@ -66,11 +68,9 @@ const CardRoot = React.forwardRef<HTMLDivElement, SimpleCardProps>(
         ref={ref}
         withBorder={cardStyles.withBorder}
         padding={padding}
+        radius={theme.radius.md}
         className={cn(cardStyles.className, onClick && "cursor-pointer", className)}
         onClick={onClick}
-        style={{
-          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
-        }}
         {...props}
       >
         {children}

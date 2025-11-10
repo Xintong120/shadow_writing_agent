@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Switch as MantineSwitch, SwitchGroup as MantineSwitchGroup } from '@mantine/core'
+import { Switch as MantineSwitch, SwitchGroup as MantineSwitchGroup, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -47,8 +47,8 @@ interface SimpleSwitchGroupProps {
 const SwitchRoot = React.forwardRef<HTMLInputElement, SimpleSwitchProps>(
   ({
     size = "md",
-    radius = "sm",
-    color = "blue",
+    radius,
+    color,
     id,
     offLabel,
     onLabel,
@@ -64,12 +64,16 @@ const SwitchRoot = React.forwardRef<HTMLInputElement, SimpleSwitchProps>(
     className,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.primary[6]
+    const defaultRadius = radius || theme.radius.sm
+
     return (
       <MantineSwitch
         ref={ref}
         size={size}
-        radius={radius}
-        color={color}
+        radius={defaultRadius}
+        color={defaultColor}
         id={id}
         offLabel={offLabel}
         onLabel={onLabel}

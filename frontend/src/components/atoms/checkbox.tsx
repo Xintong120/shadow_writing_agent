@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Checkbox as MantineCheckbox, Box, Text, Group } from '@mantine/core'
+import { Checkbox as MantineCheckbox, Box, Text, Group, useMantineTheme } from '@mantine/core'
 import { MantineSize } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
@@ -50,18 +50,21 @@ const CheckboxRoot = React.forwardRef<HTMLInputElement, SimpleCheckboxProps>(
     defaultChecked,
     onChange,
     disabled = false,
-    color = "blue",
+    color,
     size = "md",
     indeterminate = false,
     className,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.primary[6]
+
     return (
       <Box className={cn("flex items-center", className)}>
         <Group gap="xs" wrap="nowrap" align="center">
           <MantineCheckbox
             ref={ref}
-            color={color}
+            color={defaultColor}
             disabled={disabled}
             checked={checked}
             defaultChecked={defaultChecked}
@@ -90,36 +93,38 @@ CheckboxRoot.displayName = "Checkbox"
 
 // 简化的Checkbox组组件
 const CheckboxGroup = React.forwardRef<HTMLDivElement, SimpleCheckboxGroupProps>(
-  ({ 
-    children, 
-    value, 
-    onChange, 
-    spacing = "sm", 
+  ({
+    children,
+    value,
+    onChange,
+    spacing,
     orientation = "horizontal",
     className,
-    ...props 
+    ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultSpacing = spacing || theme.spacing.sm
     const [internalValue, setInternalValue] = React.useState(value || [])
-    
+
     React.useEffect(() => {
       if (value !== undefined) {
         setInternalValue(value)
       }
     }, [value])
-    
+
     const handleItemChange = (itemValue: string, checked: boolean) => {
       let newValue: string[]
-      
+
       if (checked) {
         newValue = [...internalValue, itemValue]
       } else {
         newValue = internalValue.filter(v => v !== itemValue)
       }
-      
+
       setInternalValue(newValue)
       onChange?.(newValue)
     }
-    
+
     const enhancedChildren = React.Children.map(children, (child) => {
       if (React.isValidElement(child)) {
         return React.cloneElement(child, {
@@ -130,7 +135,7 @@ const CheckboxGroup = React.forwardRef<HTMLDivElement, SimpleCheckboxGroupProps>
       }
       return child
     })
-    
+
     return (
       <Box
         ref={ref}
@@ -140,7 +145,7 @@ const CheckboxGroup = React.forwardRef<HTMLDivElement, SimpleCheckboxGroupProps>
           className
         )}
         style={{
-          gap: typeof spacing === 'number' ? `${spacing}px` : spacing,
+          gap: defaultSpacing,
         }}
         {...props}
       >

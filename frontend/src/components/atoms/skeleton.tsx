@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Skeleton as MantineSkeleton } from '@mantine/core'
+import { Skeleton as MantineSkeleton, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义

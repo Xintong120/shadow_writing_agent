@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Button as MantineButton } from "@mantine/core"
+import { Button as MantineButton, useMantineTheme } from "@mantine/core"
 import { ButtonProps as MantineButtonProps } from "@mantine/core"
 import { cn } from "@/lib/utils"
 
@@ -15,13 +15,16 @@ interface ButtonProps extends Omit<MantineButtonProps, 'variant' | 'size'> {
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "filled", size = "md", radius = "md", children, ...props }, ref) => {
+  ({ className, variant = "filled", size = "md", radius, children, ...props }, ref) => {
+    const theme = useMantineTheme()
+    const defaultRadius = radius || theme.radius.md
+
     return (
       <MantineButton
         className={className}
         variant={variant}
         size={size}
-        radius={radius}
+        radius={defaultRadius}
         ref={ref}
         {...props}
       >

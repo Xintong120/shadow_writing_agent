@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Divider as MantineDivider } from '@mantine/core'
+import { Divider as MantineDivider, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -28,6 +28,9 @@ const Divider = React.forwardRef<HTMLDivElement, SimpleDividerProps>(
     className,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.base[3]
+
     return (
       <MantineDivider
         ref={ref}
@@ -35,7 +38,7 @@ const Divider = React.forwardRef<HTMLDivElement, SimpleDividerProps>(
         labelPosition={labelPosition}
         size={size}
         orientation={orientation}
-        color={color}
+        color={defaultColor}
         className={cn(className)}
         {...props}
       />

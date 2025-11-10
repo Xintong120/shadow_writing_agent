@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Tabs as MantineTabs, MantineColor } from '@mantine/core'
+import { Tabs as MantineTabs, MantineColor, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -49,16 +49,20 @@ const TabsRoot = React.forwardRef<HTMLDivElement, SimpleTabsProps>(
   ({
     children,
     variant = "default",
-    radius = "sm",
+    radius,
     orientation = "horizontal",
     className,
     value,
     defaultValue,
-    color = "blue",
+    color,
     keepMounted = false,
     onChange,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.primary[6]
+    const defaultRadius = radius || theme.radius.sm
+
     return (
       <MantineTabs
         ref={ref}
@@ -66,9 +70,9 @@ const TabsRoot = React.forwardRef<HTMLDivElement, SimpleTabsProps>(
         defaultValue={defaultValue}
         onChange={onChange}
         variant={variant}
-        radius={radius}
+        radius={defaultRadius}
         orientation={orientation}
-        color={color}
+        color={defaultColor}
         keepMounted={keepMounted}
         className={cn(className)}
         {...props}

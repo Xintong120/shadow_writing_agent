@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Notification as MantineNotification } from '@mantine/core'
+import { Notification as MantineNotification, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -24,8 +24,8 @@ const Notification = React.forwardRef<HTMLDivElement, SimpleNotificationProps>(
   ({
     title,
     message,
-    color = "blue",
-    radius = "sm",
+    color,
+    radius,
     className,
     onClose,
     disallowClose = false,
@@ -34,12 +34,16 @@ const Notification = React.forwardRef<HTMLDivElement, SimpleNotificationProps>(
     withBorder = false,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.primary[6]
+    const defaultRadius = radius || theme.radius.sm
+
     return (
       <MantineNotification
         ref={ref}
         title={title}
-        color={color}
-        radius={radius}
+        color={defaultColor}
+        radius={defaultRadius}
         className={cn(className)}
         onClose={onClose}
         icon={icon}

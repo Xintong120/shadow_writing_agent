@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Badge as MantineBadge, Box, Text } from "@mantine/core"
+import { Badge as MantineBadge, Box, Text, useMantineTheme } from "@mantine/core"
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -55,12 +55,15 @@ const BadgeRoot = React.forwardRef<HTMLDivElement, SimpleBadgeProps>(
     children,
     variant = "filled",
     size = "md",
-    color = "blue",
+    color,
     onClick,
     className,
     disabled = false,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.primary[6]
+
     return (
       <MantineBadge
         ref={ref}
@@ -70,7 +73,7 @@ const BadgeRoot = React.forwardRef<HTMLDivElement, SimpleBadgeProps>(
           className
         )}
         variant={variant}
-        color={color}
+        color={defaultColor}
         size={size}
         onClick={disabled ? undefined : onClick}
         {...props}
@@ -84,13 +87,16 @@ BadgeRoot.displayName = "Badge"
 
 // 简化的Badge组组件
 const BadgeGroup = React.forwardRef<HTMLDivElement, SimpleBadgeGroupProps>(
-  ({ children, spacing = "sm", className, ...props }, ref) => {
+  ({ children, spacing, className, ...props }, ref) => {
+    const theme = useMantineTheme()
+    const defaultSpacing = spacing || theme.spacing.sm
     const childrenArray = React.Children.toArray(children)
-    
+
     return (
       <Box
         ref={ref}
-        className={cn("flex items-center gap-2", className)}
+        className={cn("flex items-center", className)}
+        style={{ gap: defaultSpacing }}
         {...props}
       >
         {childrenArray}
@@ -102,28 +108,30 @@ BadgeGroup.displayName = "BadgeGroup"
 
 // 简化的Badge计数组件
 const BadgeCount = React.forwardRef<HTMLDivElement, SimpleBadgeCountProps>(
-  ({ 
-    count = 0, 
-    max = 99, 
-    variant = "filled", 
-    size = "sm", 
-    color = "red",
+  ({
+    count = 0,
+    max = 99,
+    variant = "filled",
+    size = "sm",
+    color,
     showZero = false,
     className,
-    ...props 
+    ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.secondary[6]
     const displayCount = count > max ? `${max}+` : count
-    
+
     if (count === 0 && !showZero) {
       return null
     }
-    
+
     return (
       <BadgeRoot
         ref={ref}
         variant={variant}
         size={size}
-        color={color}
+        color={defaultColor}
         className={cn("min-w-5 h-5 flex items-center justify-center", className)}
         {...props}
       >
@@ -136,29 +144,31 @@ BadgeCount.displayName = "BadgeCount"
 
 // 简化的Badge通知组件
 const BadgeNotification = React.forwardRef<HTMLDivElement, SimpleBadgeNotificationProps>(
-  ({ 
+  ({
     children,
     count = 0,
     max = 99,
     variant = "filled",
     size = "sm",
-    color = "red",
+    color,
     position = "top-right",
     hidden = false,
     className,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultColor = color || theme.colors.secondary[6]
     const positionStyles = {
       "top-right": { top: 0, right: 0 },
       "top-left": { top: 0, left: 0 },
       "bottom-right": { bottom: 0, right: 0 },
       "bottom-left": { bottom: 0, left: 0 },
     }
-    
+
     if (hidden || count === 0) {
       return <>{children}</>
     }
-    
+
     return (
       <div
         ref={ref}
@@ -172,7 +182,7 @@ const BadgeNotification = React.forwardRef<HTMLDivElement, SimpleBadgeNotificati
             max={max}
             variant={variant}
             size={size}
-            color={color}
+            color={defaultColor}
           />
         </div>
       </div>

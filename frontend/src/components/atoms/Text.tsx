@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Text as MantineText } from '@mantine/core'
+import { Text as MantineText, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -49,7 +49,7 @@ const weightMap = {
 const Text = React.forwardRef<HTMLDivElement, SimpleTextProps>(
   ({
     children,
-    size = "md",
+    size,
     weight = "normal",
     style = "normal",
     decoration = "none",
@@ -61,13 +61,15 @@ const Text = React.forwardRef<HTMLDivElement, SimpleTextProps>(
     className,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultSize = size || theme.fontSizes.md
     // 自动设置variant为gradient当gradient存在时
     const actualVariant = gradient ? "gradient" : variant
 
     return (
       <MantineText
         ref={ref}
-        size={size}
+        size={defaultSize}
         fw={weightMap[weight]}
         fs={style === "italic" ? "italic" : undefined}
         td={decoration !== "none" ? decoration : undefined}

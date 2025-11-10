@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Modal as MantineModal } from '@mantine/core'
+import { Modal as MantineModal, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -26,13 +26,16 @@ const Modal = React.forwardRef<HTMLDivElement, SimpleModalProps>(
     onClose,
     title,
     size = "md",
-    radius = "sm",
+    radius,
     children,
     className,
     centered = true,
     keepMounted = false,
     ...props
   }, ref) => {
+    const theme = useMantineTheme()
+    const defaultRadius = radius || theme.radius.sm
+
     return (
       <MantineModal
         ref={ref}
@@ -40,13 +43,13 @@ const Modal = React.forwardRef<HTMLDivElement, SimpleModalProps>(
         onClose={onClose}
         title={title}
         size={size}
-        radius={radius}
+        radius={defaultRadius}
         centered={centered}
         keepMounted={keepMounted}
         className={cn(className)}
         styles={{
           content: {
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', // 添加自定义阴影
+            boxShadow: theme.shadows.md, // 使用主题阴影
           }
         }}
         {...props}
