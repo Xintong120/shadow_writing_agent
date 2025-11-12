@@ -1,61 +1,110 @@
-import { Avatar, AvatarFallback } from '@/components/atoms/avatar'
-import { UserRound, Bot } from 'lucide-react'
-import { cn } from '@/lib/utils'
-
 /**
- * MessageBubble - 消息气泡组件
+ * 消息气泡组件:
  * 显示用户和Agent的消息，支持头像、时间戳和不同样式
  */
-export function MessageBubble({
-  message,
-  variant = 'default',
-  size = 'md',
-  showAvatar = true,
-  showTimestamp = true,
-  className,
-  ...props
-}) {
-  const isUser = message.role === 'user'
 
-  return (
-    <div
-      className={cn(
-        "flex items-start gap-sm lg:gap-md",
-        isUser && "flex-row-reverse",
-        className
-      )}
-      {...props}
-    >
-      {/* Avatar - 小窗口适配：略小 */}
-      {showAvatar && (
-        <Avatar className="h-8 w-8 lg:h-10 lg:w-10 shrink-0" style={{width: '2rem', height: '2rem'}} >
-          <AvatarFallback>
-            {isUser ? <UserRound className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
-          </AvatarFallback>
-        </Avatar>
-      )}
+import * as React from "react"
+import { Group, Box, Text , useMantineTheme} from '@mantine/core'
+import { cn } from "@/lib/utils"
+import { Avatar } from '@/components/atoms/avatar'
+import { Card } from '@/components/atoms/card'
+import { Text as TextAtom } from '@/components/atoms/Text'
+import { UserRound, Bot } from 'lucide-react'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
-      {/* 消息内容 -  小窗口适配：减小padding */}
-      <div className="flex flex-col gap-xs max-w-[80%] lg:max-w-[70%]">
-        <div
-          className={cn(
-            "p-md lg:p-lg rounded-lg max-w-full break-words",
-            "text-sm lg:text-base",
-            isUser
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted"
-          )}
-        >
-          {message.content}
-        </div>
-
-        {/* 时间戳 */}
-        {showTimestamp && message.timestamp && (
-          <span className="text-xs text-muted-foreground px-1">
-            {new Date(message.timestamp).toLocaleTimeString()}
-          </span>
-        )}
-      </div>
-    </div>
-  )
+interface MessageBubbleProps {
+  message: {
+    role: 'user' | 'agent'
+    content: string | React.ReactNode
+    timestamp?: string | number
+  }
+  variant?: 'default' | 'compact'
+  size?: 'sm' | 'md' | 'lg'
+  showAvatar?: boolean
+  showTimestamp?: boolean
+  className?: string
 }
+
+const MessageBubble = React.forwardRef<HTMLDivElement, MessageBubbleProps>(
+  (
+    {
+      message,
+      variant = 'default',
+      size = 'md',
+      showAvatar = true,
+      showTimestamp = true,
+      className,
+      ...props
+    },
+    ref
+  ) => {
+    const theme = useMantineTheme()
+    const colors = getSemanticColors(theme)
+    const spacing = getSpacing(theme)
+    const isUser = message.role === 'user'
+    const avatarIcon = isUser ? <UserRound size={20} /> : <Bot size={20} />
+    const bgColor = isUser ? colors.primary : colors.surface
+    const alignItems = isUser ? 'flex-end' : 'flex-start'
+    const borderRadius = variant === 'compact' ? theme.radius.sm : theme.radius.md
+    const padding = size === 'sm' ? spacing.sm : size === 'lg' ? spacing.lg : spacing.md
+    const fontSize = size === 'sm' ? theme.fontSizes.sm : size === 'lg' ? theme.fontSizes.lg : theme.fontSizes.md
+
+    return (
+      <Box ref={ref} className={cn("w-full", className)} {...props}>
+        <Group align="flex-start" gap="sm" style={{ justifyContent: alignItems }}>
+          {/* AI消息：头像在左边 */}
+          {!isUser && showAvatar && (
+            <Avatar
+              size="md"
+              variant="filled"
+              color="gray"
+              alt="AI头像"
+            >
+              {avatarIcon}
+            </Avatar>
+          )}
+
+          <div
+            className="max-w-[75%] rounded-lg"
+            style={{
+              backgroundColor: bgColor,
+              borderRadius: borderRadius,
+              padding: padding,
+            }}
+          >
+            <Text style={{ fontSize: fontSize, lineHeight: 1.5 }}>
+              {message.content}
+            </Text>
+            {showTimestamp && message.timestamp && (
+              <TextAtom
+                size="xs"
+                color="dimmed"
+                className="text-right mt-2"
+              >
+                {typeof message.timestamp === 'number'
+                  ? new Date(message.timestamp).toLocaleString()
+                  : message.timestamp}
+              </TextAtom>
+            )}
+          </div>
+
+          {/* 用户消息：头像在右边 */}
+          {isUser && showAvatar && (
+            <Avatar
+              size="md"
+              variant="filled"
+              color="blue"
+              alt="用户头像"
+            >
+              {avatarIcon}
+            </Avatar>
+          )}
+        </Group>
+      </Box>
+    )
+  } 
+)
+MessageBubble.displayName = "MessageBubble"
+
+export { MessageBubble }
+export type { MessageBubbleProps }

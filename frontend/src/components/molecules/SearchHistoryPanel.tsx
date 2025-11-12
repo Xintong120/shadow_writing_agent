@@ -1,7 +1,5 @@
 /**
- * 搜索历史面板组件
- *
- * 功能：
+ * 搜索历史面板组件：
  * - 显示最近的搜索主题
  * - 点击重新搜索
  * - 显示搜索结果数量
@@ -9,7 +7,7 @@
  */
 
 import { Search, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/atoms/button'
 
 function SearchHistoryPanel({
   searchHistory = [],

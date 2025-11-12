@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Notification as MantineNotification, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
 // 简化的类型定义
 type NotificationRadius = "xs" | "sm" | "md" | "lg" | "xl"
@@ -35,6 +36,8 @@ const Notification = React.forwardRef<HTMLDivElement, SimpleNotificationProps>(
     ...props
   }, ref) => {
     const theme = useMantineTheme()
+    const colors = getSemanticColors(theme)
+    const spacing = getSpacing(theme)
     const defaultColor = color || theme.colors.primary[6]
     const defaultRadius = radius || theme.radius.sm
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/atoms/card'
-import { ScrollArea } from '@/components/atoms/scroll-area'
+import { ScrollArea } from '@/components/atoms/scrollarea'
 import { MessageSquare } from 'lucide-react'
 import { MessageBubble } from '../molecules/MessageBubble'
 import { QuickSuggestions } from '../molecules/QuickSuggestions'

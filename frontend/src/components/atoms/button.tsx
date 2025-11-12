@@ -9,9 +9,10 @@ type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl" | "icon"
 type ButtonRadius = "xs" | "sm" | "md" | "lg" | "xl"
 
 interface ButtonProps extends Omit<MantineButtonProps, 'variant' | 'size'> {
-  variant?: ButtonVariant 
+  variant?: ButtonVariant
   size?: ButtonSize
   radius?: ButtonRadius
+  onClick?: () => void
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Button } from '@/components/atoms/button'
-import { ScrollArea } from '@/components/atoms/scroll-area'
+import { ScrollArea } from '@/components/atoms/scrollarea'
 import { Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ComponentProps } from 'react'

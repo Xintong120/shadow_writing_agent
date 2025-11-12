@@ -16,13 +16,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious
-} from '@/components/molecules/carousel'
+import { Carousel } from '@/components/molecules/Carousel'
+import { Carousel as MantineCarousel } from '@mantine/carousel'
 import { Button } from '@/components/atoms/button'
 import ShadowWritingCard from './ShadowWritingCard'
 import ProgressDots from '../molecules/ProgressDots'
@@ -149,17 +144,16 @@ function CardNavigator({
       </div>
 
       {/* Carousel 容器 */}
-      <Carousel
-        setApi={setApi}
+      <MantineCarousel
+        getEmblaApi={setApi}
         className="w-full"
-        opts={{
-          align: "start",
-          loop: false,
-        }}
+        slideGap="md"
+        align="start"
+        loop={false}
       >
-        <CarouselContent>
+        <MantineCarousel.Slide>
           {results.map((result, index) => (
-            <CarouselItem key={index}>
+            <div key={index} className="min-w-0 shrink-0 grow-0 basis-full">
               <ShadowWritingCard
                 result={result}
                 highlightEnabled={highlightEnabled}
@@ -168,14 +162,10 @@ function CardNavigator({
                 onCopy={handleCopy}
                 className="h-full"
               />
-            </CarouselItem>
+            </div>
           ))}
-        </CarouselContent>
-
-        {/* Carousel 内置导航按钮 */}
-        <CarouselPrevious className="left-2" />
-        <CarouselNext className="right-2" />
-      </Carousel>
+        </MantineCarousel.Slide>
+      </MantineCarousel>
 
       {/* 进度点指示器 */}
       <ProgressDots
