@@ -1,11 +1,13 @@
+/**
+ * 单个任务项组件：
+ * 显示TED演讲的任务状态、进度和结果信息
+ */
+
 import { CheckCircle, Loader2, Clock, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ComponentProps } from 'react'
 
-/**
- * TaskItem - 单个任务项组件
- * 显示TED演讲的任务状态、进度和结果信息
- */
+
 
 interface TEDInfo {
   title?: string

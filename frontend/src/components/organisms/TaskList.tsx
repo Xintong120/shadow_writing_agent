@@ -1,4 +1,4 @@
-import { TaskItem } from '../molecules/TaskItem'
+import { TaskItem } from './TaskItem'
 import { cn } from '@/lib/utils'
 import { ComponentProps } from 'react'
 

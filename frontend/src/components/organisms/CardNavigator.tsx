@@ -16,7 +16,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Carousel } from '@/components/molecules/Carousel'
+import { Carousel } from '@/components/organisms/Carousel'
 import { Carousel as MantineCarousel } from '@mantine/carousel'
 import { Button } from '@/components/atoms/button'
 import ShadowWritingCard from './ShadowWritingCard'

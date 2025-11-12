@@ -1,5 +1,5 @@
 import { Button } from '@/components/atoms/button'
-import { TEDCard } from '../molecules/TEDCard'
+import { TEDCard } from './TEDCard'
 import { cn } from '@/lib/utils'
 
 /**
