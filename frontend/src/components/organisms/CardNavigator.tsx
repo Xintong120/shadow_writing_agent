@@ -23,6 +23,8 @@ import ShadowWritingCard from './ShadowWritingCard'
 import ProgressDots from '../molecules/ProgressDots'
 import type { ShadowWritingResult } from '@/types'
 import { ComponentProps } from 'react'
+import { Text, useMantineTheme } from '@mantine/core'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
 interface TEDInfo {
   title: string
@@ -44,6 +46,10 @@ function CardNavigator({
   className = '',
   ...props
 }: CardNavigatorProps) {
+  const theme = useMantineTheme()
+  const colors = getSemanticColors(theme)
+  const spacing = getSpacing(theme)
+
   const [api, setApi] = useState<any>(null)
   const [current, setCurrent] = useState(initialIndex)
   const [highlightEnabled, setHighlightEnabled] = useState(true)
@@ -127,9 +133,9 @@ function CardNavigator({
           上一个
         </Button>
 
-        <span className="text-sm text-muted-foreground px-4">
+        <Text size="sm" style={{ color: colors.textMuted, padding: `0 ${spacing.md}` }}>
           {current + 1} / {results.length}
-        </span>
+        </Text>
 
         <Button
           variant="outline"
@@ -148,8 +154,6 @@ function CardNavigator({
         getEmblaApi={setApi}
         className="w-full"
         slideGap="md"
-        align="start"
-        loop={false}
       >
         <MantineCarousel.Slide>
           {results.map((result, index) => (
@@ -176,8 +180,10 @@ function CardNavigator({
       />
 
       {/* 键盘提示 */}
-      <div className="text-center mt-4 text-xs text-muted-foreground">
-        💡 使用 ← → 方向键快速导航 • H 键切换高亮显示
+      <div className="text-center mt-4">
+        <Text size="xs" style={{ color: colors.textMuted }}>
+          💡 使用 ← → 方向键快速导航 • H 键切换高亮显示
+        </Text>
       </div>
     </div>
   )

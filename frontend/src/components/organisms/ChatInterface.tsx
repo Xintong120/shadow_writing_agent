@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/atoms/card'
+import { Card as MantineCard, Text, useMantineTheme } from '@mantine/core'
 import { ScrollArea } from '@/components/atoms/scrollarea'
 import { MessageSquare } from 'lucide-react'
 import { MessageBubble } from '../molecules/MessageBubble'
@@ -9,6 +9,7 @@ import { ChatInput } from '../molecules/ChatInput'
 import { TEDList } from './TEDList'
 import { BatchActionBar } from '../molecules/BatchActionBar'
 import { cn } from '@/lib/utils'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
 /**
  * ChatInterface - 对话界面容器组件
@@ -24,10 +25,14 @@ export function ChatInterface({
   onStartBatch,
   onClearSelection,
   isTyping = false,
+  isSearching = false,
   className,
   ...props
 }) {
   const messagesEndRef = useRef(null)
+  const theme = useMantineTheme()
+  const colors = getSemanticColors(theme)
+  const spacing = getSpacing(theme)
   const [showSuggestions, setShowSuggestions] = useState(true)
 
   // 自动滚动到最新消息
@@ -47,15 +52,37 @@ export function ChatInterface({
   ]
 
   return (
-    <Card className={cn("flex flex-col h-full max-h-[800px] bg-card", className)} {...props}>
-      <CardHeader className="flex-shrink-0">
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Shadow Writing Agent
-        </CardTitle>
-      </CardHeader>
+    <MantineCard
+      className={cn("flex flex-col h-full max-h-[800px]", className)}
+      style={{
+        backgroundColor: 'white',
+        borderColor: colors.border,
+        boxShadow: 'none',
+      }}
+      {...props}
+    >
+      {/* Card Header */}
+      <MantineCard.Section
+        className="flex-shrink-0"
+        style={{
+          padding: `${spacing.md} ${spacing.lg}`,
+          borderBottom: `1px solid ${colors.border}`,
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" style={{ color: colors.text }} />
+          <Text
+            size="lg"
+            fw={600}
+            style={{ color: colors.text }}
+          >
+            Shadow Writing Agent
+          </Text>
+        </div>
+      </MantineCard.Section>
 
-      <CardContent className="flex-1 flex flex-col min-h-0 p-0">
+      {/* Card Content */}
+      <div className="flex-1 flex flex-col min-h-0">
         {/* 消息区域 */}
         <ScrollArea className="flex-1 px-6 pb-4">
           <div className="space-y-6 py-4">
@@ -104,6 +131,7 @@ export function ChatInterface({
                       selectedUrls.forEach(url => onToggleTED(url))
                     }
                   }}
+                  className=""
                 />
 
                 {/* 快速操作建议 */}
@@ -155,8 +183,8 @@ export function ChatInterface({
             disabled={isTyping}
           />
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </MantineCard>
   )
 }
 

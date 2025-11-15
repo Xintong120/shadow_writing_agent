@@ -10,6 +10,8 @@
 
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/atoms/button'
+import { Text, useMantineTheme } from '@mantine/core'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
 function ResultHeader({
   tedInfo,
@@ -19,6 +21,9 @@ function ResultHeader({
   className = '',
   ...props
 }) {
+  const theme = useMantineTheme()
+  const colors = getSemanticColors(theme)
+  const spacing = getSpacing(theme)
   const displayIndex = currentIndex !== undefined ? currentIndex + 1 : null
 
   return (
@@ -35,30 +40,47 @@ function ResultHeader({
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回搜索
           </Button>
-          <h1 className="text-xl lg:text-2xl font-bold text-primary truncate">
+          <Text
+            size="xl"
+            fw={700}
+            style={{ color: colors.primary }}
+            className="truncate"
+          >
             Shadow Writing 学习卡片
-          </h1>
+          </Text>
         </div>
 
         {/* TED 标题和演讲者 */}
         {tedInfo.title && (
           <div className="mb-3">
-            <h2 className="text-lg lg:text-xl font-semibold text-foreground truncate">
+            <Text
+              size="lg"
+              fw={600}
+              style={{ color: colors.text }}
+              className="truncate"
+            >
               📖 {tedInfo.title}
-            </h2>
+            </Text>
             {tedInfo.speaker && (
-              <p className="text-sm lg:text-base text-muted-foreground mt-1">
+              <Text
+                size="sm"
+                style={{ color: colors.textMuted, marginTop: spacing.xs }}
+              >
                 👤 {tedInfo.speaker}
-              </p>
+              </Text>
             )}
           </div>
         )}
 
         {/* 结果统计 */}
-        <div className="flex items-center gap-4 text-sm lg:text-base text-muted-foreground">
-          <span>📊 共 {totalCount} 个结果</span>
+        <div className="flex items-center gap-4">
+          <Text size="sm" style={{ color: colors.textMuted }}>
+            📊 共 {totalCount} 个结果
+          </Text>
           {displayIndex && (
-            <span>当前：{displayIndex}/{totalCount}</span>
+            <Text size="sm" style={{ color: colors.textMuted }}>
+              当前：{displayIndex}/{totalCount}
+            </Text>
           )}
         </div>
       </div>

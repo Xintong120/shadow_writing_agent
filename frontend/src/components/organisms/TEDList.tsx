@@ -1,6 +1,8 @@
 import { Button } from '@/components/atoms/button'
 import { TEDCard } from './TEDCard'
 import { cn } from '@/lib/utils'
+import { Text, useMantineTheme } from '@mantine/core'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
 /**
  * TEDList - TED列表容器组件
@@ -14,6 +16,10 @@ function TEDList({
   className,
   ...props
 }) {
+  const theme = useMantineTheme()
+  const colors = getSemanticColors(theme)
+  const spacing = getSpacing(theme)
+
   const selectedCount = selectedUrls.length
   const totalCount = teds.length
   const isAllSelected = selectedCount === totalCount && totalCount > 0
@@ -50,9 +56,9 @@ function TEDList({
             {isAllSelected ? '取消全选' : '全选'}
           </Button>
 
-          <span className="text-sm text-muted-foreground">
+          <Text size="sm" style={{ color: colors.textMuted }}>
             已选择 {selectedCount} / {totalCount} 个演讲
-          </span>
+          </Text>
         </div>
       </div>
 
