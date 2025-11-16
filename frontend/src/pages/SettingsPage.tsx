@@ -2,7 +2,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/atoms/card'
 import { Button } from '@/components/atoms/button'
 import { Input } from '@/components/atoms/input'
-import { Label } from '@/components/atoms/label'
 import { Switch } from '@/components/atoms/switch'
 import { Badge } from '@/components/atoms/badge'
 import { AlertTriangle } from 'lucide-react'
@@ -41,7 +40,7 @@ function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="api-url">后端API地址</Label>
+                <label htmlFor="api-url">后端API地址</label>
                 <Input
                   id="api-url"
                   placeholder="http://localhost:8000"
@@ -49,7 +48,7 @@ function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="api-key">LLM API Key (OpenAI/DeepSeek)</Label>
+                <label htmlFor="api-key">LLM API Key (OpenAI/DeepSeek)</label>
                 <Input
                   id="api-key"
                   type="password"
@@ -74,7 +73,7 @@ function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <Label>主题模式</Label>
+              <label>主题模式</label>
               <div className="flex gap-4">
                 <Badge variant="outline">浅色模式</Badge>
                 <Badge variant="default">深色模式</Badge>
@@ -86,7 +85,7 @@ function SettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="font-size">字体大小</Label>
+              <label htmlFor="font-size">字体大小</label>
               <div className="flex items-center gap-4">
                 <span className="text-sm">小</span>
                 <div className="flex-1">
@@ -113,7 +112,7 @@ function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="auto-save">自动保存学习进度</Label>
+                <label htmlFor="auto-save">自动保存学习进度</label>
                 <p className="text-sm text-muted-foreground">
                   自动保存您的学习进度到本地
                 </p>
@@ -123,7 +122,7 @@ function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="show-stats">显示学习统计</Label>
+                <label htmlFor="show-stats">显示学习统计</label>
                 <p className="text-sm text-muted-foreground">
                   在历史页面显示详细的学习统计数据
                 </p>
@@ -133,7 +132,7 @@ function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="keyboard-hints">启用键盘快捷键提示</Label>
+                <label htmlFor="keyboard-hints">启用键盘快捷键提示</label>
                 <p className="text-sm text-muted-foreground">
                   显示键盘快捷键使用提示
                 </p>
