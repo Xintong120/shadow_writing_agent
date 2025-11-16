@@ -51,7 +51,15 @@ const MessageBubble = React.forwardRef<HTMLDivElement, MessageBubbleProps>(
 
     return (
       <Box ref={ref} className={cn("w-full", className)} {...props}>
-        <Group align="flex-start" gap="sm" style={{ justifyContent: alignItems }}>
+        <Group
+          align="flex-start"
+          gap="sm"
+          style={{
+            justifyContent: alignItems,
+            marginLeft: isUser ? '2rem' : '0.5rem', // 用户消息向右，用户消息向左
+            marginRight: isUser ? '0.5rem' : '2rem'
+          }}
+        >
           {/* AI消息：头像在左边 */}
           {!isUser && showAvatar && (
             <Avatar

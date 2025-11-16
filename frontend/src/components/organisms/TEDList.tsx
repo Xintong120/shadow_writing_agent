@@ -64,7 +64,7 @@ function TEDList({
 
       {/* TED卡片列表 */}
       <div
-        className="space-y-2 max-h-96 overflow-y-auto"
+        className="space-y-2 max-h-64 overflow-y-auto"
         role="list"
         aria-label="TED演讲列表"
       >

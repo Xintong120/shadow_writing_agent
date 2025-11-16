@@ -8,21 +8,14 @@ import { Card } from '@/components/atoms/card'
 import { Checkbox } from '@/components/atoms/checkbox'
 import { cn } from '@/lib/utils'
 import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
+import type { TEDCandidate } from '@/types/ted'
 
 // 简化的类型定义
 type TEDCardVariant = 'default' | 'compact' | 'minimal'
 type TEDCardSize = 'sm' | 'md' | 'lg'
 
-interface TEDData {
-  title: string
-  speaker: string
-  duration: string
-  views: string
-  relevance_score?: number
-}
-
 interface TEDCardProps {
-  ted: TEDData
+  ted: TEDCandidate
   isSelected: boolean
   onToggle: () => void
   variant?: TEDCardVariant
@@ -46,8 +39,20 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
     const colors = getSemanticColors(theme)
     const spacing = getSpacing(theme)
 
+    // 调试日志
+    console.log('[DEBUG TEDCard] 渲染TED卡片:', {
+      title: ted.title,
+      speaker: ted.speaker,
+      duration: ted.duration,
+      views: ted.views,
+      url: ted.url,
+      hasDescription: !!ted.description,
+      relevance_score: ted.relevance_score
+    })
+
     const handleClick = () => {
       if (!disabled) {
+        console.log('[DEBUG TEDCard] 点击切换选择:', ted.url)
         onToggle()
       }
     }
@@ -55,6 +60,7 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
         e.preventDefault()
+        console.log('[DEBUG TEDCard] 键盘切换选择:', ted.url)
         onToggle()
       }
     }
@@ -117,102 +123,103 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
         style={{
           ...getVariantStyles(),
           ...getSizeStyles(),
-          backgroundColor: theme.colors.base[0],
-          borderColor: theme.colors.base[2],
+          backgroundColor: 'white',
+          border: '1px solid #e5e7eb',
           cursor: 'pointer',
-          borderRadius: theme.radius.md,
-          border: `1px solid ${theme.colors.base[2]}`,
+          borderRadius: '8px',
+          padding: '16px',
           transition: 'all 0.2s ease',
+          position: 'relative', // 用于绝对定位的checkbox
           // 状态样式
           ...(isSelected && {
-            backgroundColor: theme.colors.primary[0],
-            borderColor: theme.colors.primary[6],
-            boxShadow: `0 0 0 2px ${theme.colors.primary[6]}`,
+            backgroundColor: '#f0f9ff',
+            borderColor: '#0ea5e9',
           }),
           ...(disabled && {
             opacity: 0.5,
             cursor: 'not-allowed',
             pointerEvents: 'none',
           }),
-          // 悬停和焦点样式
-          '&:hover': {
-            boxShadow: theme.shadows.md,
-          },
-          '&:focus-visible': {
-            outline: `2px solid ${theme.colors.primary[6]}`,
-            outlineOffset: 2,
-          },
         }}
         {...props}
       >
-        <Box
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            gap: theme.spacing.sm,
-            '@media (min-width: 1024px)': {
-              flexDirection: 'row',
-              gap: theme.spacing.md,
-            },
-          }}
-        >
-          <Box style={{ flexShrink: 0, marginTop: 2 }}>
-            <Checkbox
-              checked={isSelected}
-              disabled={disabled}
-              aria-hidden="true"
-            />
-          </Box>
+        {/* 选择框 - 右上角绝对定位 */}
+        <Box style={{
+          position: 'absolute',
+          top: '12px',
+          right: '12px',
+          zIndex: 1
+        }}>
+          <Checkbox
+            checked={isSelected}
+            disabled={disabled}
+            aria-hidden="true"
+          />
+        </Box>
 
+        {/* 内容区域 */}
+        <Box style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: '12px',
+          paddingRight: '40px', // 为右上角的checkbox留出空间
+        }}>
           <Box className="flex-1 min-w-0 w-full">
             <Text
               style={{
-                fontWeight: 500,
+                fontWeight: 600,
                 fontSize: size === 'sm' ? theme.fontSizes.sm : size === 'lg' ? theme.fontSizes.md : theme.fontSizes.sm,
+                color: colors.text,
+                lineHeight: 1.4,
+                marginBottom: '4px'
               }}
               className="truncate"
             >
               {ted.title}
             </Text>
-
+            
             <Text
               style={{
-                color: theme.colors.base[5],
                 fontSize: theme.fontSizes.xs,
+                color: colors.textSecondary,
+                marginBottom: '8px'
               }}
             >
-              演讲者：{ted.speaker}
+              {ted.speaker}
             </Text>
-
-            <Group
-              gap="sm"
-              style={{
-                flexWrap: 'wrap',
-                alignItems: 'center',
-              }}
-            >
-              <Text size="xs" style={{ color: theme.colors.base[5] }}>
-                时长：{ted.duration}
+            
+            <Group style={{ gap: '16px', marginBottom: '8px' }}>
+              <Text style={{ fontSize: theme.fontSizes.xs, color: colors.textMuted }}>
+                ⏱️ {ted.duration}
               </Text>
-              <Text size="xs" style={{ color: theme.colors.base[5] }}>
-                观看：{ted.views}
+              <Text style={{ fontSize: theme.fontSizes.xs, color: colors.textMuted }}>
+                👁️ {ted.views}
               </Text>
+              {ted.relevance_score && (
+                <Text style={{ fontSize: theme.fontSizes.xs, color: '#10b981' }}>
+                  📊 {Math.round(ted.relevance_score * 100)}% 相关
+                </Text>
+              )}
             </Group>
+            
+            {ted.description && (
+              <Text
+                style={{
+                  fontSize: theme.fontSizes.xs,
+                  color: colors.textMuted,
+                  lineHeight: 1.5,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}
+              >
+                {ted.description}
+              </Text>
+            )}
           </Box>
 
-          {ted.relevance_score && (
-            <Text
-              style={{
-                fontWeight: 500,
-                color: theme.colors.primary[6],
-                fontSize: theme.fontSizes.xs,
-                flexShrink: 0,
-              }}
-            >
-              ⭐ {ted.relevance_score.toFixed(1)}
-            </Text>
-          )}
         </Box>
       </Box>
     )
@@ -222,7 +229,7 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
 TEDCard.displayName = "TEDCard"
 
 export { TEDCard }
-export type { TEDCardProps, TEDData }
+export type { TEDCardProps }
 
 // 为了向后兼容，也导出为默认导出
 export default TEDCard
