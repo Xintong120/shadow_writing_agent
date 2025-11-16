@@ -101,12 +101,28 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
               fontSize: theme.fontSizes.sm,
               lineHeight: 1.5,
               borderRadius: theme.radius.xl,
-              border: 'none',
+              border: 'none !important',
+              boxShadow: 'none',
+              backgroundColor: 'transparent',
+              color: 'inherit',
               '::placeholder': {
                 color: colors.textMuted,
               },
               '&:focus': {
                 outline: 'none',
+                border: 'none !important',
+                boxShadow: 'none',
+                backgroundColor: 'transparent',
+              },
+              '&:disabled': {
+                backgroundColor: 'transparent',
+                border: 'none !important',
+                boxShadow: 'none',
+              },
+              '&[data-loading="true"]': {
+                backgroundColor: 'transparent',
+                border: 'none !important',
+                boxShadow: 'none',
               },
               '@media(min-width:1024px)': {
                 fontSize: theme.fontSizes.md,

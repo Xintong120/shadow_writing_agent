@@ -94,8 +94,8 @@ export function ChatInterface({
       {/* Card Content - 无标题，直接显示内容 */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* 消息区域 */}
-        <ScrollArea className="flex-1 px-0.5 py-0.5">
-          <div className="space-y-6 py-2">
+        <ScrollArea className="flex-1 h-0 px-1 py-1">
+          <div className="space-y-3 py-2">
             {/* 加载历史消息状态 */}
             {isLoadingHistory && (
               <div className="text-center py-8 text-muted-foreground">
