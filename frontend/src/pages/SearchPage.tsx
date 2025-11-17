@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MessageSquare } from 'lucide-react'
 import { api } from '@/services/api'
 import { useTasks } from '@/contexts/TaskContext'
 import { useIncompleteTasks } from '@/hooks/useIncompleteTasks'
@@ -276,18 +275,6 @@ function SearchPage() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {/* 固定标题区域 */}
-      <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4 ">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-6 w-6 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-900">
-              Shadow Writing Agent
-            </h1>
-          </div>
-        </div>
-      </div>
-
       {/* 可滚动内容区域 */}
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">

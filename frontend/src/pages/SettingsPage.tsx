@@ -22,11 +22,6 @@ function SettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl bg-background">
-      {/* 页面标题 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">设置</h1>
-        <p className="text-muted-foreground">配置您的学习偏好和API设置</p>
-      </div>
 
       <div className="space-y-6">
         {/* API配置 */}

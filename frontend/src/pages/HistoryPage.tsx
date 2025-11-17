@@ -85,11 +85,6 @@ function HistoryPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
-      {/* 页面标题 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">学习历史</h1>
-        <p className="text-muted-foreground">回顾你的英语学习旅程</p>
-      </div>
 
       {/* 统计卡片 */}
       {stats && (
