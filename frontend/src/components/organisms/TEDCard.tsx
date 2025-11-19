@@ -123,21 +123,19 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
         style={{
           ...getVariantStyles(),
           ...getSizeStyles(),
-          backgroundColor: 'white',
-          border: '1px solid #e5e7eb',
-          cursor: 'pointer',
-          borderRadius: '8px',
-          padding: '16px',
+          backgroundColor: colors.surface,
+          border: `1px solid ${colors.border}`,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          borderRadius: theme.radius.md,
           transition: 'all 0.2s ease',
-          position: 'relative', // 用于绝对定位的checkbox
+          position: 'relative',
           // 状态样式
           ...(isSelected && {
-            backgroundColor: '#f0f9ff',
-            borderColor: '#0ea5e9',
+            backgroundColor: `${colors.primary}0D`,
+            borderColor: colors.primary,
           }),
           ...(disabled && {
             opacity: 0.5,
-            cursor: 'not-allowed',
             pointerEvents: 'none',
           }),
         }}
@@ -146,8 +144,8 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
         {/* 选择框 - 右上角绝对定位 */}
         <Box style={{
           position: 'absolute',
-          top: '12px',
-          right: '12px',
+          top: spacing.sm,
+          right: spacing.sm,
           zIndex: 1
         }}>
           <Checkbox
@@ -162,8 +160,8 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'flex-start',
-          gap: '12px',
-          paddingRight: '40px', // 为右上角的checkbox留出空间
+          gap: spacing.sm,
+          paddingRight: '40px',
         }}>
           <Box className="flex-1 min-w-0 w-full">
             <Text
@@ -171,8 +169,8 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
                 fontWeight: 600,
                 fontSize: size === 'sm' ? theme.fontSizes.sm : size === 'lg' ? theme.fontSizes.md : theme.fontSizes.sm,
                 color: colors.text,
-                lineHeight: 1.4,
-                marginBottom: '4px'
+                lineHeight: theme.lineHeights.sm,
+                marginBottom: spacing.xs
               }}
               className="truncate"
             >
@@ -183,13 +181,13 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
               style={{
                 fontSize: theme.fontSizes.xs,
                 color: colors.textSecondary,
-                marginBottom: '8px'
+                marginBottom: spacing.xs
               }}
             >
               {ted.speaker}
             </Text>
             
-            <Group style={{ gap: '16px', marginBottom: '8px' }}>
+            <Group style={{ gap: spacing.md, marginBottom: spacing.xs }}>
               <Text style={{ fontSize: theme.fontSizes.xs, color: colors.textMuted }}>
                 ⏱️ {ted.duration}
               </Text>
@@ -197,7 +195,7 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
                 👁️ {ted.views}
               </Text>
               {ted.relevance_score && (
-                <Text style={{ fontSize: theme.fontSizes.xs, color: '#10b981' }}>
+                <Text style={{ fontSize: theme.fontSizes.xs, color: colors.success }}>
                   📊 {Math.round(ted.relevance_score * 100)}% 相关
                 </Text>
               )}
@@ -208,7 +206,7 @@ const TEDCard = React.forwardRef<HTMLDivElement, TEDCardProps>(
                 style={{
                   fontSize: theme.fontSizes.xs,
                   color: colors.textMuted,
-                  lineHeight: 1.5,
+                  lineHeight: theme.lineHeights.md,
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',

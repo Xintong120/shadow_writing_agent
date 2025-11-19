@@ -39,14 +39,16 @@ const Notification = React.forwardRef<HTMLDivElement, SimpleNotificationProps>(
     const colors = getSemanticColors(theme)
     const spacing = getSpacing(theme)
     const defaultColor = color || theme.colors.primary[6]
-    const defaultRadius = radius || theme.radius.sm
+    
+    // 使用主题圆角系统
+    const notificationRadius = radius ? theme.radius[radius] : theme.radius.sm
 
     return (
       <MantineNotification
         ref={ref}
         title={title}
         color={defaultColor}
-        radius={defaultRadius}
+        radius={notificationRadius}
         className={cn(className)}
         onClose={onClose}
         icon={icon}

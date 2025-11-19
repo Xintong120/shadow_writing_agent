@@ -10,6 +10,7 @@ import { Group, Text, Box, useMantineTheme } from '@mantine/core'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/atoms/button'
 import { cn } from "@/lib/utils"
+import { getSemanticColors, getSpacing, getResponsiveProps } from '@/theme/mantine-theme'
 
 // 简化的类型定义
 interface NavigationButtonsProps {
@@ -38,11 +39,15 @@ const NavigationButtons = React.forwardRef<HTMLDivElement, NavigationButtonsProp
     ...props
   }, ref) => {
     const theme = useMantineTheme()
+    const colors = getSemanticColors(theme)
+    const spacing = getSpacing(theme)
+    const responsive = getResponsiveProps(theme)
 
     return (
       <Box
         ref={ref}
         className={cn("flex items-center justify-center gap-4", className)}
+        style={responsive.stackOnMobile}
         {...props}
       >
         <Group gap="md" align="center" wrap="nowrap">
@@ -63,14 +68,14 @@ const NavigationButtons = React.forwardRef<HTMLDivElement, NavigationButtonsProp
           <Box
             className="flex items-center gap-2 px-3 py-1 rounded-md"
             style={{
-              backgroundColor: theme.colors.base[1],
-              border: `1px solid ${theme.colors.base[2]}`,
+              backgroundColor: colors.surface,
+              border: `1px solid ${colors.border}`,
             }}
           >
             <Text
               size="sm"
               style={{
-                color: theme.colors.base[7],
+                color: colors.textSecondary,
                 fontWeight: 600,
               }}
             >
@@ -79,7 +84,7 @@ const NavigationButtons = React.forwardRef<HTMLDivElement, NavigationButtonsProp
             <Text
               size="sm"
               style={{
-                color: theme.colors.base[5],
+                color: colors.textMuted,
               }}
             >
               /
@@ -87,7 +92,7 @@ const NavigationButtons = React.forwardRef<HTMLDivElement, NavigationButtonsProp
             <Text
               size="sm"
               style={{
-                color: theme.colors.base[6],
+                color: colors.textMuted,
               }}
             >
               {totalCount}
@@ -111,8 +116,8 @@ const NavigationButtons = React.forwardRef<HTMLDivElement, NavigationButtonsProp
             <Text
               size="xs"
               style={{
-                color: theme.colors.base[5],
-                marginLeft: theme.spacing.md,
+                color: colors.textMuted,
+                marginLeft: spacing.md,
               }}
             >
               💡 使用 ← → 键导航

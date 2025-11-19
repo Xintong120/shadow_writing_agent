@@ -33,15 +33,29 @@ function TEDList({
 
   return (
     <div
-      className={cn(
-        "space-y-3",
-        className
-      )}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: spacing.sm,
+      }}
+      className={className}
       {...props}
     >
       {/* 全选按钮和统计 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing.xs,
+          }}
+        >
           <Button
             variant="outline"
             size="sm"
@@ -56,7 +70,13 @@ function TEDList({
             {isAllSelected ? '取消全选' : '全选'}
           </Button>
 
-          <Text size="sm" style={{ color: colors.textMuted }}>
+          <Text
+            style={{
+              fontSize: theme.fontSizes.sm,
+              lineHeight: theme.lineHeights.sm,
+              color: colors.textMuted,
+            }}
+          >
             已选择 {selectedCount} / {totalCount} 个演讲
           </Text>
         </div>
@@ -64,7 +84,13 @@ function TEDList({
 
       {/* TED卡片列表 */}
       <div
-        className="space-y-2 max-h-64 overflow-y-auto"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing.xs,
+          maxHeight: '16rem',
+          overflowY: 'auto',
+        }}
         role="list"
         aria-label="TED演讲列表"
       >

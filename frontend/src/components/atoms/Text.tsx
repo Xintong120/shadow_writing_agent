@@ -62,14 +62,16 @@ const Text = React.forwardRef<HTMLDivElement, SimpleTextProps>(
     ...props
   }, ref) => {
     const theme = useMantineTheme()
-    const defaultSize = size || theme.fontSizes.md
+    
+    // 使用主题字体大小系统
+    const textSize = size ? theme.fontSizes[size] : theme.fontSizes.md
     // 自动设置variant为gradient当gradient存在时
     const actualVariant = gradient ? "gradient" : variant
 
     return (
       <MantineText
         ref={ref}
-        size={defaultSize}
+        size={textSize}
         fw={weightMap[weight]}
         fs={style === "italic" ? "italic" : undefined}
         td={decoration !== "none" ? decoration : undefined}

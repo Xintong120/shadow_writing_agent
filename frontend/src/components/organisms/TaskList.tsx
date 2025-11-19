@@ -1,6 +1,8 @@
 import { TaskItem } from './TaskItem'
 import { cn } from '@/lib/utils'
 import { ComponentProps } from 'react'
+import { useMantineTheme, Box, Text } from '@mantine/core'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
 /**
  * TaskList - 任务列表容器组件
@@ -23,59 +25,85 @@ interface Task {
   results?: any[]
 }
 
-interface TaskListProps extends Omit<ComponentProps<'div'>, 'children'> {
+interface TaskListProps {
   tasks?: Task[]
   currentTaskId?: string | null
   className?: string
+  style?: React.CSSProperties
+  onClick?: () => void
 }
 
 function TaskList({
   tasks = [],
   currentTaskId,
   className,
+  style,
   ...props
 }: TaskListProps) {
+  const theme = useMantineTheme()
+  const colors = getSemanticColors(theme)
+  const spacing = getSpacing(theme)
+
   if (!tasks || tasks.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>暂无任务</p>
-      </div>
+      <Box
+        ta="center"
+        py="xl"
+        style={{
+          color: colors.textMuted
+        }}
+      >
+        <Text size="md" style={{ color: colors.textMuted }}>
+          暂无任务
+        </Text>
+      </Box>
     )
   }
 
   return (
-    <div
-      className={cn(
-        "space-y-3 max-h-96 overflow-y-auto",
-        className
-      )}
+    <Box
+      className={cn(className)}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: spacing.sm,
+        maxHeight: '384px',
+        overflowY: 'auto',
+        transition: 'all 0.3s ease',
+        ...style
+      }}
       {...props}
     >
-      {tasks.map((task, index) => (
-        <div
-          key={task.id || index}
-          className={cn(
-            "transition-all duration-300",
-            // 当前处理的任务高亮显示
-            currentTaskId === task.id && task.status === 'processing' && [
-              "ring-2 ring-primary ring-offset-2 ring-offset-background",
-              "shadow-lg shadow-primary/20"
-            ]
-          )}
-        >
-          <TaskItem
-            url={task.url || task.urls?.[0] || ''}
-            tedInfo={{
-              title: task.title || task.tedInfo?.title || '未知标题',
-              speaker: task.speaker || task.tedInfo?.speaker || '未知演讲者'
+      {tasks.map((task, index) => {
+        const isCurrentTask = currentTaskId === task.id && task.status === 'processing'
+        
+        return (
+          <Box
+            key={task.id || index}
+            style={{
+              transition: 'all 0.3s ease',
+              ...(isCurrentTask && {
+                border: `2px solid ${colors.primary}`,
+                borderRadius: theme.radius.md,
+                boxShadow: `0 0 0 2px ${colors.primary}20, 0 10px 15px -3px rgba(0, 0, 0, 0.1)`,
+                backgroundColor: colors.surface
+              })
             }}
-            status={task.status}
-            resultCount={task.resultCount || task.results?.length}
-            error={task.error}
-          />
-        </div>
-      ))}
-    </div>
+          >
+            <TaskItem
+              url={task.url || task.urls?.[0] || ''}
+              tedInfo={{
+                title: task.title || task.tedInfo?.title || '未知标题',
+                speaker: task.speaker || task.tedInfo?.speaker || '未知演讲者'
+              }}
+              status={task.status}
+              resultCount={task.resultCount || task.results?.length}
+              error={task.error}
+            />
+          </Box>
+        )
+      })}
+    </Box>
   )
 }
 

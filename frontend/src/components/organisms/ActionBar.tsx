@@ -11,7 +11,7 @@ import { Group, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 import { Button } from '@/components/atoms/button'
 import { Download, Printer, Share2 } from 'lucide-react'
-import { getSpacing } from '@/theme/mantine-theme'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
 // 简化的类型定义
 interface ActionBarProps {
@@ -39,6 +39,7 @@ const ActionBar = React.forwardRef<HTMLDivElement, ActionBarProps>(
     ...props
   }, ref) => {
     const theme = useMantineTheme()
+    const colors = getSemanticColors(theme)
     const spacing = getSpacing(theme)
     const currentResult = results[currentIndex]
 
@@ -107,8 +108,13 @@ const ActionBar = React.forwardRef<HTMLDivElement, ActionBarProps>(
           variant="outline"
           onClick={handleExport}
           className="flex-1 sm:flex-none"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing.xs,
+          }}
         >
-          <Download className="h-4 w-4 mr-2" />
+          <Download style={{ height: '1rem', width: '1rem' }} />
           导出全部
         </Button>
 
@@ -116,8 +122,13 @@ const ActionBar = React.forwardRef<HTMLDivElement, ActionBarProps>(
           variant="outline"
           onClick={handlePrint}
           className="flex-1 sm:flex-none"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing.xs,
+          }}
         >
-          <Printer className="h-4 w-4 mr-2" />
+          <Printer style={{ height: '1rem', width: '1rem' }} />
           打印卡片
         </Button>
 
@@ -125,8 +136,13 @@ const ActionBar = React.forwardRef<HTMLDivElement, ActionBarProps>(
           variant="outline"
           onClick={handleShare}
           className="flex-1 sm:flex-none"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing.xs,
+          }}
         >
-          <Share2 className="h-4 w-4 mr-2" />
+          <Share2 style={{ height: '1rem', width: '1rem' }} />
           分享
         </Button>
       </Group>

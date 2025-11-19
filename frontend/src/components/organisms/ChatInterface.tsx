@@ -9,7 +9,7 @@ import { ChatInput } from '../molecules/ChatInput'
 import { TEDList } from './TEDList'
 import { BatchActionBar } from '../molecules/BatchActionBar'
 import { cn } from '@/lib/utils'
-import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
+import { getSemanticColors, getSpacing, getResponsiveProps } from '@/theme/mantine-theme'
 
 /**
  * ChatInterface - 对话界面容器组件
@@ -27,6 +27,7 @@ export function ChatInterface({
   isTyping = false,
   isSearching = false,
   isLoadingHistory = false,
+  disabled = false,
   className,
   ...props
 }) {
@@ -34,6 +35,7 @@ export function ChatInterface({
   const theme = useMantineTheme()
   const colors = getSemanticColors(theme)
   const spacing = getSpacing(theme)
+  const responsive = getResponsiveProps(theme)
   const [showSuggestions, setShowSuggestions] = useState(true)
 
   // 自动滚动到最新消息
@@ -83,8 +85,11 @@ export function ChatInterface({
 
   return (
     <MantineCard
-      className={cn("flex flex-col h-full", className)}
+      className={className}
       style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
         backgroundColor: 'transparent',
         border: 'none',
         boxShadow: 'none',
@@ -92,15 +97,63 @@ export function ChatInterface({
       {...props}
     >
       {/* Card Content - 无标题，直接显示内容 */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
         {/* 消息区域 */}
-        <ScrollArea className="flex-1 h-0 px-1 py-1">
-          <div className="space-y-3 py-2">
+        <div
+          style={{
+            flex: 1,
+            height: 0,
+            overflow: 'auto',
+            padding: spacing.xs,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: spacing.sm,
+              paddingTop: spacing.xs,
+              paddingBottom: spacing.xs,
+            }}
+          >
             {/* 加载历史消息状态 */}
             {isLoadingHistory && (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                <p>正在加载聊天记录...</p>
+              <div
+                style={{
+                  textAlign: 'center',
+                  paddingTop: spacing.lg,
+                  paddingBottom: spacing.lg,
+                  color: colors.textSecondary,
+                }}
+              >
+                <div
+                  style={{
+                    width: '2rem',
+                    height: '2rem',
+                    border: `2px solid ${colors.border}`,
+                    borderTopColor: colors.primary,
+                    borderRadius: '50%',
+                    margin: '0 auto',
+                    marginBottom: spacing.xs,
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                <p
+                  style={{
+                    fontSize: theme.fontSizes.sm,
+                    lineHeight: theme.lineHeights.sm,
+                    margin: 0,
+                  }}
+                >
+                  正在加载聊天记录...
+                </p>
               </div>
             )}
 
@@ -140,7 +193,12 @@ export function ChatInterface({
 
                   {/* 如果是搜索结果消息且有对应的TED候选列表，则显示 */}
                   {hasResults && tedCandidates && tedCandidates.length > 0 && (
-                    <div className="mt-4 mb-6">
+                    <div
+                      style={{
+                        marginTop: spacing.md,
+                        marginBottom: spacing.lg,
+                      }}
+                    >
                       <TEDList
                         teds={tedCandidates}
                         selectedUrls={selectedUrls}
@@ -166,7 +224,7 @@ export function ChatInterface({
                       />
 
                       {/* 快速操作建议 */}
-                      <div className="mt-4">
+                      <div style={{ marginTop: spacing.md }}>
                         <QuickSuggestions
                           suggestions={actionSuggestions}
                           onSelect={onSendMessage}
@@ -193,7 +251,13 @@ export function ChatInterface({
 
             {/* 初始快速建议 */}
             {messages.length === 0 && showSuggestions && (
-              <div className="space-y-4">
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: spacing.md,
+                }}
+              >
                 <QuickSuggestions
                   suggestions={hotTopics}
                   onSelect={onSendMessage}
@@ -209,8 +273,20 @@ export function ChatInterface({
             )}
 
             <div ref={messagesEndRef} />
+
+            {/* 全局批量操作栏 - 移到ScrollArea内部，实现统一滚动 */}
+            {selectedUrls.length > 0 && (
+              <div style={{ marginTop: spacing.md }}>
+                <BatchActionBar
+                  selectedCount={selectedUrls.length}
+                  onStartBatch={onStartBatch}
+                  onClear={onClearSelection}
+                  disabled={disabled || isSearching}
+                />
+              </div>
+            )}
           </div>
-        </ScrollArea>
+        </div>
 
       </div>
     </MantineCard>

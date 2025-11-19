@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Tabs as MantineTabs, MantineColor, useMantineTheme } from '@mantine/core'
+import { getSemanticColors, getSpacing } from "@/theme/mantine-theme"
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -60,8 +61,12 @@ const TabsRoot = React.forwardRef<HTMLDivElement, SimpleTabsProps>(
     ...props
   }, ref) => {
     const theme = useMantineTheme()
-    const defaultColor = color || theme.colors.primary[6]
-    const defaultRadius = radius || theme.radius.sm
+    const colors = getSemanticColors(theme)
+    const spacing = getSpacing(theme)
+    const defaultColor = color || colors.primary
+    
+    // 使用主题圆角系统
+    const tabsRadius = radius ? theme.radius[radius] : theme.radius.sm
 
     return (
       <MantineTabs
@@ -70,11 +75,55 @@ const TabsRoot = React.forwardRef<HTMLDivElement, SimpleTabsProps>(
         defaultValue={defaultValue}
         onChange={onChange}
         variant={variant}
-        radius={defaultRadius}
+        radius={tabsRadius}
         orientation={orientation}
         color={defaultColor}
         keepMounted={keepMounted}
         className={cn(className)}
+        styles={{
+          root: {
+            color: colors.text,
+          },
+          list: {
+            backgroundColor: colors.surface,
+            border: `1px solid ${colors.border}`,
+            borderRadius: tabsRadius,
+            padding: spacing.xs,
+          },
+          tab: {
+            color: colors.textSecondary,
+            fontSize: theme.fontSizes.md,
+            lineHeight: theme.lineHeights.md,
+            fontWeight: 500,
+            padding: `${spacing.sm} ${spacing.md}`,
+            borderRadius: tabsRadius,
+            border: 'none',
+            transition: 'all 200ms ease',
+            
+            '&[data-active]': {
+              color: colors.background,
+              backgroundColor: colors.primary,
+            },
+            
+            '&:hover': {
+              backgroundColor: colors.surfaceHover,
+              color: colors.text,
+            },
+            
+            '&:focus': {
+              outline: `2px solid ${colors.primary}`,
+              outlineOffset: 2,
+            }
+          },
+          panel: {
+            padding: spacing.md,
+            color: colors.text,
+            backgroundColor: colors.background,
+            border: `1px solid ${colors.border}`,
+            borderTop: 'none',
+            borderRadius: `0 0 ${tabsRadius} ${tabsRadius}`,
+          }
+        }}
         {...props}
       >
         {children}

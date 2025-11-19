@@ -1,6 +1,7 @@
 import * as React from "react"
 import { TextInput, NumberInput as MantineNumberInput, Group, Text, Input as MantineInput, Box, useMantineTheme } from "@mantine/core"
 import { MantineRadius } from "@mantine/core"
+import { getSemanticColors, getSpacing, getResponsiveProps } from "@/theme/mantine-theme"
 import { cn } from "@/lib/utils"
 
 // 增强的类型定义
@@ -22,7 +23,12 @@ interface SimpleInputProps {
   variant?: InputVariant
   size?: InputSize
   radius?: InputRadius
+  id?: string
+  name?: string
+  defaultValue?: string
+  type?: string
   withAsterisk?: boolean
+  responsive?: boolean
 }
 
 // 增强的数字输入接口
@@ -40,8 +46,8 @@ interface SimpleNumberInputProps {
   size?: InputSize
   radius?: InputRadius
   withAsterisk?: boolean
+  responsive?: boolean
 }
-
 
 // 增强的基础输入组件
 const InputRoot = React.forwardRef<HTMLInputElement, SimpleInputProps>(
@@ -59,10 +65,16 @@ const InputRoot = React.forwardRef<HTMLInputElement, SimpleInputProps>(
     size = "md",
     radius,
     withAsterisk = false,
+    responsive = true,
     ...props
   }, ref) => {
     const theme = useMantineTheme()
-    const defaultRadius = radius || theme.radius.sm
+    const colors = getSemanticColors(theme)
+    const spacing = getSpacing(theme)
+    const responsiveProps = getResponsiveProps(theme)
+    
+    // 使用主题圆角系统
+    const inputRadius = radius ? theme.radius[radius] : theme.radius.sm
 
     return (
       <MantineInput.Wrapper
@@ -70,7 +82,29 @@ const InputRoot = React.forwardRef<HTMLInputElement, SimpleInputProps>(
         required={required}
         withAsterisk={withAsterisk}
         error={error}
-        className={className}
+        className={cn(className)}
+        style={responsive ? responsiveProps.stackOnMobile : undefined}
+        styles={{
+          label: {
+            color: colors.text,
+            fontSize: theme.fontSizes.sm,
+            lineHeight: theme.lineHeights.sm,
+            fontWeight: 500,
+            marginBottom: spacing.xs,
+          },
+          description: {
+            color: colors.textSecondary,
+            fontSize: theme.fontSizes.xs,
+            lineHeight: theme.lineHeights.sm,
+            marginBottom: spacing.xs,
+          },
+          error: {
+            color: colors.error,
+            fontSize: theme.fontSizes.xs,
+            lineHeight: theme.lineHeights.sm,
+            marginTop: spacing.xs,
+          },
+        }}
       >
         <TextInput
           ref={ref}
@@ -81,8 +115,39 @@ const InputRoot = React.forwardRef<HTMLInputElement, SimpleInputProps>(
           disabled={disabled}
           error={!!error}
           size={size}
-          radius={defaultRadius}
+          radius={inputRadius}
           variant={variant}
+          styles={{
+            input: {
+              backgroundColor: colors.background,
+              color: colors.text,
+              border: `1px solid ${error ? colors.error : colors.border}`,
+              fontSize: theme.fontSizes.md,
+              lineHeight: theme.lineHeights.md,
+              padding: `${spacing.sm} ${spacing.md}`,
+              borderRadius: theme.radius.sm,
+              transition: 'all 200ms ease',
+              
+              '&::placeholder': {
+                color: colors.textMuted,
+              },
+              
+              '&:focus': {
+                borderColor: error ? colors.error : colors.borderFocus,
+                outline: 'none',
+              },
+              
+              '&[data-error]': {
+                borderColor: colors.error,
+              },
+              
+              '&[data-disabled]': {
+                backgroundColor: colors.surface,
+                color: colors.textDisabled,
+                cursor: 'not-allowed',
+              }
+            },
+          }}
           {...props}
         />
       </MantineInput.Wrapper>
@@ -107,10 +172,16 @@ const CustomNumberInput = React.forwardRef<HTMLInputElement, SimpleNumberInputPr
     size = "md",
     radius,
     withAsterisk = false,
+    responsive = true,
     ...props
   }, ref) => {
     const theme = useMantineTheme()
-    const defaultRadius = radius || theme.radius.sm
+    const colors = getSemanticColors(theme)
+    const spacing = getSpacing(theme)
+    const responsiveProps = getResponsiveProps(theme)
+    
+    // 使用主题圆角系统
+    const inputRadius = radius ? theme.radius[radius] : theme.radius.sm
 
     return (
       <MantineInput.Wrapper
@@ -118,7 +189,29 @@ const CustomNumberInput = React.forwardRef<HTMLInputElement, SimpleNumberInputPr
         required={required}
         withAsterisk={withAsterisk}
         error={error}
-        className={className}
+        className={cn(className)}
+        style={responsive ? responsiveProps.stackOnMobile : undefined}
+        styles={{
+          label: {
+            color: colors.text,
+            fontSize: theme.fontSizes.sm,
+            lineHeight: theme.lineHeights.sm,
+            fontWeight: 500,
+            marginBottom: spacing.xs,
+          },
+          description: {
+            color: colors.textSecondary,
+            fontSize: theme.fontSizes.xs,
+            lineHeight: theme.lineHeights.sm,
+            marginBottom: spacing.xs,
+          },
+          error: {
+            color: colors.error,
+            fontSize: theme.fontSizes.xs,
+            lineHeight: theme.lineHeights.sm,
+            marginTop: spacing.xs,
+          },
+        }}
       >
         <MantineNumberInput
           ref={ref}
@@ -129,8 +222,48 @@ const CustomNumberInput = React.forwardRef<HTMLInputElement, SimpleNumberInputPr
           disabled={disabled}
           error={!!error}
           size={size}
-          radius={defaultRadius}
+          radius={inputRadius}
           variant={variant}
+          styles={{
+            input: {
+              backgroundColor: colors.background,
+              color: colors.text,
+              border: `1px solid ${error ? colors.error : colors.border}`,
+              fontSize: theme.fontSizes.md,
+              lineHeight: theme.lineHeights.md,
+              padding: `${spacing.sm} ${spacing.md}`,
+              borderRadius: theme.radius.sm,
+              transition: 'all 200ms ease',
+              
+              '&::placeholder': {
+                color: colors.textMuted,
+              },
+              
+              '&:focus': {
+                borderColor: error ? colors.error : colors.borderFocus,
+                outline: 'none',
+              },
+              
+              '&[data-error]': {
+                borderColor: colors.error,
+              },
+              
+              '&[data-disabled]': {
+                backgroundColor: colors.surface,
+                color: colors.textDisabled,
+                cursor: 'not-allowed',
+              }
+            },
+            controls: {
+              '& button': {
+                color: colors.textSecondary,
+                
+                '&:hover': {
+                  backgroundColor: colors.surfaceHover,
+                }
+              }
+            }
+          }}
           {...props}
         />
       </MantineInput.Wrapper>

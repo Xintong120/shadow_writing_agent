@@ -4,7 +4,7 @@ import { ButtonProps as MantineButtonProps } from "@mantine/core"
 import { cn } from "@/lib/utils"
 
 // 使用Mantine Button组件的直接类型定义
-type ButtonVariant = "filled" | "outline" | "light" | "subtle" | "transparent" | "white" 
+type ButtonVariant = "filled" | "outline" | "light" | "subtle" | "transparent" | "white" | "destructive"
 type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl" | "icon"
 type ButtonRadius = "xs" | "sm" | "md" | "lg" | "xl"
 
@@ -18,14 +18,16 @@ interface ButtonProps extends Omit<MantineButtonProps, 'variant' | 'size'> {
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "filled", size = "md", radius, children, ...props }, ref) => {
     const theme = useMantineTheme()
-    const defaultRadius = radius || theme.radius.md
+    
+    // 使用主题圆角系统
+    const buttonRadius = radius ? theme.radius[radius] : theme.radius.md
 
     return (
       <MantineButton
         className={className}
         variant={variant}
         size={size}
-        radius={defaultRadius}
+        radius={buttonRadius}
         ref={ref}
         {...props}
       >

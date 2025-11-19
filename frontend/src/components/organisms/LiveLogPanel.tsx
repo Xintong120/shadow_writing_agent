@@ -3,7 +3,8 @@ import { Button } from '@/components/atoms/button'
 import { ScrollArea } from '@/components/atoms/scrollarea'
 import { Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ComponentProps } from 'react'
+import { useMantineTheme, Box, Text } from '@mantine/core'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 
 /**
  * LiveLogPanel - 实时日志面板组件
@@ -18,20 +19,26 @@ interface LogEntry {
   log?: string
 }
 
-interface LiveLogPanelProps extends Omit<ComponentProps<'div'>, 'children'> {
+interface LiveLogPanelProps {
   logs?: LogEntry[]
   onClearLogs?: () => void
   className?: string
+  style?: React.CSSProperties
+  onClick?: () => void
 }
 
 function LiveLogPanel({
   logs = [],
   onClearLogs,
   className,
+  style,
   ...props
 }: LiveLogPanelProps) {
-  const scrollAreaRef = useRef(null)
-  const endRef = useRef(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const endRef = useRef<HTMLDivElement>(null)
+  const theme = useMantineTheme()
+  const colors = getSemanticColors(theme)
+  const spacing = getSpacing(theme)
 
   // 自动滚动到最新日志
   useEffect(() => {
@@ -41,17 +48,17 @@ function LiveLogPanel({
   }, [logs])
 
   // 日志类型样式映射
-  const getLogStyle = (type: LogEntry['type']): string => {
+  const getLogStyle = (type: LogEntry['type']): React.CSSProperties => {
     switch (type) {
       case 'error':
-        return 'text-destructive'
+        return { color: colors.error }
       case 'success':
-        return 'text-green-600'
+        return { color: colors.success }
       case 'warning':
-        return 'text-yellow-600'
+        return { color: colors.warning }
       case 'info':
       default:
-        return 'text-foreground'
+        return { color: colors.info }
     }
   }
 
@@ -67,27 +74,51 @@ function LiveLogPanel({
   const displayLogs = logs.slice(-100)
 
   return (
-    <div
-      className={cn(
-        "bg-neutral-950 text-neutral-50 rounded-lg border overflow-hidden",
-        className
-      )}
+    <Box
+      className={cn(className)}
+      style={{
+        backgroundColor: theme.colors.gray[9],
+        color: theme.colors.gray[0],
+        borderRadius: theme.radius.lg,
+        border: `1px solid ${theme.colors.gray[8]}`,
+        overflow: 'hidden',
+        ...style
+      }}
       {...props}
     >
       {/* 标题栏 */}
-      <div className="flex items-center justify-between p-3 border-b border-neutral-800">
-        <h3 className="text-sm font-medium">📋 实时日志</h3>
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: spacing.sm,
+          borderBottom: `1px solid ${theme.colors.gray[8]}`
+        }}
+      >
+        <Text
+          size="sm"
+          fw={500}
+          style={{ color: theme.colors.gray[0] }}
+        >
+          📋 实时日志
+        </Text>
         <Button
-          variant="ghost"
+          variant="subtle"
           size="sm"
           onClick={onClearLogs}
           disabled={!logs.length}
-          className="h-7 px-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800"
+          style={{
+            height: '28px',
+            padding: '0 8px',
+            color: theme.colors.gray[4],
+            backgroundColor: 'transparent'
+          }}
           aria-label="清空日志"
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 size={12} />
         </Button>
-      </div>
+      </Box>
 
       {/* 日志内容 */}
       <ScrollArea
@@ -97,42 +128,73 @@ function LiveLogPanel({
         aria-live="polite"
         aria-atomic="false"
       >
-        <div className="space-y-1">
+        <Box style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing.xs,
+          fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace'
+        }}>
           {displayLogs.length === 0 ? (
-            <div className="text-neutral-500 italic">
+            <Box
+              style={{
+                color: theme.colors.gray[5],
+                fontStyle: 'italic'
+              }}
+            >
               暂无日志...
-            </div>
+            </Box>
           ) : (
             displayLogs.map((log, index) => (
-              <div
+              <Box
                 key={index}
-                className={cn(
-                  "flex gap-2 leading-relaxed",
-                  getLogStyle(log.type)
-                )}
+                style={{
+                  display: 'flex',
+                  gap: spacing.xs,
+                  lineHeight: 1.5,
+                  ...getLogStyle(log.type)
+                }}
               >
-                <span className="text-neutral-500 shrink-0">
+                <Text
+                  size="xs"
+                  style={{
+                    color: theme.colors.gray[5],
+                    flexShrink: 0
+                  }}
+                >
                   [{formatTimestamp(log.timestamp)}]
-                </span>
-                <span className="break-all">
+                </Text>
+                <Text
+                  size="xs"
+                  style={{
+                    wordBreak: 'break-word'
+                  }}
+                >
                   {log.message || log.log || ''}
-                </span>
-              </div>
+                </Text>
+              </Box>
             ))
           )}
-        </div>
+        </Box>
 
         {/* 滚动锚点 */}
-        <div ref={endRef} />
+        <Box ref={endRef} />
       </ScrollArea>
 
       {/* 日志数量提示 */}
       {logs.length > 100 && (
-        <div className="px-3 py-1 bg-neutral-900 text-xs text-neutral-500 border-t border-neutral-800">
+        <Box
+          style={{
+            padding: `${spacing.xs} ${spacing.sm}`,
+            backgroundColor: theme.colors.gray[9],
+            fontSize: theme.fontSizes.xs,
+            color: theme.colors.gray[5],
+            borderTop: `1px solid ${theme.colors.gray[8]}`
+          }}
+        >
           显示最近 100 条，共 {logs.length} 条
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }
 

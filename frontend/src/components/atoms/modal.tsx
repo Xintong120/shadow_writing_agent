@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Modal as MantineModal, useMantineTheme } from '@mantine/core'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -34,7 +35,11 @@ const Modal = React.forwardRef<HTMLDivElement, SimpleModalProps>(
     ...props
   }, ref) => {
     const theme = useMantineTheme()
-    const defaultRadius = radius || theme.radius.sm
+    const colors = getSemanticColors(theme)
+    const spacing = getSpacing(theme)
+    
+    // 使用主题圆角系统
+    const modalRadius = radius ? theme.radius[radius] : theme.radius.md
 
     return (
       <MantineModal
@@ -43,14 +48,30 @@ const Modal = React.forwardRef<HTMLDivElement, SimpleModalProps>(
         onClose={onClose}
         title={title}
         size={size}
-        radius={defaultRadius}
+        radius={modalRadius}
         centered={centered}
         keepMounted={keepMounted}
         className={cn(className)}
         styles={{
           content: {
-            boxShadow: theme.shadows.md, // 使用主题阴影
-          }
+            backgroundColor: colors.background,
+            color: colors.text,
+            border: `1px solid ${colors.border}`,
+            // 保留硬编码阴影（符合新策略）
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          },
+          header: {
+            backgroundColor: colors.surface,
+            borderBottom: `1px solid ${colors.border}`,
+            color: colors.text,
+          },
+          body: {
+            backgroundColor: colors.background,
+            color: colors.text,
+          },
+          overlay: {
+            backgroundColor: 'rgba(0,0,0,0.5)',
+          },
         }}
         {...props}
       >

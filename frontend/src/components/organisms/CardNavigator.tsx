@@ -2,29 +2,19 @@
  * 卡片导航容器组件
  *
  * 功能：
- * - 使用 shadcn/ui Carousel 实现卡片翻页
+ * - 简单的翻页实现，确保可靠性
  * - 键盘导航支持（← → 方向键）
- * - 进度点指示器
  * - 导航按钮
  * - 平滑动画过渡
- *
- * 技术实现：
- * - 基于 embla-carousel 的 Carousel 组件
- * - 自动监听 slide 变化
- * - 完整的无障碍支持
  */
 
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Carousel } from '@/components/organisms/Carousel'
-import { Carousel as MantineCarousel } from '@mantine/carousel'
 import { Button } from '@/components/atoms/button'
 import ShadowWritingCard from './ShadowWritingCard'
-import ProgressDots from '../molecules/ProgressDots'
 import type { ShadowWritingResult } from '@/types'
-import { ComponentProps } from 'react'
 import { Text, useMantineTheme } from '@mantine/core'
-import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
+import { getSemanticColors, getSpacing, getResponsiveProps } from '@/theme/mantine-theme'
 
 interface TEDInfo {
   title: string
@@ -32,7 +22,7 @@ interface TEDInfo {
   url: string
 }
 
-interface CardNavigatorProps extends Omit<ComponentProps<'div'>, 'children'> {
+interface CardNavigatorProps {
   results: ShadowWritingResult[]
   tedInfo: TEDInfo
   initialIndex?: number
@@ -49,139 +39,172 @@ function CardNavigator({
   const theme = useMantineTheme()
   const colors = getSemanticColors(theme)
   const spacing = getSpacing(theme)
+  const responsive = getResponsiveProps(theme)
 
-  const [api, setApi] = useState<any>(null)
   const [current, setCurrent] = useState(initialIndex)
   const [highlightEnabled, setHighlightEnabled] = useState(true)
-
-  // 设置初始索引
-  useEffect(() => {
-    if (api && initialIndex !== current) {
-      api.scrollTo(initialIndex)
-    }
-  }, [api, initialIndex])
-
-  // 监听 slide 变化
-  useEffect(() => {
-    if (!api) return
-
-    setCurrent(api.selectedScrollSnap())
-
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap())
-    })
-  }, [api])
-
-  // 键盘导航
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (!api) return
-
-      switch (event.key) {
-        case 'ArrowLeft':
-          event.preventDefault()
-          api.scrollPrev()
-          break
-        case 'ArrowRight':
-          event.preventDefault()
-          api.scrollNext()
-          break
-        case 'Home':
-          event.preventDefault()
-          api.scrollTo(0)
-          break
-        case 'End':
-          event.preventDefault()
-          api.scrollTo(results.length - 1)
-          break
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [api, results.length])
 
   const handleToggleHighlight = useCallback(() => {
     setHighlightEnabled(prev => !prev)
   }, [])
 
-  const handleViewParagraph = useCallback((result) => {
-    // 这里可以实现查看完整段落的逻辑
+  const handleViewParagraph = useCallback((result: ShadowWritingResult) => {
     console.log('查看段落:', result.paragraph)
   }, [])
 
   const handleCopy = useCallback(() => {
-    // 这里可以添加复制成功的提示
     console.log('复制成功')
   }, [])
 
   const canGoPrev = current > 0
   const canGoNext = current < results.length - 1
 
+  const handleNext = useCallback(() => {
+    if (canGoNext) {
+      setCurrent(prev => prev + 1)
+    }
+  }, [canGoNext])
+
+  const handlePrev = useCallback(() => {
+    if (canGoPrev) {
+      setCurrent(prev => prev - 1)
+    }
+  }, [canGoPrev])
+
+  // 键盘导航
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault()
+          handlePrev()
+          break
+        case 'ArrowRight':
+          event.preventDefault()
+          handleNext()
+          break
+        case 'Home':
+          event.preventDefault()
+          setCurrent(0)
+          break
+        case 'End':
+          event.preventDefault()
+          setCurrent(results.length - 1)
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleNext, handlePrev, results.length])
+
   return (
-    <div className={`w-full max-w-4xl mx-auto ${className}`} {...props}>
+    <div
+      style={{
+        width: '100%',
+        maxWidth: '56rem',
+        margin: '0 auto',
+      }}
+      className={className}
+      {...props}
+    >
       {/* 自定义导航按钮 */}
-      <div className="flex items-center justify-center gap-4 mb-6">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: spacing.md,
+          marginBottom: spacing.lg,
+          ...responsive.stackOnMobile.container,
+        }}
+      >
         <Button
           variant="outline"
           size="sm"
-          onClick={() => api?.scrollPrev()}
+          onClick={handlePrev}
           disabled={!canGoPrev}
           aria-label={`上一个卡片 (当前第 ${current + 1} / ${results.length} 个)`}
         >
-          <ChevronLeft className="h-4 w-4 mr-2" />
+          <ChevronLeft style={{ height: '1rem', width: '1rem', marginRight: spacing.xs }} />
           上一个
         </Button>
 
-        <Text size="sm" style={{ color: colors.textMuted, padding: `0 ${spacing.md}` }}>
+        <Text
+          style={{
+            fontSize: theme.fontSizes.sm,
+            lineHeight: theme.lineHeights.sm,
+            color: colors.textMuted,
+            padding: `0 ${spacing.md}`,
+          }}
+        >
           {current + 1} / {results.length}
         </Text>
 
         <Button
           variant="outline"
           size="sm"
-          onClick={() => api?.scrollNext()}
+          onClick={handleNext}
           disabled={!canGoNext}
           aria-label={`下一个卡片 (当前第 ${current + 1} / ${results.length} 个)`}
         >
           下一个
-          <ChevronRight className="h-4 w-4 ml-2" />
+          <ChevronRight style={{ height: '1rem', width: '1rem', marginLeft: spacing.xs }} />
         </Button>
       </div>
 
-      {/* Carousel 容器 */}
-      <MantineCarousel
-        getEmblaApi={setApi}
-        className="w-full"
-        slideGap="md"
+      {/* 使用更简单的翻页显示 */}
+      <div
+        style={{
+          position: 'relative',
+          minHeight: '600px',
+          width: '100%',
+        }}
       >
-        <MantineCarousel.Slide>
-          {results.map((result, index) => (
-            <div key={index} className="min-w-0 shrink-0 grow-0 basis-full">
-              <ShadowWritingCard
-                result={result}
-                highlightEnabled={highlightEnabled}
-                onToggleHighlight={handleToggleHighlight}
-                onViewParagraph={() => handleViewParagraph(result)}
-                onCopy={handleCopy}
-                className="h-full"
-              />
-            </div>
-          ))}
-        </MantineCarousel.Slide>
-      </MantineCarousel>
-
-      {/* 进度点指示器 */}
-      <ProgressDots
-        total={results.length}
-        current={current}
-        onChange={(index) => api?.scrollTo(index)}
-        className="mt-6"
-      />
+        {/* 隐藏所有卡片，只显示当前索引的卡片 */}
+        {results.map((result, index) => (
+          <div
+            key={index}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              opacity: index === current ? 1 : 0,
+              transform: `translateX(${(index - current) * 100}%)`,
+              transition: 'all 0.3s ease',
+              padding: spacing.md,
+            }}
+          >
+            <ShadowWritingCard
+              result={result}
+              highlightEnabled={highlightEnabled}
+              onToggleHighlight={handleToggleHighlight}
+              onViewParagraph={() => handleViewParagraph(result)}
+              onCopy={handleCopy}
+              style={{
+                height: '100%',
+                width: '100%',
+              }}
+            />
+          </div>
+        ))}
+      </div>
 
       {/* 键盘提示 */}
-      <div className="text-center mt-4">
-        <Text size="xs" style={{ color: colors.textMuted }}>
+      <div
+        style={{
+          textAlign: 'center',
+          marginTop: spacing.md,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: theme.fontSizes.xs,
+            lineHeight: theme.lineHeights.xs,
+            color: colors.textMuted,
+          }}
+        >
           💡 使用 ← → 方向键快速导航 • H 键切换高亮显示
         </Text>
       </div>

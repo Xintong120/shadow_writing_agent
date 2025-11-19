@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { useMantineTheme } from '@mantine/core'
-import { getSpacing } from '@/theme/mantine-theme'
+import { getSemanticColors, getSpacing, getResponsiveProps } from '@/theme/mantine-theme'
 
 /**
  * LayoutContainer - 页面容器组件
@@ -119,21 +119,62 @@ export function PageSection({
 /**
  * Grid - 响应式网格组件
  * 基于12列网格系统的灵活布局组件
+ * 迁移到主题令牌系统，保持布局功能完整性
  */
 export function Grid({
   columns = 12,
-  gap = 'gap-4 lg:gap-6',
+  gap = 'md',
+  responsive,
   className,
   children,
   ...props
 }) {
+  const theme = useMantineTheme()
+  const spacing = getSpacing(theme)
+  const colors = getSemanticColors(theme)
+  const responsiveProps = getResponsiveProps(theme)
 
-  // 网格布局类名
-  const gridClass = `grid grid-cols-${columns} ${gap}`
+  // 间距映射
+  const gapMap = {
+    xs: spacing.xs,
+    sm: spacing.sm,
+    md: spacing.md,
+    lg: spacing.lg,
+    xl: spacing.xl,
+    '2xl': spacing['2xl']
+  }
+
+  // 构建网格样式
+  const gridStyles: Record<string, any> = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+    gap: gapMap[gap] || spacing.md,
+    backgroundColor: colors.background,
+    color: colors.text,
+  }
+
+  // 处理响应式
+  if (responsive) {
+    Object.entries(responsive).forEach(([breakpoint, columns]) => {
+      const mediaQuery = {
+        sm: '(max-width: 767px)',
+        md: '(min-width: 768px) and (max-width: 991px)', 
+        lg: '(min-width: 992px)',
+        xl: '(min-width: 1200px)'
+      }[breakpoint]
+      
+      if (mediaQuery) {
+        gridStyles[`@media ${mediaQuery}`] = {
+          gridTemplateColumns: `repeat(${columns}, 1fr)`
+        }
+      }
+    })
+  }
 
   return (
     <div
-      className={cn(gridClass, className)}
+      className={cn(className)}
+      style={gridStyles}
       {...props}
     >
       {children}
@@ -144,6 +185,7 @@ export function Grid({
 /**
  * GridItem - 网格项组件
  * 网格布局中的单个项目
+ * 迁移到主题令牌系统，保持布局功能完整性
  */
 export function GridItem({
   span = 1,
@@ -152,45 +194,43 @@ export function GridItem({
   children,
   ...props
 }) {
-  // 基础跨度类名
-  const spanMap = {
-    1: 'col-span-1', 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4',
-    5: 'col-span-5', 6: 'col-span-6', 7: 'col-span-7', 8: 'col-span-8',
-    9: 'col-span-9', 10: 'col-span-10', 11: 'col-span-11', 12: 'col-span-12'
+  const theme = useMantineTheme()
+  const colors = getSemanticColors(theme)
+
+  // 构建网格项样式
+  const gridItemStyles: Record<string, any> = {
+    backgroundColor: colors.surface,
+    color: colors.text,
+    borderRadius: theme.radius.sm,
   }
 
-  let spanClass = spanMap[span] || spanMap[1]
+  // 处理跨度
+  if (span !== 1) {
+    gridItemStyles.gridColumn = `span ${span}`
+  }
 
   // 处理响应式跨度
   if (responsive) {
-    const responsiveClasses = []
     Object.entries(responsive).forEach(([breakpoint, spanValue]) => {
-      const responsiveMap = {
-        sm: { 1: 'sm:col-span-1', 2: 'sm:col-span-2', 3: 'sm:col-span-3', 4: 'sm:col-span-4',
-              5: 'sm:col-span-5', 6: 'sm:col-span-6', 7: 'sm:col-span-7', 8: 'sm:col-span-8',
-              9: 'sm:col-span-9', 10: 'sm:col-span-10', 11: 'sm:col-span-11', 12: 'sm:col-span-12' },
-        md: { 1: 'md:col-span-1', 2: 'md:col-span-2', 3: 'md:col-span-3', 4: 'md:col-span-4',
-              5: 'md:col-span-5', 6: 'md:col-span-6', 7: 'md:col-span-7', 8: 'md:col-span-8',
-              9: 'md:col-span-9', 10: 'md:col-span-10', 11: 'md:col-span-11', 12: 'md:col-span-12' },
-        lg: { 1: 'lg:col-span-1', 2: 'lg:col-span-2', 3: 'lg:col-span-3', 4: 'lg:col-span-4',
-              5: 'lg:col-span-5', 6: 'lg:col-span-6', 7: 'lg:col-span-7', 8: 'lg:col-span-8',
-              9: 'lg:col-span-9', 10: 'lg:col-span-10', 11: 'lg:col-span-11', 12: 'lg:col-span-12' },
-        xl: { 1: 'xl:col-span-1', 2: 'xl:col-span-2', 3: 'xl:col-span-3', 4: 'xl:col-span-4',
-              5: 'xl:col-span-5', 6: 'xl:col-span-6', 7: 'xl:col-span-7', 8: 'xl:col-span-8',
-              9: 'xl:col-span-9', 10: 'xl:col-span-10', 11: 'xl:col-span-11', 12: 'xl:col-span-12' }
-      }
-      if (responsiveMap[breakpoint]?.[spanValue]) {
-        responsiveClasses.push(responsiveMap[breakpoint][spanValue])
+      const mediaQuery = {
+        sm: '(max-width: 767px)',
+        md: '(min-width: 768px) and (max-width: 991px)', 
+        lg: '(min-width: 992px)',
+        xl: '(min-width: 1200px)'
+      }[breakpoint]
+      
+      if (mediaQuery && spanValue !== span) {
+        gridItemStyles[`@media ${mediaQuery}`] = {
+          gridColumn: `span ${spanValue}`
+        }
       }
     })
-    if (responsiveClasses.length > 0) {
-      spanClass = responsiveClasses.join(' ')
-    }
   }
 
   return (
     <div
-      className={cn(spanClass, className)}
+      className={cn(className)}
+      style={gridItemStyles}
       {...props}
     >
       {children}
@@ -201,29 +241,50 @@ export function GridItem({
 /**
  * Stack - 垂直堆叠布局组件
  * 统一的垂直间距布局
+ * 迁移到主题令牌系统，保持布局功能完整性
  */
 export function Stack({
-  spacing = 'gap-md lg:gap-lg',
+  spacing: spacingSize = 'md',
   align = 'stretch',
   className,
   children,
   ...props
 }) {
-  const alignClass = {
-    start: 'items-start',
-    center: 'items-center',
-    end: 'items-end',
-    stretch: 'items-stretch',
-  }[align] || 'items-stretch'
+  const theme = useMantineTheme()
+  const spacing = getSpacing(theme)
+  const colors = getSemanticColors(theme)
+
+  // 间距映射
+  const spacingMap = {
+    xs: spacing.xs,
+    sm: spacing.sm,
+    md: spacing.md,
+    lg: spacing.lg,
+    xl: spacing.xl,
+    '2xl': spacing['2xl']
+  }
+
+  // 对齐映射
+  const alignMap = {
+    start: 'flex-start',
+    center: 'center',
+    end: 'flex-end',
+    stretch: 'stretch',
+  }
+
+  const stackStyles: Record<string, any> = {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: alignMap[align] || 'stretch',
+    gap: spacingMap[spacingSize] || spacing.md,
+    backgroundColor: colors.background,
+    color: colors.text,
+  }
 
   return (
     <div
-      className={cn(
-        'flex flex-col',
-        alignClass,
-        spacing,
-        className
-      )}
+      className={cn(className)}
+      style={stackStyles}
       {...props}
     >
       {children}
@@ -234,9 +295,10 @@ export function Stack({
 /**
  * Inline - 水平内联布局组件
  * 统一的水平间距布局
+ * 迁移到主题令牌系统，保持布局功能完整性
  */
 export function Inline({
-  spacing = 'gap-sm lg:gap-md',
+  spacing: spacingSize = 'sm',
   align = 'center',
   justify = 'start',
   wrap = true,
@@ -244,35 +306,54 @@ export function Inline({
   children,
   ...props
 }) {
-  const alignClass = {
-    start: 'items-start',
-    center: 'items-center',
-    end: 'items-end',
-    baseline: 'items-baseline',
-    stretch: 'items-stretch',
-  }[align] || 'items-center'
+  const theme = useMantineTheme()
+  const spacing = getSpacing(theme)
+  const colors = getSemanticColors(theme)
 
-  const justifyClass = {
-    start: 'justify-start',
-    center: 'justify-center',
-    end: 'justify-end',
-    between: 'justify-between',
-    around: 'justify-around',
-    evenly: 'justify-evenly',
-  }[justify] || 'justify-start'
+  // 间距映射
+  const spacingMap = {
+    xs: spacing.xs,
+    sm: spacing.sm,
+    md: spacing.md,
+    lg: spacing.lg,
+    xl: spacing.xl,
+    '2xl': spacing['2xl']
+  }
 
-  const wrapClass = wrap ? 'flex-wrap' : 'flex-nowrap'
+  // 对齐映射
+  const alignMap = {
+    start: 'flex-start',
+    center: 'center',
+    end: 'flex-end',
+    baseline: 'baseline',
+    stretch: 'stretch',
+  }
+
+  // 分布映射
+  const justifyMap = {
+    start: 'flex-start',
+    center: 'center',
+    end: 'flex-end',
+    between: 'space-between',
+    around: 'space-around',
+    evenly: 'space-evenly',
+  }
+
+  const inlineStyles: Record<string, any> = {
+    display: 'flex',
+    flexDirection: 'row' as const,
+    alignItems: alignMap[align] || 'center',
+    justifyContent: justifyMap[justify] || 'flex-start',
+    gap: spacingMap[spacingSize] || spacing.sm,
+    flexWrap: wrap ? 'wrap' : 'nowrap',
+    backgroundColor: colors.background,
+    color: colors.text,
+  }
 
   return (
     <div
-      className={cn(
-        'flex',
-        alignClass,
-        justifyClass,
-        wrapClass,
-        spacing,
-        className
-      )}
+      className={cn(className)}
+      style={inlineStyles}
       {...props}
     >
       {children}
@@ -283,6 +364,7 @@ export function Inline({
 /**
  * SidebarLayout - 侧边栏布局组件
  * 专门用于有侧边栏的页面布局
+ * 迁移到主题令牌系统，保持布局功能完整性
  */
 export function SidebarLayout({
   sidebar,
@@ -290,22 +372,56 @@ export function SidebarLayout({
   className,
   ...props
 }) {
+  const theme = useMantineTheme()
+  const spacing = getSpacing(theme)
+  const colors = getSemanticColors(theme)
+
+  const layoutStyles = {
+    display: 'flex',
+    height: '100vh',
+    backgroundColor: colors.background,
+    color: colors.text,
+  }
+
+  const sidebarStyles = {
+    width: '5rem', // 80px - 保持原有尺寸
+    flexShrink: 0,
+    backgroundColor: colors.surface,
+    borderRight: `1px solid ${colors.border}`,
+    padding: spacing.md,
+  }
+
+  const mainStyles: Record<string, any> = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    minWidth: 0,
+    overflow: 'hidden',
+  }
+
+  const contentStyles = {
+    flex: 1,
+    overflow: 'auto',
+    padding: spacing.lg,
+    [theme.breakpoints.lg]: {
+      padding: spacing.xl,
+    },
+  }
+
   return (
     <div
-      className={cn(
-        'flex h-screen bg-background',
-        className
-      )}
+      className={cn(className)}
+      style={layoutStyles}
       {...props}
     >
       {/* 侧边栏 */}
-      <aside className="w-20 flex-shrink-0 bg-card border-r border-border">
+      <aside style={sidebarStyles}>
         {sidebar}
       </aside>
 
       {/* 主内容区 */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main className="flex-1 overflow-auto p-6 lg:p-8 focus:outline-none">
+      <div style={mainStyles}>
+        <main style={contentStyles} tabIndex={-1}>
           {children}
         </main>
       </div>
@@ -316,7 +432,7 @@ export function SidebarLayout({
 /**
  * DualColumnLayout - 双列布局组件
  * 用于侧边栏内容页面
- * 使用 Mantine 主题间距系统 + Tailwind 布局基础类
+ * 添加完整的响应式设计支持
  */
 export function DualColumnLayout({
   main,
@@ -326,19 +442,36 @@ export function DualColumnLayout({
 }) {
   const theme = useMantineTheme()
   const spacing = getSpacing(theme)
+  const colors = getSemanticColors(theme)
+  const responsiveProps = getResponsiveProps(theme)
 
   // 使用 Mantine 主题间距
-  const layoutStyles = {
+  const layoutStyles: Record<string, any> = {
     padding: `${spacing.md} ${spacing.md}`,
     [theme.breakpoints.lg]: {
       padding: `${spacing.lg} ${spacing.lg}`
     },
     paddingTop: spacing.lg,
-    paddingBottom: spacing.lg
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.background,
+    color: colors.text,
   }
 
-  const gridStyles = {
-    gap: spacing.lg
+  const gridStyles: Record<string, any> = {
+    display: 'grid',
+    gap: spacing.lg,
+    gridTemplateColumns: '1fr',
+    [theme.breakpoints.lg]: {
+      gridTemplateColumns: '2fr 1fr',
+    },
+  }
+
+  const mainStyles = {
+    minWidth: 0,
+  }
+
+  const sidebarStyles = {
+    minWidth: 0,
   }
 
   return (
@@ -350,14 +483,11 @@ export function DualColumnLayout({
       style={layoutStyles} // Mantine 主题间距
       {...props}
     >
-      <div
-        className="grid grid-cols-1 lg:grid-cols-3" // Tailwind 网格布局
-        style={gridStyles} // Mantine 主题间距
-      >
-        <main className="lg:col-span-2">
+      <div style={gridStyles}>
+        <main style={mainStyles}>
           {main}
         </main>
-        <aside className="lg:col-span-1">
+        <aside style={sidebarStyles}>
           {sidebar}
         </aside>
       </div>
@@ -368,7 +498,7 @@ export function DualColumnLayout({
 /**
  * CardGrid - 卡片网格布局组件
  * 专门用于卡片列表的网格布局
- * 使用 Mantine 主题间距系统 + Tailwind 布局基础类
+ * 添加颜色、字体、圆角主题令牌
  */
 export function CardGrid({
   children,
@@ -377,19 +507,31 @@ export function CardGrid({
 }) {
   const theme = useMantineTheme()
   const spacing = getSpacing(theme)
+  const colors = getSemanticColors(theme)
 
-  // 使用 Mantine 主题间距
-  const containerStyles = {
+  // 使用完整的 Mantine 主题令牌
+  const containerStyles: Record<string, any> = {
     padding: `${spacing.lg} ${spacing.md}`,
     [theme.breakpoints.lg]: {
       padding: `${spacing.lg} ${spacing.lg}`
     },
     paddingTop: spacing.lg,
-    paddingBottom: spacing.lg
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.background,
+    color: colors.text,
+    borderRadius: theme.radius.md,
   }
 
-  const gridStyles = {
-    gap: spacing.md
+  const gridStyles: Record<string, any> = {
+    display: 'grid',
+    gap: spacing.md,
+    gridTemplateColumns: '1fr',
+    [theme.breakpoints.md]: {
+      gridTemplateColumns: 'repeat(2, 1fr)',
+    },
+    [theme.breakpoints.lg]: {
+      gridTemplateColumns: 'repeat(3, 1fr)',
+    },
   }
 
   return (
@@ -398,13 +540,10 @@ export function CardGrid({
         'container mx-auto', // Tailwind 布局基础类
         className
       )}
-      style={containerStyles} // Mantine 主题间距
+      style={containerStyles} // Mantine 主题令牌
       {...props}
     >
-      <div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" // Tailwind 网格布局
-        style={gridStyles} // Mantine 主题间距
-      >
+      <div style={gridStyles}>
         {children}
       </div>
     </div>

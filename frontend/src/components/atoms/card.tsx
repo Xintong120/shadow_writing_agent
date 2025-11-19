@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Card as MantineCard, Text, Title, Group, Box, useMantineTheme } from "@mantine/core"
+import { getSemanticColors, getSpacing } from "@/theme/mantine-theme"
 import { cn } from "@/lib/utils"
 
 // 简化的类型定义
@@ -47,29 +48,50 @@ interface SimpleMediaProps {
 const CardRoot = React.forwardRef<HTMLDivElement, SimpleCardProps>(
   ({ variant = "default", size = "md", onClick, className, children, ...props }, ref) => {
     const theme = useMantineTheme()
+    const colors = getSemanticColors(theme)
+    const spacing = getSpacing(theme)
 
-    // 使用主题阴影和圆角
+    // 根据主题和变体配置样式
     const styles = {
       default: {
         withBorder: false,
-        className: "bg-white shadow-lg"
+        backgroundColor: colors.background,
+        border: `1px solid ${colors.border}`,
       },
       outline: {
-        withBorder: false,  // 改为false避免与阴影冲突
-        className: "bg-transparent border border-gray-200 dark:border-gray-700"
+        withBorder: false,
+        backgroundColor: colors.surface,
+        border: `1px solid ${colors.border}`,
       }
     }
 
     const cardStyles = styles[variant]
     const padding = size === "sm" ? "sm" : size === "lg" ? "lg" : "md"
+    
+    // 根据size映射圆角
+    const radiusMap = {
+      xs: theme.radius.xs,
+      sm: theme.radius.sm,
+      md: theme.radius.md,
+      lg: theme.radius.lg,
+      xl: theme.radius.xl,
+    }
 
     return (
       <MantineCard
         ref={ref}
         withBorder={cardStyles.withBorder}
         padding={padding}
-        radius={theme.radius.md}
-        className={cn(cardStyles.className, onClick && "cursor-pointer", className)}
+        radius={radiusMap[size]}
+        style={{
+          backgroundColor: cardStyles.backgroundColor,
+          border: cardStyles.border,
+          // 保留硬编码阴影（符合新策略）
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          cursor: onClick ? 'pointer' : 'default',
+          transition: 'all 200ms ease',
+        }}
+        className={cn(onClick && "hover:opacity-90", className)}
         onClick={onClick}
         {...props}
       >
@@ -83,10 +105,16 @@ CardRoot.displayName = "Card"
 // 简化的CardHeader
 const CardHeader = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
   ({ className, children, ...props }, ref) => {
+    const theme = useMantineTheme()
+    const spacing = getSpacing(theme)
+
     return (
       <MantineCard.Section
         ref={ref}
-        className={cn("p-md", className)}
+        style={{
+          padding: spacing.md,
+        }}
+        className={cn(className)}
         {...props}
       >
         {children}
@@ -99,10 +127,16 @@ CardHeader.displayName = "CardHeader"
 // 简化的CardBody
 const CardBody = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
   ({ className, children, ...props }, ref) => {
+    const theme = useMantineTheme()
+    const spacing = getSpacing(theme)
+
     return (
       <MantineCard.Section
         ref={ref}
-        className={cn("p-md", className)}
+        style={{
+          padding: spacing.md,
+        }}
+        className={cn(className)}
         {...props}
       >
         {children}
@@ -115,13 +149,22 @@ CardBody.displayName = "CardBody"
 // 简化的CardFooter
 const CardFooter = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
   ({ className, children, ...props }, ref) => {
+    const theme = useMantineTheme()
+    const spacing = getSpacing(theme)
+    const colors = getSemanticColors(theme)
+
     return (
       <MantineCard.Section
         ref={ref}
-        className={cn("p-md", className)}
+        style={{
+          padding: spacing.md,
+          borderTop: `1px solid ${colors.border}`,
+          backgroundColor: colors.surface,
+        }}
+        className={cn(className)}
         {...props}
       >
-        <Group justify="flex-end" gap="sm">
+        <Group justify="flex-end" gap={spacing.sm}>
           {children}
         </Group>
       </MantineCard.Section>
@@ -133,11 +176,20 @@ CardFooter.displayName = "CardFooter"
 // 简化的CardTitle
 const CardTitle = React.forwardRef<HTMLDivElement, SimpleTitleProps>(
   ({ order = 3, children, className, ...props }, ref) => {
+    const theme = useMantineTheme()
+    const colors = getSemanticColors(theme)
+
     return (
       <Title
         ref={ref}
         order={order}
-        className={cn("text-lg font-semibold text-gray-900 dark:text-gray-100", className)}
+        style={{
+          color: colors.text,
+          fontSize: theme.fontSizes.lg,
+          lineHeight: theme.lineHeights.lg,
+          fontWeight: 600,
+        }}
+        className={cn(className)}
         {...props}
       >
         {children}
@@ -150,12 +202,18 @@ CardTitle.displayName = "CardTitle"
 // 简化的CardDescription
 const CardDescription = React.forwardRef<HTMLDivElement, SimpleDescriptionProps>(
   ({ children, className, ...props }, ref) => {
+    const theme = useMantineTheme()
+    const colors = getSemanticColors(theme)
+
     return (
       <Text
         ref={ref}
-        size="sm"
-        c="dimmed"
-        className={cn("text-gray-600 dark:text-gray-400", className)}
+        style={{
+          color: colors.textSecondary,
+          fontSize: theme.fontSizes.sm,
+          lineHeight: theme.lineHeights.md,
+        }}
+        className={cn(className)}
         {...props}
       >
         {children}

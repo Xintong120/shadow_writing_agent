@@ -77,7 +77,7 @@ const StatsSummary = React.forwardRef<HTMLDivElement, StatsSummaryProps>(
           <Card key={index} variant="outline" className="p-4">
             <Group justify="space-between" align="flex-start" className="mb-3">
               <div>
-                <Text size="sm" weight="semibold" style={{ color: colors.textSecondary }}>
+                <Text size="sm" weight="semibold" color={colors.textSecondary}>
                   {item.title}
                 </Text>
               </div>
@@ -90,10 +90,17 @@ const StatsSummary = React.forwardRef<HTMLDivElement, StatsSummaryProps>(
             </Group>
 
             <div className="space-y-1">
-              <Text size="xl" weight="bold" style={{ color: colors.text }}>
+              <Text
+                size="xl"
+                weight="bold"
+                color={colors.text}
+              >
                 {item.value.toLocaleString()}
               </Text>
-              <Text size="xs" color="dimmed">
+              <Text
+                size="xs"
+                color="dimmed"
+              >
                 {item.description}
               </Text>
             </div>

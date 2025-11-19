@@ -75,7 +75,10 @@ const RecentSearches = React.forwardRef<HTMLDivElement, RecentSearchesProps>(
           {searches.slice(0, maxItems).map((search, index) => (
             <Box
               key={index}
-              className="p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="p-3 rounded-md cursor-pointer transition-all duration-200 recent-search-item"
+              style={{
+                borderRadius: theme.radius.md,
+              }}
               onClick={() => onSelect(search.topic)}
             >
               <Group justify="space-between" align="center">
@@ -97,6 +100,7 @@ const RecentSearches = React.forwardRef<HTMLDivElement, RecentSearchesProps>(
             </Box>
           ))}
         </Box>
+
       </Card>
     )
   }

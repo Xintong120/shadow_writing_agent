@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { Group, Box, Text , useMantineTheme} from '@mantine/core'
+import { Group, Box, Text, useMantineTheme } from '@mantine/core'
 import { cn } from "@/lib/utils"
 import { Avatar } from '@/components/atoms/avatar'
 import { Card } from '@/components/atoms/card'
@@ -39,12 +39,14 @@ const MessageBubble = React.forwardRef<HTMLDivElement, MessageBubbleProps>(
     ref
   ) => {
     const theme = useMantineTheme()
+    const colors = getSemanticColors(theme)
     const spacing = getSpacing(theme)
     const isUser = message.role === 'user'
     const avatarIcon = isUser ? <UserRound size={20} /> : <Bot size={20} />
     const alignItems = isUser ? 'flex-end' : 'flex-start'
     const padding = size === 'sm' ? spacing.sm : size === 'lg' ? spacing.lg : spacing.md
     const fontSize = size === 'sm' ? theme.fontSizes.sm : size === 'lg' ? theme.fontSizes.lg : theme.fontSizes.md
+    const lineHeight = theme.lineHeights.md
 
     return (
       <Box ref={ref} className={cn("w-full", className)} {...props}>
@@ -70,20 +72,19 @@ const MessageBubble = React.forwardRef<HTMLDivElement, MessageBubbleProps>(
           )}
 
           <div
-            className={`max-w-[65%] ${
-              isUser
-                ? 'bg-[#efefefff] border border-[#dcdcdc] rounded-lg'
-                : ''
-            }`}
+            className="max-w-[65%]"
             style={{
               padding: padding,
+              backgroundColor: isUser ? colors.surface : undefined,
+              border: isUser ? `1px solid ${colors.border}` : undefined,
+              borderRadius: theme.radius.md,
             }}
           >
             <Text
               style={{
                 fontSize: fontSize,
-                lineHeight: 1.5,
-                color: isUser ? undefined : theme.colors.gray[8] // 机器人消息使用深灰色文字
+                lineHeight: lineHeight,
+                color: isUser ? colors.text : colors.textSecondary // 使用主题颜色
               }}
             >
               {message.content}

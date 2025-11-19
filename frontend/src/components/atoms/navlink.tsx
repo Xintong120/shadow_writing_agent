@@ -53,17 +53,38 @@ const NavLink = React.forwardRef<HTMLAnchorElement, SimpleNavLinkProps>(
         leftSection={leftSection}
         styles={{
           root: {
-            backgroundColor: active
-              ? theme.colors[theme.primaryColor][5]
-              : undefined,
-            color: active
-              ? theme.white
-              : undefined,
+            backgroundColor: active ? colors.primary : 'transparent',
+            color: active ? colors.background : colors.text,
+            borderRadius: theme.radius.sm,
+            padding: spacing.sm,
+            transition: 'all 200ms ease',
+            
+            '&:hover': {
+              backgroundColor: active ? colors.primaryHover : colors.surfaceHover,
+            },
+            
+            '&[data-disabled]': {
+              color: colors.textDisabled,
+            }
           },
+          label: {
+            color: 'inherit',
+            fontSize: theme.fontSizes.md,
+            lineHeight: theme.lineHeights.md,
+          },
+          description: {
+            color: 'inherit',
+            opacity: 0.8,
+            fontSize: theme.fontSizes.sm,
+            lineHeight: theme.lineHeights.sm,
+          },
+          children: {
+            color: 'inherit',
+          }
         }}
         {...props}
       >
-        {icon && <div className="mr-2">{icon}</div>}
+        {icon && <div style={{ marginRight: spacing.xs }}>{icon}</div>}
         {label}
       </MantineNavLink>
     )
