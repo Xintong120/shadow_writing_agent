@@ -13,7 +13,7 @@ import {
 import { NavLink } from '@/components/atoms/navlink';
 import { Search, BarChart3, Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getSemanticColors, getSpacing } from '@/theme/mantine-theme';
+import { getSemanticColors, getSpacing, getResponsiveProps } from '@/theme/mantine-theme';
 
 /**
  * Shadow Writing AppShell - 完美响应式导航组件
@@ -31,6 +31,7 @@ import { getSemanticColors, getSpacing } from '@/theme/mantine-theme';
  * - ✅ 提取硬编码数值为常量或配置
  * - ✅ 添加性能优化（useMemo, useCallback）
  * - ✅ 增强类型安全性
+ * - ✅ 修复硬编码颜色和缺失的圆角系统
  */
 
 // SVG Logo 组件
@@ -91,6 +92,7 @@ export function ShadowWritingAppShell() {
   const theme = useMantineTheme();
   const colors = getSemanticColors(theme);
   const spacing = getSpacing(theme);
+  const responsiveProps = getResponsiveProps(theme);
 
   // 性能优化：使用 useMemo 缓存导航项数组
   const navigationItems = useMemo<NavigationItem[]>(() => [
@@ -127,11 +129,11 @@ export function ShadowWritingAppShell() {
   const getNavItemStyles = useCallback((itemPath: string) => {
     const isActive = location.pathname === itemPath;
     return {
-      color: isActive ? theme.colors.primary[6] : colors.text,
+      color: isActive ? colors.primary : colors.text,
       fontWeight: isActive ? 600 : 400,
       transition: APP_CONFIG.navigation.transition
     };
-  }, [location.pathname, theme.colors.primary, colors.text]);
+  }, [location.pathname, colors.primary, colors.text]);
 
   return (
     <AppShell
@@ -148,8 +150,8 @@ export function ShadowWritingAppShell() {
     >
       {/* 头部 - 双汉堡菜单设计 */}
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group gap="sm">
+        <Group h="100%" px={spacing.md} justify="space-between">
+          <Group gap={spacing.sm}>
             {/* 移动端汉堡菜单 */}
             <Burger 
               opened={mobileOpened} 
@@ -169,7 +171,7 @@ export function ShadowWritingAppShell() {
             />
             
             {/* Logo 区域 */}
-            <Group gap="sm" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} align="center">
+            <Group gap={spacing.sm} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} align="center">
               <LogoIcon
                 size={32}
                 style={{
@@ -195,10 +197,11 @@ export function ShadowWritingAppShell() {
 
       {/* 侧边栏导航 */}
       <AppShell.Navbar
-        p="md"
+        p={spacing.md}
         style={{
-          backgroundColor: 'white',
-          borderRight: '1px solid #e5e7eb'
+          backgroundColor: colors.surface,
+          borderRight: `1px solid ${colors.border}`,
+          borderRadius: theme.radius.md,
         }}
       >
         <AppShell.Section grow>
@@ -219,13 +222,6 @@ export function ShadowWritingAppShell() {
                 onClick={() => handleNavigation(item.path)}
                 variant="subtle"
                 className="rounded-lg transition-all duration-200 hover:bg-gray-50/50"
-                styles={{
-                  root: {
-                    backgroundColor: location.pathname === item.path ? 'white' : undefined,
-                    border: location.pathname === item.path ? '1px solid #374151' : undefined,
-                    color: location.pathname === item.path ? '#374151' : undefined,
-                  }
-                }}
               />
             ))}
           </Box>
@@ -236,12 +232,16 @@ export function ShadowWritingAppShell() {
       <AppShell.Main>
         <Box
           style={{
-            backgroundColor: theme.colors.base[0],
+            backgroundColor: colors.background,
             borderRadius: theme.radius.md,
             minHeight: APP_CONFIG.mainContent.minHeight,
-            padding: theme.spacing.lg,
+            padding: spacing.md,
             transition: APP_CONFIG.navigation.transition,
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+            // 保留硬编码阴影（符合新策略）
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+            
+            // 响应式设计
+            ...responsiveProps.stackOnMobile,
           }}
         >
           <Outlet />
