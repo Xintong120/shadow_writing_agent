@@ -21,6 +21,7 @@ export interface FilterState {
  */
 export interface Message {
   id: string
+  userId: string
   role: 'user' | 'agent'
   content: string
   timestamp: number
