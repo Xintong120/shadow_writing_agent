@@ -1,6 +1,24 @@
 import { createTheme } from '@mantine/core';
+import type { MantineTheme } from '@mantine/core';
+import type { CSSProperties } from 'react';
 
-// 创建一个简单的主题，避免与TailwindCSS冲突
+// 定义CSS textTransform类型
+type TextTransform = 
+  | 'none'
+  | 'capitalize'
+  | 'uppercase'
+  | 'lowercase'
+  | 'full-width'
+  | 'full-size-kana';
+
+// ========================================
+// 主题配置
+// ========================================
+
+/**
+ * Mantine主题配置 - 基础主题设置
+ * 避免与TailwindCSS冲突，提供完整的颜色、间距、圆角等设计令牌
+ */
 export const theme = createTheme({
   // 基本颜色配置
   colors: {
@@ -90,42 +108,6 @@ export const theme = createTheme({
     xl: '2.0',
   },
 
-  // 添加字重映射 (移除，因为Mantine主题不支持此属性)
-  // fontWeights: {
-  //   thin: 100,
-  //   light: 300,
-  //   normal: 400,
-  //   medium: 500,
-  //   semibold: 600,
-  //   bold: 700,
-  //   extrabold: 800,
-  //   black: 900,
-  // },
-
-  // 添加z-index层级 (移除，因为Mantine主题不支持此属性)
-  // zIndices: {
-  //   hide: -1,
-  //   auto: 'auto',
-  //   base: 0,
-  //   docked: 10,
-  //   dropdown: 1000,
-  //   sticky: 1100,
-  //   banner: 1200,
-  //   overlay: 1300,
-  //   modal: 1400,
-  //   popover: 1500,
-  //   skipLink: 1600,
-  //   toast: 1700,
-  //   tooltip: 1800,
-  // },
-
-  // 添加动画时长 (移除，因为Mantine主题不支持此属性)
-  // transitionDurations: {
-  //   fast: '150ms',
-  //   normal: '200ms',
-  //   slow: '300ms',
-  // },
-
   // 组件样式
   components: {
     Button: {
@@ -169,11 +151,188 @@ export const theme = createTheme({
   }
 });
 
-// 导入MantineTheme类型
-import type { MantineTheme } from '@mantine/core';
+// ========================================
+// 类型定义
+// ========================================
 
-// 语义色工具函数
-export const getSemanticColors = (theme: MantineTheme) => ({
+/**
+ * 语义化颜色接口
+ */
+export interface SemanticColors {
+  /** 主背景色 */
+  background: string;
+  /** 表面色（卡片背景等） */
+  surface: string;
+  /** 表面悬停色 */
+  surfaceHover: string;
+  /** 边框色 */
+  border: string;
+  /** 边框悬停色 */
+  borderHover: string;
+  /** 边框聚焦色 */
+  borderFocus: string;
+  /** 主文字色 */
+  text: string;
+  /** 次要文字色 */
+  textSecondary: string;
+  /** 弱化文字色 */
+  textMuted: string;
+  /** 禁用文字色 */
+  textDisabled: string;
+  /** 主色 */
+  primary: string;
+  /** 主色悬停 */
+  primaryHover: string;
+  /** 成功色 */
+  success: string;
+  /** 警告色 */
+  warning: string;
+  /** 错误色 */
+  error: string;
+  /** 信息色 */
+  info: string;
+}
+
+/**
+ * 间距令牌接口
+ */
+export interface SpacingTokens {
+  /** 无间距 */
+  none: number;
+  /** 小间距 */
+  xs: string;
+  /** 标准间距 */
+  sm: string;
+  /** 中等间距 */
+  md: string;
+  /** 大间距 */
+  lg: string;
+  /** 超大间距 */
+  xl: string;
+  /** 超大间距（2倍） */
+  '2xl': string;
+  /** 卡片内边距 */
+  card: string;
+  /** 区块间距 */
+  section: string;
+  /** 页面边距 */
+  page: string;
+}
+
+/**
+ * 响应式令牌接口
+ */
+export interface ResponsiveTokens {
+  /** 仅移动端显示 */
+  mobileOnly: Record<string, CSSProperties>;
+  /** 仅平板显示 */
+  tabletOnly: Record<string, CSSProperties>;
+  /** 仅桌面显示 */
+  desktopOnly: Record<string, CSSProperties>;
+  /** 移动端垂直排列 */
+  stackOnMobile: Record<string, CSSProperties>;
+}
+
+/**
+ * 字体排版样式接口
+ */
+export interface TypographyStyle {
+  /** 字体大小 */
+  fontSize: string;
+  /** 行高 */
+  lineHeight: string | number;
+  /** 字重 */
+  fontWeight: number;
+  /** 文本转换 */
+  textTransform?: TextTransform;
+  /** 字符间距 */
+  letterSpacing?: string;
+}
+
+/**
+ * 字体排版令牌接口
+ */
+export interface TypographyTokens {
+  /** 一级标题 */
+  h1: TypographyStyle;
+  /** 二级标题 */
+  h2: TypographyStyle;
+  /** 三级标题 */
+  h3: TypographyStyle;
+  /** 正文 */
+  body: TypographyStyle;
+  /** 文字说明 */
+  caption: TypographyStyle;
+  /** 按钮文字 */
+  button: TypographyStyle;
+}
+
+/**
+ * 圆角令牌接口
+ */
+export interface BorderRadiusTokens {
+  /** 超小圆角 */
+  xs: string | number;
+  /** 小圆角 */
+  sm: string | number;
+  /** 中等圆角 */
+  md: string | number;
+  /** 大圆角 */
+  lg: string | number;
+  /** 超大圆角 */
+  xl: string | number;
+  /** 按钮圆角 */
+  button: string | number;
+  /** 输入框圆角 */
+  input: string | number;
+  /** 卡片圆角 */
+  card: string | number;
+  /** 模态框圆角 */
+  modal: string | number;
+  /** 胶囊圆角 */
+  pill: string;
+  /** 圆形 */
+  circle: string;
+}
+
+/**
+ * 阴影令牌接口
+ */
+export interface ShadowTokens {
+  /** 超小阴影 */
+  xs: string;
+  /** 小阴影 */
+  sm: string;
+  /** 中等阴影 */
+  md: string;
+  /** 大阴影 */
+  lg: string;
+  /** 超大阴影 */
+  xl: string;
+  /** 卡片阴影 */
+  card: string;
+  /** 模态框阴影 */
+  modal: string;
+  /** 下拉框阴影 */
+  dropdown: string;
+  /** 悬停阴影 */
+  hover: string;
+  /** 激活阴影 */
+  active: string;
+  /** 聚焦阴影 */
+  focus: string;
+}
+
+// ========================================
+// 工具函数
+// ========================================
+
+/**
+ * 获取语义化颜色工具函数
+ * @param theme Mantine主题对象
+ * @returns 语义化颜色对象
+ */
+export const getSemanticColors = (theme: MantineTheme): SemanticColors => ({
   // 背景色
   background: theme.colors.base[0],
   surface: theme.colors.base[1],
@@ -199,8 +358,12 @@ export const getSemanticColors = (theme: MantineTheme) => ({
   info: theme.colors.info[6],
 });
 
-// 间距工具函数
-export const getSpacing = (theme: MantineTheme) => ({
+/**
+ * 获取间距令牌工具函数
+ * @param theme Mantine主题对象
+ * @returns 间距令牌对象
+ */
+export const getSpacing = (theme: MantineTheme): SpacingTokens => ({
   // 常用间距组合
   none: 0,
   xs: theme.spacing.xs,      // 8px - 小元素
@@ -216,8 +379,12 @@ export const getSpacing = (theme: MantineTheme) => ({
   page: theme.spacing['2xl'], // 页面边距
 });
 
-// 响应式工具函数
-export const getResponsiveProps = (theme: MantineTheme) => ({
+/**
+ * 获取响应式属性工具函数
+ * @param theme Mantine主题对象
+ * @returns 响应式令牌对象
+ */
+export const getResponsiveProps = (theme: MantineTheme): ResponsiveTokens => ({
   // 响应式显示 - 使用媒体查询字符串
   mobileOnly: {
     '@media (max-width: 767px)': { display: 'block' },
@@ -244,4 +411,87 @@ export const getResponsiveProps = (theme: MantineTheme) => ({
       gap: theme.spacing.md,
     },
   },
+});
+
+/**
+ * 获取字体排版工具函数
+ * @param theme Mantine主题对象
+ * @returns 字体排版令牌对象
+ */
+export const getTypography = (theme: MantineTheme): TypographyTokens => ({
+  // 标题层级
+  h1: {
+    fontSize: theme.fontSizes.xl,
+    lineHeight: theme.lineHeights.xl,
+    fontWeight: 700,
+  },
+  h2: {
+    fontSize: theme.fontSizes.lg,
+    lineHeight: theme.lineHeights.lg,
+    fontWeight: 600,
+  },
+  h3: {
+    fontSize: theme.fontSizes.md,
+    lineHeight: theme.lineHeights.md,
+    fontWeight: 600,
+  },
+  // 正文层级
+  body: {
+    fontSize: theme.fontSizes.md,
+    lineHeight: theme.lineHeights.md,
+    fontWeight: 400,
+  },
+  caption: {
+    fontSize: theme.fontSizes.sm,
+    lineHeight: theme.lineHeights.sm,
+    fontWeight: 400,
+  },
+  // 特殊用途
+  button: {
+    fontSize: theme.fontSizes.md,
+    lineHeight: theme.lineHeights.md,
+    fontWeight: 500,
+    textTransform: 'uppercase' as TextTransform,
+    letterSpacing: '0.5px',
+  },
+});
+
+/**
+ * 获取圆角工具函数
+ * @param theme Mantine主题对象
+ * @returns 圆角令牌对象
+ */
+export const getBorderRadius = (theme: MantineTheme): BorderRadiusTokens => ({
+  // 标准圆角
+  xs: theme.radius.xs,
+  sm: theme.radius.sm,
+  md: theme.radius.md,
+  lg: theme.radius.lg,
+  xl: theme.radius.xl,
+  // 语义化圆角
+  button: theme.radius.sm,
+  input: theme.radius.sm,
+  card: theme.radius.md,
+  modal: theme.radius.lg,
+  // 特殊圆角
+  pill: '9999px',
+  circle: '50%',
+});
+
+/**
+ * 获取阴影工具函数
+ * @param theme Mantine主题对象
+ * @returns 阴影令牌对象
+ */
+export const getShadows = (theme: MantineTheme): ShadowTokens => ({
+  // 主题阴影
+  ...theme.shadows,
+  // 语义化阴影
+  card: theme.shadows.sm,
+  modal: theme.shadows.lg,
+  dropdown: theme.shadows.md,
+  // 自定义阴影（硬编码，符合策略）
+  hover: '0 4px 12px rgba(0,0,0,0.15)',
+  active: '0 2px 8px rgba(0,0,0,0.1)',
+  focus: '0 0 0 2px rgba(59, 130, 246, 0.5)',
 });
