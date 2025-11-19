@@ -4,10 +4,13 @@ import { Button } from '@/components/atoms/button'
 import { ProgressOverview } from '@/components/molecules/ProgressOverview'
 import { TaskList } from '@/components/organisms/TaskList'
 import { LiveLogPanel } from '@/components/organisms/LiveLogPanel'
+import { WebSocketStatus } from '@/components/atoms/websocket_status'
 import { websocketService } from '@/services/websocket'
 import { api, flattenBatchResults } from '@/services/api'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { useMantineTheme, Box, Group, Text, SimpleGrid, Title } from '@mantine/core'
+import { getSemanticColors, getSpacing } from '@/theme/mantine-theme'
 import type { BatchProgressMessage, TaskStatusResponse } from '@/types'
 
 /**
@@ -17,6 +20,9 @@ import type { BatchProgressMessage, TaskStatusResponse } from '@/types'
 function BatchProcessPage() {
   const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
+  const theme = useMantineTheme()
+  const colors = getSemanticColors(theme)
+  const spacing = getSpacing(theme)
 
   // 页面状态
   const [taskData, setTaskData] = useState<TaskStatusResponse | null>(null)
@@ -151,30 +157,52 @@ function BatchProcessPage() {
   // 如果正在加载
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p>加载中...</p>
-        </div>
-      </div>
+      <Box
+        maw="1200px"
+        mx="auto"
+        p="xl"
+        style={{
+          backgroundColor: colors.background,
+          minHeight: '100vh'
+        }}
+      >
+        <Text size="lg" ta="center" style={{ color: colors.text }}>
+          加载中...
+        </Text>
+      </Box>
     )
   }
 
   // 如果没有任务数据
   if (!taskData) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p>任务不存在</p>
-          <Button onClick={handleBack} className="mt-4">
-            返回搜索
-          </Button>
-        </div>
-      </div>
+      <Box
+        maw="1200px"
+        mx="auto"
+        p="xl"
+        style={{
+          backgroundColor: colors.background,
+          minHeight: '100vh'
+        }}
+      >
+        <Text size="lg" ta="center" style={{ color: colors.text, marginBottom: spacing.md }}>
+          任务不存在
+        </Text>
+        <Button onClick={handleBack} style={{ marginTop: spacing.md }}>
+          返回搜索
+        </Button>
+      </Box>
     )
   }
 
   const { status, progress = 0, current = 0, total = 0 } = taskData
   const isCompleted = status === 'completed'
+
+  // 状态映射：将API状态转换为ProgressOverview期望的状态类型
+  const mappedStatus: 'processing' | 'completed' | 'failed' | 'pending' =
+    status === 'running' ? 'processing' :
+    status === 'failed' ? 'failed' :
+    status === 'completed' ? 'completed' : 'pending'
 
   // 构建任务列表（简化版，实际项目中应从API获取详细的TED信息）
   const taskItems = Array.from({ length: total }, (_, index) => ({
@@ -187,69 +215,104 @@ function BatchProcessPage() {
   }))
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <Box
+      maw="1200px"
+      mx="auto"
+      p="xl"
+      style={{
+        backgroundColor: colors.background,
+        minHeight: '100vh'
+      }}
+    >
       {/* WebSocket 状态指示器 */}
       <WebSocketStatus status={wsStatus} />
 
       {/* 顶部导航 */}
-      <div className="flex items-center gap-4 mb-6">
+      <Group gap="sm" mb="md" align="center">
         <Button
           variant="outline"
           onClick={handleBack}
-          className="flex items-center gap-2"
+          leftSection={<ArrowLeft className="h-4 w-4" />}
         >
-          <ArrowLeft className="h-4 w-4" />
           返回搜索
         </Button>
 
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">
+        <Box style={{ flex: 1 }}>
+          <Title 
+            order={1} 
+            size="xl" 
+            fw={700}
+            style={{ color: colors.text }}
+          >
             {isCompleted ? '✅ 批量处理完成' : `正在处理 ${total} 个TED演讲`}
-          </h1>
-        </div>
-      </div>
+          </Title>
+        </Box>
+      </Group>
 
       {/* 总体进度 */}
-      <div className="mb-8">
+      <Box mb="xl">
         <ProgressOverview
           total={total}
           current={current}
-          status={status}
+          status={mappedStatus}
         />
-      </div>
+      </Box>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <Group gap="lg">
         {/* 左侧：任务列表 */}
-        <div className="lg:col-span-2">
+        <Box style={{ flex: 2 }}>
           <TaskList
             tasks={taskItems}
             currentTaskId={status === 'running' ? `${taskId}_${current - 1}` : null}
           />
-        </div>
+        </Box>
 
         {/* 右侧：实时日志 */}
-        <div>
+        <Box style={{ flex: 1 }}>
           <LiveLogPanel
             logs={logs}
             onClearLogs={clearLogs}
           />
-        </div>
-      </div>
+        </Box>
+      </Group>
 
       {/* 完成状态 */}
       {isCompleted && (
-        <div className="mt-8 text-center">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-4">处理完成！</h2>
-          <p className="text-muted-foreground mb-6">
+        <Box ta="center" mt="xl">
+          <CheckCircle 
+            size={64} 
+            color={colors.success}
+            style={{ 
+              width: 64, 
+              height: 64,
+              margin: '0 auto',
+              marginBottom: spacing.md
+            }}
+          />
+          <Title 
+            order={2} 
+            size="xl" 
+            fw={600}
+            style={{ color: colors.text, marginBottom: spacing.md }}
+          >
+            处理完成！
+          </Title>
+          <Text 
+            size="md" 
+            c="dimmed"
+            style={{ 
+              color: colors.textMuted, 
+              marginBottom: spacing.lg 
+            }}
+          >
             处理完成，共提取 Shadow Writing 结果
-          </p>
+          </Text>
           <Button onClick={() => navigate(`/results/${taskId}`)}>
             查看学习结果 →
           </Button>
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }
 

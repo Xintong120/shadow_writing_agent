@@ -14,6 +14,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Box } from '@mantine/core'
 import { Calendar, Clock, BookOpen, TrendingUp, Flame } from 'lucide-react'
 import { api, flattenStats, calculateLearningTime, calculateStreakDays } from '@/services/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/atoms/card'
@@ -74,91 +75,128 @@ function HistoryPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+        }}
+      >
+        <Box style={{ textAlign: 'center' }}>
+          <Box
+            style={{
+              animation: 'spin 1s linear infinite',
+              width: '3rem',
+              height: '3rem',
+              border: '2px solid transparent',
+              borderBottom: `2px solid var(--mantine-color-primary-6)`,
+              borderRadius: '50%',
+              margin: '0 auto 1rem auto',
+            }}
+          />
           <p>加载学习历史...</p>
-        </div>
-      </div>
+        </Box>
+      </Box>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl">
-
+    <Box
+      style={{
+        maxWidth: '1536px', // max-w-6xl
+        margin: '0 auto',
+        padding: '1.5rem',
+      }}
+    >
       {/* 统计卡片 */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* TED 观看数量 */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">TED 演讲</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_teds_watched}</div>
-              <p className="text-xs text-muted-foreground">已观看</p>
-            </CardContent>
-          </Card>
+        <Box
+          style={{
+            display: 'grid',
+            gap: '1rem',
+            gridTemplateColumns: '1fr',
+            marginBottom: '2rem',
+          }}
+        >
+          <Box
+            style={{
+              display: 'grid',
+              gap: '1rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            }}
+          >
+            {/* TED 观看数量 */}
+            <Card>
+              <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem' }}>
+                <CardTitle style={{ fontSize: '0.875rem', fontWeight: '500' }}>TED 演讲</CardTitle>
+                <BookOpen className="h-4 w-4" style={{ color: 'var(--mantine-color-dimmed)' }} />
+              </CardHeader>
+              <CardContent>
+                <Box style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.total_teds_watched}</Box>
+                <Box style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>已观看</Box>
+              </CardContent>
+            </Card>
 
-          {/* 学习记录数量 */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">学习记录</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_records}</div>
-              <p className="text-xs text-muted-foreground">Shadow Writing</p>
-            </CardContent>
-          </Card>
+            {/* 学习记录数量 */}
+            <Card>
+              <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem' }}>
+                <CardTitle style={{ fontSize: '0.875rem', fontWeight: '500' }}>学习记录</CardTitle>
+                <TrendingUp className="h-4 w-4" style={{ color: 'var(--mantine-color-dimmed)' }} />
+              </CardHeader>
+              <CardContent>
+                <Box style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.total_records}</Box>
+                <Box style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>Shadow Writing</Box>
+              </CardContent>
+            </Card>
 
-          {/* 学习时长 */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">学习时长</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{learningTime}</div>
-              <p className="text-xs text-muted-foreground">分钟（估算）</p>
-            </CardContent>
-          </Card>
+            {/* 学习时长 */}
+            <Card>
+              <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem' }}>
+                <CardTitle style={{ fontSize: '0.875rem', fontWeight: '500' }}>学习时长</CardTitle>
+                <Clock className="h-4 w-4" style={{ color: 'var(--mantine-color-dimmed)' }} />
+              </CardHeader>
+              <CardContent>
+                <Box style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{learningTime}</Box>
+                <Box style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>分钟（估算）</Box>
+              </CardContent>
+            </Card>
 
-          {/* 连续打卡 */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">连续打卡</CardTitle>
-              <Flame className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{streakDays}</div>
-              <p className="text-xs text-muted-foreground">天</p>
-            </CardContent>
-          </Card>
-        </div>
+            {/* 连续打卡 */}
+            <Card>
+              <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem' }}>
+                <CardTitle style={{ fontSize: '0.875rem', fontWeight: '500' }}>连续打卡</CardTitle>
+                <Flame className="h-4 w-4" style={{ color: 'var(--mantine-color-dimmed)' }} />
+              </CardHeader>
+              <CardContent>
+                <Box style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{streakDays}</Box>
+                <Box style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>天</Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
       )}
 
       {/* 搜索和过滤 */}
-      <div className="mb-6">
+      <Box style={{ marginBottom: '1.5rem' }}>
         <Input
           placeholder="搜索 TED 标题或原文..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-md"
+          onChange={setSearchQuery}
+          style={{ maxWidth: '28rem' }}
         />
-      </div>
+      </Box>
 
       {/* 学习记录列表 */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold mb-4">学习记录</h2>
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>学习记录</h2>
 
         {filteredRecords.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground">还没有学习记录</p>
+            <CardContent style={{ padding: '2rem 0', textAlign: 'center' }}>
+              <p style={{ color: 'var(--mantine-color-dimmed)' }}>还没有学习记录</p>
               <Button
-                className="mt-4"
+                style={{ marginTop: '1rem' }}
                 onClick={() => navigate('/')}
               >
                 开始学习
@@ -167,26 +205,26 @@ function HistoryPage() {
           </Card>
         ) : (
           filteredRecords.map((record) => (
-            <Card key={record.record_id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-1">{record.ted_title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
+            <Card key={record.record_id} style={{ transition: 'box-shadow 0.2s ease' }}>
+              <CardContent style={{ padding: '1.5rem' }}>
+                <Box style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <Box style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.25rem' }}>{record.ted_title}</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)', marginBottom: '0.5rem' }}>
                       {record.ted_speaker && `演讲者：${record.ted_speaker}`}
                     </p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
+                    <Box style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)' }}>
+                      <Box style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         <Calendar className="h-4 w-4" />
                         {new Date(record.learned_at).toLocaleDateString()}
-                      </div>
+                      </Box>
                       {record.quality_score && (
                         <Badge variant="secondary">
                           质量评分: {record.quality_score}/8
                         </Badge>
                       )}
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                   <Button
                     variant="outline"
                     size="sm"
@@ -197,39 +235,43 @@ function HistoryPage() {
                   >
                     查看详情
                   </Button>
-                </div>
+                </Box>
 
                 {/* 原文 */}
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm mb-1">原文：</h4>
-                  <p className="text-sm bg-muted p-3 rounded-md">{record.original}</p>
-                </div>
+                <Box style={{ marginBottom: '0.75rem' }}>
+                  <h4 style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.25rem' }}>原文：</h4>
+                  <Box style={{ fontSize: '0.875rem', backgroundColor: 'var(--mantine-color-dimmed)', padding: '0.75rem', borderRadius: 'var(--mantine-radius-md)' }}>
+                    {record.original}
+                  </Box>
+                </Box>
 
                 {/* 改写 */}
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm mb-1">Shadow Writing：</h4>
-                  <p className="text-sm bg-muted p-3 rounded-md">{record.imitation}</p>
-                </div>
+                <Box style={{ marginBottom: '0.75rem' }}>
+                  <h4 style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Shadow Writing：</h4>
+                  <Box style={{ fontSize: '0.875rem', backgroundColor: 'var(--mantine-color-dimmed)', padding: '0.75rem', borderRadius: 'var(--mantine-radius-md)' }}>
+                    {record.imitation}
+                  </Box>
+                </Box>
 
                 {/* 词汇映射 */}
                 {record.map && Object.keys(record.map).length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-sm mb-2">词汇映射：</h4>
-                    <div className="flex flex-wrap gap-2">
+                  <Box>
+                    <h4 style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.5rem' }}>词汇映射：</h4>
+                    <Box style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                       {Object.entries(record.map).map(([category, words]) => (
                         <Badge key={category} variant="outline">
                           {category}: {words.join(', ')}
                         </Badge>
                       ))}
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                 )}
               </CardContent>
             </Card>
           ))
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 

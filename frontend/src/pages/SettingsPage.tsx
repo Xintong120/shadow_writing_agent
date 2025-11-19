@@ -1,4 +1,4 @@
-// SettingsPage.tsx - 设置页面
+import { Box } from '@mantine/core'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/atoms/card'
 import { Button } from '@/components/atoms/button'
 import { Input } from '@/components/atoms/input'
@@ -21,9 +21,20 @@ function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl bg-background">
-
-      <div className="space-y-6">
+    <Box
+      style={{
+        maxWidth: '1024px',
+        margin: '0 auto',
+        padding: '1.5rem',
+      }}
+    >
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.5rem',
+        }}
+      >
         {/* API配置 */}
         <Card>
           <CardHeader>
@@ -32,17 +43,23 @@ function SettingsPage() {
               配置后端API和LLM服务连接信息
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+          <CardContent>
+            <Box
+              style={{
+                display: 'grid',
+                gap: '1rem',
+                gridTemplateColumns: '1fr',
+              }}
+            >
+              <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label htmlFor="api-url">后端API地址</label>
                 <Input
                   id="api-url"
                   placeholder="http://localhost:8000"
                   defaultValue="http://localhost:8000"
                 />
-              </div>
-              <div className="space-y-2">
+              </Box>
+              <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label htmlFor="api-key">LLM API Key (OpenAI/DeepSeek)</label>
                 <Input
                   id="api-key"
@@ -50,11 +67,13 @@ function SettingsPage() {
                   placeholder="sk-************************"
                   defaultValue="sk-****************************"
                 />
-              </div>
-            </div>
-            <Button variant="outline" onClick={handleTestConnection}>
-              测试连接
-            </Button>
+              </Box>
+            </Box>
+            <Box style={{ marginTop: '1rem' }}>
+              <Button variant="outline" onClick={handleTestConnection}>
+                测试连接
+              </Button>
+            </Box>
           </CardContent>
         </Card>
 
@@ -66,33 +85,49 @@ function SettingsPage() {
               自定义应用的外观和主题
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
+          <CardContent>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <label>主题模式</label>
-              <div className="flex gap-4">
+              <Box style={{ display: 'flex', gap: '1rem' }}>
                 <Badge variant="outline">浅色模式</Badge>
                 <Badge variant="default">深色模式</Badge>
                 <Badge variant="secondary">跟随系统</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                目前支持浅色和深色模式切换
-              </p>
-            </div>
+              </Box>
+              <Box>
+                <span style={{ fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)' }}>
+                  目前支持浅色和深色模式切换
+                </span>
+              </Box>
+            </Box>
 
-            <div className="space-y-2">
+            <Box style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label htmlFor="font-size">字体大小</label>
-              <div className="flex items-center gap-4">
-                <span className="text-sm">小</span>
-                <div className="flex-1">
-                  {/* 这里可以添加滑块组件 */}
-                  <div className="h-2 bg-muted rounded-full">
-                    <div className="h-2 bg-primary rounded-full w-2/3"></div>
-                  </div>
-                </div>
-                <span className="text-sm">大</span>
-              </div>
-              <p className="text-xs text-muted-foreground">当前：中等</p>
-            </div>
+              <Box style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '0.875rem' }}>小</span>
+                <Box style={{ flex: 1 }}>
+                  <Box
+                    style={{
+                      height: '8px',
+                      backgroundColor: 'var(--mantine-color-dimmed)',
+                      borderRadius: 'var(--mantine-radius-full)',
+                    }}
+                  >
+                    <Box
+                      style={{
+                        height: '8px',
+                        backgroundColor: 'var(--mantine-color-primary-6)',
+                        borderRadius: 'var(--mantine-radius-full)',
+                        width: '66.666667%',
+                      }}
+                    />
+                  </Box>
+                </Box>
+                <span style={{ fontSize: '0.875rem' }}>大</span>
+              </Box>
+              <Box>
+                <span style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>当前：中等</span>
+              </Box>
+            </Box>
           </CardContent>
         </Card>
 
@@ -104,36 +139,44 @@ function SettingsPage() {
               配置学习相关的行为偏好
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <label htmlFor="auto-save">自动保存学习进度</label>
-                <p className="text-sm text-muted-foreground">
-                  自动保存您的学习进度到本地
-                </p>
-              </div>
-              <Switch id="auto-save" defaultChecked />
-            </div>
+          <CardContent>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <label htmlFor="auto-save">自动保存学习进度</label>
+                  <Box>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)' }}>
+                      自动保存您的学习进度到本地
+                    </span>
+                  </Box>
+                </Box>
+                <Switch id="auto-save" defaultChecked />
+              </Box>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <label htmlFor="show-stats">显示学习统计</label>
-                <p className="text-sm text-muted-foreground">
-                  在历史页面显示详细的学习统计数据
-                </p>
-              </div>
-              <Switch id="show-stats" defaultChecked />
-            </div>
+              <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <label htmlFor="show-stats">显示学习统计</label>
+                  <Box>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)' }}>
+                      在历史页面显示详细的学习统计数据
+                    </span>
+                  </Box>
+                </Box>
+                <Switch id="show-stats" defaultChecked />
+              </Box>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <label htmlFor="keyboard-hints">启用键盘快捷键提示</label>
-                <p className="text-sm text-muted-foreground">
-                  显示键盘快捷键使用提示
-                </p>
-              </div>
-              <Switch id="keyboard-hints" />
-            </div>
+              <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <label htmlFor="keyboard-hints">启用键盘快捷键提示</label>
+                  <Box>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)' }}>
+                      显示键盘快捷键使用提示
+                    </span>
+                  </Box>
+                </Box>
+                <Switch id="keyboard-hints" />
+              </Box>
+            </Box>
           </CardContent>
         </Card>
 
@@ -145,8 +188,8 @@ function SettingsPage() {
               管理您的学习数据和应用设置
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-4">
+          <CardContent>
+            <Box style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
               <Button variant="outline">导出所有学习数据</Button>
               <Button
                 variant="destructive"
@@ -156,19 +199,21 @@ function SettingsPage() {
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 清空学习历史
               </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              ⚠️ 清空学习历史功能正在开发中，目前不可用
-            </p>
+            </Box>
+            <Box>
+              <span style={{ fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)' }}>
+                ⚠️ 清空学习历史功能正在开发中，目前不可用
+              </span>
+            </Box>
           </CardContent>
         </Card>
 
         {/* 保存按钮 */}
-        <div className="flex justify-end">
+        <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={handleSaveSettings}>保存设置</Button>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   )
 }
 

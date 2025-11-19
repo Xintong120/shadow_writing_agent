@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Box } from '@mantine/core'
 import { toast } from 'sonner'
 import { api } from '@/services/api'
 import { useTasks } from '@/contexts/TaskContext'
@@ -14,7 +15,6 @@ import { LayoutContainer, PageSection } from '@/components/templates/Layout'
 import ChatInterface from '@/components/organisms/ChatInterface'
 import ContinueLearningCard from '@/components/organisms/ContinueLearningCard'
 import TEDList from '@/components/organisms/TEDList'
-import BatchActionBar from '@/components/molecules/BatchActionBar'
 import { QuickSuggestions } from '@/components/molecules/QuickSuggestions'
 import { ChatInput } from '@/components/molecules/ChatInput'
 
@@ -274,59 +274,79 @@ function SearchPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <Box
+      h="100vh"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--mantine-color-base-1)',
+      }}
+    >
       {/* 可滚动内容区域 */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
-            {/* 继续学习卡片（条件显示） */}
-            {incompleteTasks.length > 0 && (
-              <ContinueLearningCard />
-            )}
+      <Box style={{ flex: 1, overflow: 'hidden' }}>
+        <Box
+          h="100%"
+          mih="100%"
+          style={{
+            overflowY: 'auto',
+            maxWidth: '1024px',
+            margin: '0 auto',
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.5rem',
+          }}
+        >
+          {/* 继续学习卡片（条件显示） */}
+          {incompleteTasks.length > 0 && (
+            <ContinueLearningCard />
+          )}
 
-            {/* 主对话界面 */}
-            <ChatInterface
-              messages={messages}
-              searchResults={searchResults}
-              selectedUrls={selectedUrls}
-              recentSearches={[]}
-              onSendMessage={handleSendMessage}
-              onToggleTED={handleToggleTED}
-              onStartBatch={handleStartBatch}
-              onClearSelection={handleClearSelection}
-              isTyping={false}
-              isSearching={isSearching}
-              isLoadingHistory={isLoadingHistory}
-              className=""
-            />
+          {/* 主对话界面 */}
+          <ChatInterface
+            messages={messages}
+            searchResults={searchResults}
+            selectedUrls={selectedUrls}
+            recentSearches={[]}
+            onSendMessage={handleSendMessage}
+            onToggleTED={handleToggleTED}
+            onStartBatch={handleStartBatch}
+            onClearSelection={handleClearSelection}
+            isTyping={false}
+            isSearching={isSearching}
+            isLoadingHistory={isLoadingHistory}
+            disabled={isSearching}
+            className=""
+          />
 
-            {/* 全局批量操作栏（当有选择时显示） */}
-            {selectedUrls.length > 0 && (
-              <div className="border border-gray-200 rounded-xl   shadow-sm">
-                <BatchActionBar
-                  selectedCount={selectedUrls.length}
-                  onStartBatch={handleStartBatch}
-                  onClear={handleClearSelection}
-                  disabled={isSearching}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+          
+        </Box>
+      </Box>
 
       {/* 固定输入区域 */}
-      <div className="flex-shrink-0 bg-white border-t border-gray-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto">
+      <Box
+        style={{
+          flexShrink: 0,
+          backgroundColor: 'var(--mantine-color-base-0)',
+          borderTop: '1px solid var(--mantine-color-base-2)',
+          padding: '1rem 1.5rem',
+        }}
+      >
+        <Box
+          style={{
+            maxWidth: '1024px',
+            margin: '0 auto',
+          }}
+        >
           <ChatInput
             onSend={handleSendMessage}
             disabled={isSearching}
             loading={isSearching}
             placeholder="告诉我你想搜索或者学习的TED演讲主题..."
           />
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   )
 }
 
