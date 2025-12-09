@@ -35,7 +35,7 @@ function ResultsPage() {
         setLoading(true)
         const taskData = await api.getTaskStatus(taskId)
 
-        // 🔑 关键：扁平化批量结果
+        //！关键：扁平化批量结果
         const flatResults = flattenBatchResults(taskData!)
 
         setResults(flatResults)
@@ -83,7 +83,7 @@ function ResultsPage() {
   } : { title: '', speaker: '', url: '' }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
+    <div className="container mx-auto px-4 py-3 max-w-4xl">
       {/* 使用 ResultHeader 组件 */}
       <ResultHeader
         tedInfo={tedInfo}

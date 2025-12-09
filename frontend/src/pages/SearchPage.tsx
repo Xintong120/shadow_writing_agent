@@ -291,7 +291,7 @@ function SearchPage() {
             overflowY: 'auto',
             maxWidth: '1024px',
             margin: '0 auto',
-            padding: '1.5rem',
+            padding: '0.25rem',
             display: 'flex',
             flexDirection: 'column',
             gap: '1.5rem',
@@ -329,7 +329,7 @@ function SearchPage() {
           flexShrink: 0,
           backgroundColor: 'var(--mantine-color-base-0)',
           borderTop: '1px solid var(--mantine-color-base-2)',
-          padding: '1rem 1.5rem',
+          padding: '0.15rem',
         }}
       >
         <Box
