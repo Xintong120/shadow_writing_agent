@@ -24,7 +24,7 @@ export const searchTED = async (
   topic: string,
   userId: string
 ) => {
-  const response = await fetchAPI<SearchTEDResponse>('/search-ted', {
+  const response = await fetchAPI<SearchTEDResponse>('/api/v1/search-ted', {
     method: 'POST',
     body: JSON.stringify({ topic, user_id: userId }),
   })
@@ -43,7 +43,7 @@ export const startBatchProcess = async (
   urls: string[],
   userId: string
 ) => {
-  const response = await fetchAPI<StartBatchResponse>('/process-batch', {
+  const response = await fetchAPI<StartBatchResponse>('/api/v1/process-batch', {
     method: 'POST',
     body: JSON.stringify({ urls, user_id: userId }),
   })
@@ -59,7 +59,7 @@ export const startBatchProcess = async (
 export const getTaskStatus = async (
   taskId: string
 ) => {
-  const response = await fetchAPI<TaskStatusResponse>(`/task/${taskId}`, {
+  const response = await fetchAPI<TaskStatusResponse>(`/api/v1/task/${taskId}`, {
     method: 'GET',
   })
 
@@ -119,7 +119,7 @@ export const getStats = async (userId: string): Promise<FlatStats> => {
 // ============ 健康检查 ============
 
 export const healthCheck = async () => {
-  const response = await fetchAPI<{ status: string }>('/health', {
+  const response = await fetchAPI<{ status: string }>('/api/v1/health', {
     method: 'GET',
   })
 

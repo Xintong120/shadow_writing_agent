@@ -35,12 +35,19 @@ function convertMapToHighlightMapping(
   const categories = Object.keys(map)
   const colors = generateColors(categories.length)
 
-  return categories.map((category, index) => ({
-    category,
-    original: map[category],
-    imitation: map[category],
-    color: colors[index],
-  }))
+  return categories.map((category, index) => {
+    const items = map[category] || []
+    const half = Math.ceil(items.length / 2)
+    const original = items.slice(0, half)
+    const imitation = items.slice(half)
+
+    return {
+      category,
+      original,
+      imitation,
+      color: colors[index],
+    }
+  })
 }
 
 /**
