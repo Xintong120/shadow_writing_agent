@@ -84,10 +84,10 @@ export const theme = createTheme({
   // 阴影
   shadows: {
     xs: '0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1)',
-    sm: '0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 15px -5px, 0 7px 7px -5px',
-    md: '0 1px 3px rgba(0, 0, 0, 0.05), 0 20px 25px -5px, 0 10px 10px -5px',
-    lg: '0 1px 3px rgba(0, 0, 0, 0.05), 0 28px 23px -7px, 0 12px 12px -7px',
-    xl: '0 1px 3px rgba(0, 0, 0, 0.05), 0 36px 28px -7px, 0 17px 17px -7px',
+    sm: '0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.12)',
+    md: '0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.15)',
+    lg: '0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.18)',
+    xl: '0 12px 24px rgba(0, 0, 0, 0.18), 0 6px 12px rgba(0, 0, 0, 0.20)',
   },
 
   // 断点 - 优化为更合理的断点值
@@ -119,8 +119,8 @@ export const theme = createTheme({
       defaultProps: {
         radius: 'md',
         withBorder: true,
-        shadow: 'sm',
-        padding: 'md',
+        shadow: 'md', // 使用更小的阴影避免过重效果
+        padding: 'sm',
       },
     },
     Notification: {
