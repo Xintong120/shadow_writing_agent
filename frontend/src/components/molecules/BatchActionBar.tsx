@@ -40,6 +40,7 @@ const BatchActionBar = React.forwardRef<HTMLDivElement, BatchActionBarProps>(
         style={{
           backgroundColor: colors.background,
           borderTop: `1px solid ${colors.border}`,
+          borderRadius: theme.radius.lg,
         }}
         {...props}
       >

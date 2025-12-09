@@ -6,8 +6,10 @@
  * - 键盘导航支持（← → 方向键）
  * - 导航按钮
  * - 平滑动画过渡
+ * - 优化嵌套结构，避免重复的容器
  */
 
+import React from 'react'
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/atoms/button'
@@ -29,13 +31,13 @@ interface CardNavigatorProps {
   className?: string
 }
 
-function CardNavigator({
+const CardNavigator: React.FC<CardNavigatorProps> = ({
   results,
   tedInfo,
   initialIndex = 0,
   className = '',
   ...props
-}: CardNavigatorProps) {
+}) => {
   const theme = useMantineTheme()
   const colors = getSemanticColors(theme)
   const spacing = getSpacing(theme)
@@ -46,10 +48,6 @@ function CardNavigator({
 
   const handleToggleHighlight = useCallback(() => {
     setHighlightEnabled(prev => !prev)
-  }, [])
-
-  const handleViewParagraph = useCallback((result: ShadowWritingResult) => {
-    console.log('查看段落:', result.paragraph)
   }, [])
 
   const handleCopy = useCallback(() => {
@@ -102,12 +100,26 @@ function CardNavigator({
     <div
       style={{
         width: '100%',
-        maxWidth: '56rem',
+        maxWidth: '80rem',
         margin: '0 auto',
+        padding: spacing.xs, // 统一padding，避免重复
+        transition: 'all 0.3s ease',
       }}
       className={className}
       {...props}
     >
+      {/* 当前卡片 - 移除多余的嵌套容器 */}
+      <ShadowWritingCard
+        result={results[current]}
+        highlightEnabled={highlightEnabled}
+        onToggleHighlight={handleToggleHighlight}
+        onCopy={handleCopy}
+        style={{
+          width: '100%',
+          marginBottom: spacing.sm, // 卡片与导航按钮的间距
+        }}
+      />
+
       {/* 自定义导航按钮 */}
       <div
         style={{
@@ -115,7 +127,7 @@ function CardNavigator({
           alignItems: 'center',
           justifyContent: 'center',
           gap: spacing.md,
-          marginBottom: spacing.lg,
+          marginTop: spacing.lg,
           ...responsive.stackOnMobile.container,
         }}
       >
@@ -151,44 +163,6 @@ function CardNavigator({
           下一个
           <ChevronRight style={{ height: '1rem', width: '1rem', marginLeft: spacing.xs }} />
         </Button>
-      </div>
-
-      {/* 使用更简单的翻页显示 */}
-      <div
-        style={{
-          position: 'relative',
-          minHeight: '600px',
-          width: '100%',
-        }}
-      >
-        {/* 隐藏所有卡片，只显示当前索引的卡片 */}
-        {results.map((result, index) => (
-          <div
-            key={index}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              opacity: index === current ? 1 : 0,
-              transform: `translateX(${(index - current) * 100}%)`,
-              transition: 'all 0.3s ease',
-              padding: spacing.md,
-            }}
-          >
-            <ShadowWritingCard
-              result={result}
-              highlightEnabled={highlightEnabled}
-              onToggleHighlight={handleToggleHighlight}
-              onViewParagraph={() => handleViewParagraph(result)}
-              onCopy={handleCopy}
-              style={{
-                height: '100%',
-                width: '100%',
-              }}
-            />
-          </div>
-        ))}
       </div>
 
       {/* 键盘提示 */}

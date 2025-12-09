@@ -13,12 +13,14 @@ interface SimpleCardProps {
   size?: CardSize
   onClick?: () => void
   className?: string
+  style?: React.CSSProperties
   children: React.ReactNode
 }
 
-// 简化的子组件接口
+// 简化的子组件接口 - 添加style支持
 interface SimpleCardSectionProps {
   className?: string
+  style?: React.CSSProperties
   children: React.ReactNode
 }
 
@@ -46,7 +48,7 @@ interface SimpleMediaProps {
 
 // 主Card组件
 const CardRoot = React.forwardRef<HTMLDivElement, SimpleCardProps>(
-  ({ variant = "default", size = "md", onClick, className, children, ...props }, ref) => {
+  ({ variant = "default", size = "md", onClick, className, style, children, ...props }, ref) => {
     const theme = useMantineTheme()
     const colors = getSemanticColors(theme)
     const spacing = getSpacing(theme)
@@ -86,10 +88,11 @@ const CardRoot = React.forwardRef<HTMLDivElement, SimpleCardProps>(
         style={{
           backgroundColor: cardStyles.backgroundColor,
           border: cardStyles.border,
-          // 保留硬编码阴影（符合新策略）
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          // 移除硬编码阴影，使用Mantine主题阴影避免双重阴影
+          boxShadow: 'none',
           cursor: onClick ? 'pointer' : 'default',
           transition: 'all 200ms ease',
+          ...style,
         }}
         className={cn(onClick && "hover:opacity-90", className)}
         onClick={onClick}
@@ -102,9 +105,9 @@ const CardRoot = React.forwardRef<HTMLDivElement, SimpleCardProps>(
 )
 CardRoot.displayName = "Card"
 
-// 简化的CardHeader
+// 简化的CardHeader - 添加style支持
 const CardHeader = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, style, children, ...props }, ref) => {
     const theme = useMantineTheme()
     const spacing = getSpacing(theme)
 
@@ -113,6 +116,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
         ref={ref}
         style={{
           padding: spacing.md,
+          ...style,
         }}
         className={cn(className)}
         {...props}
@@ -124,9 +128,9 @@ const CardHeader = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
 )
 CardHeader.displayName = "CardHeader"
 
-// 简化的CardBody
+// 简化的CardBody - 添加style支持
 const CardBody = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, style, children, ...props }, ref) => {
     const theme = useMantineTheme()
     const spacing = getSpacing(theme)
 
@@ -135,6 +139,7 @@ const CardBody = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
         ref={ref}
         style={{
           padding: spacing.md,
+          ...style,
         }}
         className={cn(className)}
         {...props}
@@ -146,9 +151,9 @@ const CardBody = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
 )
 CardBody.displayName = "CardBody"
 
-// 简化的CardFooter
+// 简化的CardFooter - 添加style支持
 const CardFooter = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, style, children, ...props }, ref) => {
     const theme = useMantineTheme()
     const spacing = getSpacing(theme)
     const colors = getSemanticColors(theme)
@@ -160,6 +165,7 @@ const CardFooter = React.forwardRef<HTMLDivElement, SimpleCardSectionProps>(
           padding: spacing.md,
           borderTop: `1px solid ${colors.border}`,
           backgroundColor: colors.surface,
+          ...style,
         }}
         className={cn(className)}
         {...props}

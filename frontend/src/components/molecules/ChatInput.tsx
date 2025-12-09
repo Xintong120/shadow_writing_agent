@@ -97,7 +97,7 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
           className="border-0 bg-transparent pr-12"
           styles={{
             input: {
-              padding: `${spacing.md} ${spacing.md} ${spacing.md} ${spacing.lg}`,
+              padding: `${spacing.md} ${spacing.md} ${spacing.md} ${spacing.md}`,
               fontSize: theme.fontSizes.sm,
               lineHeight: 1.5,
               borderRadius: theme.radius.xl,
@@ -126,7 +126,7 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
               },
               '@media(min-width:1024px)': {
                 fontSize: theme.fontSizes.md,
-                padding: `${spacing.lg} ${spacing.lg} ${spacing.lg} ${spacing.xl}`,
+                padding: `${spacing.lg} ${spacing.lg} ${spacing.lg} ${spacing.lg}`,
               },
             },
           }}

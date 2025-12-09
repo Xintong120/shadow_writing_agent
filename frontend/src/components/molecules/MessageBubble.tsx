@@ -72,7 +72,7 @@ const MessageBubble = React.forwardRef<HTMLDivElement, MessageBubbleProps>(
           )}
 
           <div
-            className="max-w-[65%]"
+            className="max-w-[100%]"
             style={{
               padding: padding,
               backgroundColor: isUser ? colors.surface : undefined,
