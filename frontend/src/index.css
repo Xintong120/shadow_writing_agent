@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('@mantine/core/styles.css'); /* 添加Mantine基础样式 */
 
+/* BEGIN GENERATED: colors.js */
+/* END GENERATED: colors.js */
+
 /* 确保Mantine样式优先级高于TailwindCSS */
 @layer base {
   :root {
@@ -59,6 +62,37 @@
 
 @tailwind base;
 @tailwind components;
+/* ChatInput组件强制样式覆盖 - 解决loading状态下border变化问题 */
+.mantine-Textarea-input {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+.mantine-Textarea-input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  outline: none !important;
+}
+
+.mantine-Textarea-input:disabled {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+/* 确保在所有状态下都没有border */
+textarea[class*="mantine-Textarea"] {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+textarea[class*="mantine-Textarea"]:focus {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
 @tailwind utilities;
 
 @layer base {
