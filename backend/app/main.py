@@ -12,6 +12,7 @@ from app.enums import TaskStatus, MessageType
 from app.routers.core import router as core_router
 from app.routers.memory import router as memory_router
 from app.routers.config import router as config_router
+from app.routers.settings import router as settings_router
 from app.monitoring.api_key_dashboard import router as monitoring_router
 import asyncio
 
@@ -35,6 +36,7 @@ app.add_middleware(
 app.include_router(core_router)         # 核心业务路由 (/api/v1/...)
 app.include_router(memory_router)       # Memory路由 (/api/memory/...)
 app.include_router(config_router)       # 配置路由 (/api/config/...)
+app.include_router(settings_router)     # 设置路由 (/api/settings/...)
 app.include_router(monitoring_router)   # 监控路由 (/api/monitoring/...)
 
 # 兼容性路由：保留原有路径
