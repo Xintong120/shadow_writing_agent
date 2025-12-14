@@ -18,6 +18,7 @@ interface ApiKey {
 interface SettingsState {
   // API配置
   backendApiUrl: string
+  tavilyApiKey: string
   openaiApiKey: string
   deepseekApiKey: string
   apiRotationEnabled: boolean
@@ -44,6 +45,7 @@ function SettingsPage() {
   const [settings, setSettings] = useState<SettingsState>({
     // API配置
     backendApiUrl: 'http://localhost:8000',
+    tavilyApiKey: '',
     openaiApiKey: '',
     deepseekApiKey: '',
     apiRotationEnabled: false,
@@ -226,6 +228,16 @@ function SettingsPage() {
                 onChange={(e) => updateSetting('backendApiUrl', e.target.value)}
               />
 
+              {/* Tavily API Key */}
+              <TextInput
+                label="Tavily API Key (必需)"
+                placeholder="输入 Tavily API Key"
+                type="password"
+                value={settings.tavilyApiKey}
+                onChange={(e) => updateSetting('tavilyApiKey', e.target.value)}
+                description="用于搜索功能的 API Key，必须填写"
+              />
+
               {/* API密钥管理 */}
               <Box>
                 <Group justify="space-between" mb="sm">
@@ -338,105 +350,6 @@ function SettingsPage() {
           </CardContent>
         </MantineCard>
 
-        {/* 外观设置 */}
-        <MantineCard>
-          <CardHeader>
-            <CardTitle>外观设置</CardTitle>
-            <CardDescription>
-              自定义应用的外观和主题
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* 主题模式 */}
-              <Box>
-                <Text fw={500} mb="xs">主题模式</Text>
-                <Group>
-                  {themeOptions.map((option) => (
-                    <Box
-                      key={option.value}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => updateSetting('themeMode', option.value)}
-                    >
-                      <MantineBadge
-                        variant={settings.themeMode === option.value ? 'default' : 'outline'}
-                      >
-                        {option.label}
-                      </MantineBadge>
-                    </Box>
-                  ))}
-                </Group>
-                <Text size="sm" c="dimmed" mt="xs">
-                  目前支持浅色和深色模式切换
-                </Text>
-              </Box>
-
-              {/* 字体大小 */}
-              <Box>
-                <Text fw={500} mb="xs">字体大小</Text>
-                <Select
-                  data={fontSizeOptions}
-                  value={settings.fontSize}
-                  onChange={(value) => updateSetting('fontSize', value)}
-                  placeholder="选择字体大小"
-                />
-                <Text size="sm" c="dimmed" mt="xs">
-                  当前：{settings.fontSize === 'small' ? '小' : settings.fontSize === 'large' ? '大' : '中等'}
-                </Text>
-              </Box>
-            </Box>
-          </CardContent>
-        </MantineCard>
-
-        {/* 学习偏好 */}
-        <MantineCard>
-          <CardHeader>
-            <CardTitle>学习偏好</CardTitle>
-            <CardDescription>
-              配置学习相关的行为偏好
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* 自动保存学习进度 */}
-              <Group justify="space-between">
-                <Box>
-                  <Text fw={500}>自动保存学习进度</Text>
-                  <Text size="sm" c="dimmed">自动保存您的学习进度到本地</Text>
-                </Box>
-                <MantineSwitch
-                  checked={settings.autoSaveProgress}
-                  onChange={(checked) => updateSetting('autoSaveProgress', checked)}
-                />
-              </Group>
-
-              {/* 显示学习统计 */}
-              <Group justify="space-between">
-                <Box>
-                  <Text fw={500}>显示学习统计</Text>
-                  <Text size="sm" c="dimmed">在历史页面显示详细的学习统计数据</Text>
-                </Box>
-                <MantineSwitch
-                  checked={settings.showLearningStats}
-                  onChange={(checked) => updateSetting('showLearningStats', checked)}
-                />
-              </Group>
-
-              {/* 启用键盘快捷键提示 */}
-              <Group justify="space-between">
-                <Box>
-                  <Text fw={500}>启用键盘快捷键提示</Text>
-                  <Text size="sm" c="dimmed">显示键盘快捷键使用提示</Text>
-                </Box>
-                <MantineSwitch
-                  checked={settings.enableKeyboardShortcuts}
-                  onChange={(checked) => updateSetting('enableKeyboardShortcuts', checked)}
-                />
-              </Group>
-            </Box>
-          </CardContent>
-        </MantineCard>
-
         {/* LLM配置 */}
         <MantineCard>
           <CardHeader>
@@ -497,6 +410,105 @@ function SettingsPage() {
                 value={settings.frequencyPenalty}
                 onChange={(value) => updateSetting('frequencyPenalty', value || 0)}
               />
+            </Box>
+          </CardContent>
+        </MantineCard>
+
+        {/* 外观设置 */}
+        <MantineCard>
+          <CardHeader>
+            <CardTitle>外观设置</CardTitle>
+            <CardDescription>
+              自定义应用的外观和主题
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* 主题模式 */}
+              <Box>
+                <Text fw={500} mb="xs">主题模式</Text>
+                <Group>
+                  {themeOptions.map((option) => (
+                    <Box
+                      key={option.value}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => updateSetting('themeMode', option.value)}
+                    >
+                      <MantineBadge
+                        variant={settings.themeMode === option.value ? 'default' : 'outline'}
+                      >
+                        {option.label}
+                      </MantineBadge>
+                    </Box>
+                  ))}
+                </Group>
+                <Text size="sm" c="dimmed" mt="xs">
+                  目前支持浅色和深色模式切换
+                </Text>
+              </Box>
+
+              {/* 字体大小 */}
+              <Box>
+                <Text fw={500} mb="xs">字体大小</Text>
+                <Select
+                  data={fontSizeOptions}
+                  value={settings.fontSize}
+                  onChange={(value) => updateSetting('fontSize', value)}
+                  placeholder="选择字体大小"
+                />
+                <Text size="sm" c="dimmed" mt="xs">
+                  当前：{settings.fontSize === 'small' ? '小' : settings.fontSize === 'large' ? '大' : '中等'}
+                </Text>
+              </Box>
+            </Box>
+          </CardContent>
+        </MantineCard>
+
+        {/* 学习偏好 */}
+        <MantineCard>
+          <CardHeader>
+            <CardTitle>学习偏好</CardTitle>
+            <CardDescription>
+              配置学习相关的行为偏好 <Text span c="orange" fw={500}>[功能开发中]</Text>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* 自动保存学习进度 */}
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>自动保存学习进度</Text>
+                  <Text size="sm" c="dimmed">自动保存您的学习进度到本地</Text>
+                </Box>
+                <MantineSwitch
+                  checked={settings.autoSaveProgress}
+                  onChange={(checked) => updateSetting('autoSaveProgress', checked)}
+                />
+              </Group>
+
+              {/* 显示学习统计 */}
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>显示学习统计</Text>
+                  <Text size="sm" c="dimmed">在历史页面显示详细的学习统计数据</Text>
+                </Box>
+                <MantineSwitch
+                  checked={settings.showLearningStats}
+                  onChange={(checked) => updateSetting('showLearningStats', checked)}
+                />
+              </Group>
+
+              {/* 启用键盘快捷键提示 */}
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>启用键盘快捷键提示</Text>
+                  <Text size="sm" c="dimmed">显示键盘快捷键使用提示</Text>
+                </Box>
+                <MantineSwitch
+                  checked={settings.enableKeyboardShortcuts}
+                  onChange={(checked) => updateSetting('enableKeyboardShortcuts', checked)}
+                />
+              </Group>
             </Box>
           </CardContent>
         </MantineCard>
