@@ -143,7 +143,7 @@ class SystemConfig:
     DASHBOARD_REFRESH_INTERVAL = 5         # Dashboard刷新间隔（秒）
 
 
-# ==================== LLM模型名称枚举 ====================
+# ==================== 模型名称枚举 ====================
 
 class ModelName(str, Enum):
     """LLM模型名称枚举
