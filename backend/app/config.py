@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     top_p: float = 1.0
     frequency_penalty: float = 0.0
     
-    # API配置
+    # FastAPI配置
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     debug: bool = True
@@ -153,12 +153,55 @@ settings = Settings()
 
 # 验证配置
 def validate_config():
-    if not settings.groq_api_key:
-        raise ValueError("GROQ_API_KEY not set")
-    print(f"Using model: {settings.model_name}")
-    print(f"Temperature: {settings.temperature}")
-    print(f"API Rotation: {settings.api_rotation_enabled}")
-    print(f"Current Provider: {settings.current_api_provider}")
+    """验证所有必需的配置项"""
+    errors = []
+
+    # 1. 必需的API Keys
+    if not settings.tavily_api_key:
+        errors.append("TAVILY_API_KEY 必须设置（用于搜索功能）")
+
+    # 2. 至少需要一个主要的llmAPI提供商
+    main_api_keys = [settings.groq_api_key, settings.openai_api_key, settings.deepseek_api_key]
+    if not any(main_api_keys):
+        errors.append("至少需要设置一个主要API提供商 (GROQ/OpenAI/DeepSeek)")
+
+    # 3. 如果启用了API轮换，需要至少两个GROQ API Keys
+    if settings.api_rotation_enabled:
+        if len(settings.groq_api_keys) < 2:
+            errors.append("启用API轮换时，需要至少两个GROQ API Keys")
+
+    # 4. 当前提供商必须有对应的API Key
+    current_key = settings.get_current_api_key()
+    if not current_key:
+        errors.append(f"当前API提供商 '{settings.current_api_provider}' 缺少对应的API Key")
+
+    # 5. 验证llm模型配置合理性
+    if not (0 <= settings.temperature <= 2):
+        errors.append("temperature 必须在 0-2 之间")
+
+    if not (1 <= settings.max_tokens <= 8192):
+        errors.append("max_tokens 必须在 1-8192 之间")
+
+    if not (0 <= settings.top_p <= 1):
+        errors.append("top_p 必须在 0-1 之间")
+
+    if not (-2 <= settings.frequency_penalty <= 2):
+        errors.append("frequency_penalty 必须在 -2-2 之间")
+
+    # 如果有错误，抛出异常
+    if errors:
+        raise ValueError("配置验证失败:\n" + "\n".join(f"- {error}" for error in errors))
+
+    # 打印当前配置
+    print("配置验证通过")
+    available_providers = settings.get_available_api_providers()
+    print(f"可用提供商: {', '.join(available_providers) if available_providers else '无'}")
+    print(f"当前提供商: {settings.current_api_provider}")
+    print(f"使用模型: {settings.model_name}")
+    print(f"温度: {settings.temperature}")
+    print(f"API轮换: {'启用' if settings.api_rotation_enabled else '禁用'}")
+    if settings.api_rotation_enabled:
+        print(f"GROQ API Keys 数量: {len(settings.groq_api_keys)}")
 
 # 获取设置字典（用于前端）
 def get_settings_dict():
@@ -166,6 +209,7 @@ def get_settings_dict():
     return {
         # API配置
         "backend_api_url": f"http://{settings.api_host}:{settings.api_port}",
+        "tavily_api_key": settings.tavily_api_key,
         "openai_api_key": settings.openai_api_key,
         "deepseek_api_key": settings.deepseek_api_key,
         "api_rotation_enabled": settings.api_rotation_enabled,
