@@ -13,9 +13,10 @@ from app.tools.ted_tavily_search import ted_tavily_search
 from app.tools.ted_transcript_tool import extract_ted_transcript
 from app.tools.ted_file_manager import TEDFileManager
 from app.memory import MemoryService, get_global_store
+from typing import Dict, Any
 
 
-def communication_agent(state: Shadow_Writing_State) -> Shadow_Writing_State:
+def communication_agent(state: Shadow_Writing_State) -> Dict[str, Any]:
     """
     通信节点 - 搜索TED演讲
     
@@ -49,69 +50,73 @@ def communication_agent(state: Shadow_Writing_State) -> Shadow_Writing_State:
     try:
         # 步骤1 - PreloadMemory: 从Store加载用户历史
         memory_service = MemoryService(store=get_global_store())
-        seen_urls = memory_service.get_seen_ted_urls(user_id)
+        seen_urls = memory_service.get_seen_ted_urls(user_id or "default_user")
         print(f"   已加载用户历史: {len(seen_urls)} 个已看过的TED")
-        
-        # 步骤2 - LLM优化搜索词
-        optimized_query = optimize_search_query(topic)
-        
-        # 步骤3 - 搜索TED演讲
+
+        # 初始化变量
+        optimized_query = topic  # 默认使用原始查询
+
+        # 步骤2 - 先用原始关键词搜索
         print("   搜索中...")
-        results = ted_tavily_search(optimized_query, max_results=10)
-        
-        if not results:
-            print("   未找到结果")
+        results = ted_tavily_search(topic, max_results=10)
+
+        # 步骤3 - 过滤出有transcript的结果
+        valid_results = [r for r in results if r.get('has_transcript', False)]
+        print(f"   找到 {len(results)} 个结果，其中 {len(valid_results)} 个有transcript")
+
+        # 步骤4 - 如果结果不足，使用AI优化关键词
+        if len(valid_results) < 3:
+            print("   结果不足，尝试AI优化关键词...")
+            optimized_query = optimize_search_query(topic)
+            print(f"   [SEARCH OPTIMIZER] 优化搜索词: {topic} -> {optimized_query}")
+
+            # 用优化后的关键词搜索更多结果
+            optimized_results = ted_tavily_search(optimized_query, max_results=15)
+            optimized_valid = [r for r in optimized_results if r.get('has_transcript', False)]
+
+            # 合并结果，避免重复
+            existing_urls = {r.get('url') for r in valid_results}
+            for r in optimized_valid:
+                if r.get('url') not in existing_urls:
+                    valid_results.append(r)
+                    if len(valid_results) >= 5:  # 最多保留5个
+                        break
+
+            print(f"   优化后共找到 {len(valid_results)} 个有效结果")
+
+        if not valid_results:
+            print("   未找到有效结果（无transcript的演讲）")
             return {
-                "errors": [f"未找到关于 '{topic}' 的TED演讲"],
-                "processing_logs": ["通信节点: 搜索无结果"]
+                "errors": [f"未找到关于 '{topic}' 的TED演讲（需要有transcript）"],
+                "processing_logs": ["通信节点: 搜索无有效结果"]
             }
-        
-        # 步骤4 - 过滤已看过的演讲（当前版本跳过，保留所有结果）
-        new_results = [r for r in results if r.get('url') not in seen_urls]
-        
-        print(f"   找到 {len(results)} 个结果，{len(new_results)} 个新演讲")
-        
-        # 步骤5 - 如果结果不足，尝试替代搜索
-        if len(new_results) < 3:
-            print("   结果不足，尝试替代搜索...")
-            alternative_queries = generate_alternative_queries(topic)
-            
-            for alt_query in alternative_queries[:2]:  # 最多尝试2个
-                if not alt_query:
-                    continue
-                print(f"   尝试替代词: {alt_query}")
-                alt_results = ted_tavily_search(alt_query, max_results=5)
-                
-                # 去重后添加
-                for r in alt_results:
-                    if r.get('url') not in seen_urls and r not in new_results:
-                        new_results.append(r)
-                
-                if len(new_results) >= 5:
-                    break
-        
+
+        # 步骤5 - 过滤已看过的演讲
+        new_valid_results = [r for r in valid_results if r.get('url') not in seen_urls]
+        print(f"   过滤后剩余 {len(new_valid_results)} 个新演讲")
+
         # 步骤6 - 返回结果
-        if len(new_results) == 0:
+        if len(new_valid_results) == 0:
             return {
                 "errors": [f"未找到关于 '{topic}' 的新TED演讲"],
                 "processing_logs": [f"通信节点: 无新结果 (已看过 {len(seen_urls)} 个)"]
             }
-        
-        final_results = new_results[:5]  # 最多返回5个
+
+        final_results = new_valid_results[:5]  # 最多返回5个
         print(f"   返回 {len(final_results)} 个候选演讲")
-        
+
         # 步骤7 - 记录搜索历史
         memory_service.add_search_history(
-            user_id=user_id,
+            user_id=user_id or "default_user",
             original_query=topic,
             optimized_query=optimized_query,
-            alternative_queries=generate_alternative_queries(topic) if len(new_results) < 3 else [],
+            alternative_queries=[],
             results_count=len(final_results),
-            new_results=len(new_results),
-            filtered_seen=len(results) - len(new_results)
+            new_results=len(new_valid_results),
+            filtered_seen=len(valid_results) - len(new_valid_results)
         )
         print("   搜索历史已记录")
-        
+
         return {
             "ted_candidates": final_results,
             "awaiting_user_selection": True,
@@ -119,7 +124,7 @@ def communication_agent(state: Shadow_Writing_State) -> Shadow_Writing_State:
                 "original_topic": topic,
                 "optimized_query": optimized_query,
                 "seen_count": len(seen_urls),
-                "filtered_count": len(results) - len(new_results)
+                "filtered_count": len(valid_results) - len(new_valid_results)
             },
             "processing_logs": [f"通信节点: 找到 {len(final_results)} 个候选演讲"]
         }
@@ -132,7 +137,7 @@ def communication_agent(state: Shadow_Writing_State) -> Shadow_Writing_State:
         }
 
 
-def communication_continue_agent(state: Shadow_Writing_State) -> Shadow_Writing_State:
+def communication_continue_agent(state: Shadow_Writing_State) -> Dict[str, Any]:
     """
     通信节点 - 处理用户选择的TED演讲
     
@@ -151,7 +156,7 @@ def communication_continue_agent(state: Shadow_Writing_State) -> Shadow_Writing_
     """
     selected_url = state.get("selected_ted_url", "")
     user_id = state.get("user_id", "default_user")
-    search_context = state.get("search_context", {})
+    search_context = state.get("search_context") or {}
     
     print("\n[COMMUNICATION NODE] 处理用户选择")
     print(f"   URL: {selected_url}")
