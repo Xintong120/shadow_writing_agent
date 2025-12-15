@@ -156,21 +156,105 @@ class APIKeyManager:
 api_key_manager: Optional[APIKeyManager] = None
 
 
+def check_key_health(key: str) -> bool:
+    """
+    检查单个 API Key 是否健康
+
+    通过发送简单的测试请求来验证密钥可用性
+
+    Args:
+        key: API Key 值
+
+    Returns:
+        bool: True=健康可用, False=永久失效
+    """
+    try:
+        # 发送一个简单的测试请求（只返回1个token节省成本）
+        response = completion(
+            model="groq/llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": "test"}],
+            api_key=key,
+            max_tokens=1,
+            temperature=0
+        )
+
+        # 检查响应是否有效
+        if response and response.choices and len(response.choices) > 0:
+            print(f"密钥健康: ***{key[-8:]}")
+            return True
+        else:
+            print(f"密钥返回无效响应: ***{key[-8:]}")
+            return False
+
+    except Exception as e:
+        error_msg = str(e).lower()
+
+        # 检查是否是永久性错误（不应该重试）
+        permanent_errors = [
+            'organization_restricted',
+            'invalid_api_key',
+            'unauthorized',
+            'forbidden',
+            'account_disabled'
+        ]
+
+        if any(keyword in error_msg for keyword in permanent_errors):
+            print(f"密钥永久失效: ***{key[-8:]} - {str(e)[:100]}")
+            return False  # 永久失效
+        else:
+            # 临时性错误（如网络问题、临时限制），标记为健康但记录警告
+            print(f"密钥暂时不可用: ***{key[-8:]} - {str(e)[:100]}")
+            print("   这可能是临时问题，系统将继续尝试使用此密钥")
+            return True   # 临时问题，可以重试
+
+
 def initialize_key_manager(cooldown_seconds: int = 60):
-    """初始化 API Key 管理器
-    
+    """
+    初始化 API Key 管理器（带健康检查）
+
     Args:
         cooldown_seconds: 冷却时间（秒）
     """
     global api_key_manager
-    
+
+    print("\n开始 API Key 健康检查...")
+
     if settings.groq_api_keys and len(settings.groq_api_keys) > 1:
-        api_key_manager = APIKeyManager(settings.groq_api_keys, cooldown_seconds)
+        # 多密钥模式：检查所有密钥健康状态
+        healthy_keys = []
+        unhealthy_keys = []
+
+        for i, key in enumerate(settings.groq_api_keys):
+            key_suffix = key[-8:] if len(key) >= 8 else "****"
+            print(f"检查密钥 {i+1}/{len(settings.groq_api_keys)}: ***{key_suffix}")
+
+            if check_key_health(key):
+                healthy_keys.append(key)
+            else:
+                unhealthy_keys.append(key)
+
+        if not healthy_keys:
+            raise ValueError(f"所有 {len(settings.groq_api_keys)} 个 API Key 都不可用，请检查配置")
+
+        api_key_manager = APIKeyManager(healthy_keys, cooldown_seconds)
+
+        print("\n健康检查结果:")
+        print(f"健康密钥: {len(healthy_keys)}/{len(settings.groq_api_keys)}")
+        if unhealthy_keys:
+            print(f"失效密钥: {len(unhealthy_keys)} 个（已跳过）")
+
         print("多 Key 轮换已启用")
+
     else:
+        # 单密钥模式
         api_key_manager = None
         if settings.groq_api_key:
-            print("只有 1 个 API Key，未启用轮换（建议配置多个 Key）")
+            print("检查单密钥: ***" + settings.groq_api_key[-8:] if len(settings.groq_api_key) >= 8 else "****")
+
+            if check_key_health(settings.groq_api_key):
+                print("单密钥模式就绪")
+            else:
+                raise ValueError("配置的 API Key 不可用，请检查配置")
         else:
             print("未配置 API Key")
 
