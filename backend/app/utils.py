@@ -2,6 +2,7 @@ from litellm import completion
 from app.config import settings
 import json
 import time
+import asyncio
 from collections import deque
 from typing import Callable, Optional, Dict, Any
 from app.monitoring.api_key_monitor import api_key_monitor
@@ -107,17 +108,28 @@ class APIKeyManager:
         key_id = self._get_key_id(key)
         
         if is_rate_limit:
+            # 指数退避策略：2^(failure_count-1) 秒，最多60秒
+            failure_count = self.key_failures[key]
+            base_backoff = 2 ** (failure_count - 1)  # 指数退避：1, 2, 4, 8, 16, 32...
+            max_backoff = 60  # 最大等待时间60秒
+            backoff_seconds = min(base_backoff, max_backoff)
+
+            # 添加随机抖动 (±25%) 避免惊群效应
+            import random
+            jitter = backoff_seconds * 0.25 * (random.random() * 2 - 1)
+            cooldown_seconds = max(1, backoff_seconds + jitter)  # 最少1秒
+
             # 设置冷却时间
-            cooldown_until = time.time() + self.cooldown_seconds
+            cooldown_until = time.time() + cooldown_seconds
             self.key_cooldown[key] = cooldown_until
-            
+
             # 【监控集成】标记冷却状态
             if key_id:
-                api_key_monitor.mark_cooling(key_id, self.cooldown_seconds)
-            
-            print(f"[WARNING] Key ***{key[-8:]} 达到速率限制，冷却 {self.cooldown_seconds}秒")
-            print(f"失败次数: {self.key_failures[key]}")
-            
+                api_key_monitor.mark_cooling(key_id, cooldown_seconds)
+
+            print(f"[指数退避] Key ***{key[-8:]} 达到速率限制，等待 {cooldown_seconds:.1f}秒")
+            print(f"失败次数: {failure_count}，基础等待: {backoff_seconds}秒")
+
             # 切换到下一个 Key
             self.rotate_key()
         else:
@@ -150,6 +162,59 @@ class APIKeyManager:
             'key_failures': dict(self.key_failures),
             'active_key': f"***{self.keys[0][-8:]}"
         }
+
+
+# ==================== 并发控制管理器 ====================
+
+class ConcurrencyLimiter:
+    """并发请求限制器
+
+    使用信号量控制同时进行的API请求数量，避免过载
+    """
+
+    def __init__(self, max_concurrent: int = 3):
+        """初始化并发限制器
+
+        Args:
+            max_concurrent: 最大并发请求数，默认3个
+        """
+        self.max_concurrent = max_concurrent
+        self.semaphore = asyncio.Semaphore(max_concurrent)
+        self.active_requests = 0
+        print(f"并发限制器初始化: 最大并发 {max_concurrent} 个请求")
+
+    async def acquire(self) -> None:
+        """获取并发许可"""
+        await self.semaphore.acquire()
+        self.active_requests += 1
+        print(f"[并发控制] 请求开始，当前活跃: {self.active_requests}/{self.max_concurrent}")
+
+    def release(self) -> None:
+        """释放并发许可"""
+        self.semaphore.release()
+        self.active_requests -= 1
+        print(f"[并发控制] 请求完成，当前活跃: {self.active_requests}/{self.max_concurrent}")
+
+    async def __aenter__(self):
+        await self.acquire()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+
+# 全局并发限制器实例
+concurrency_limiter: Optional[ConcurrencyLimiter] = None
+
+
+def initialize_concurrency_limiter(max_concurrent: int = 3):
+    """初始化并发限制器
+
+    Args:
+        max_concurrent: 最大并发请求数
+    """
+    global concurrency_limiter
+    concurrency_limiter = ConcurrencyLimiter(max_concurrent)
 
 
 # 全局 API Key 管理器实例
@@ -263,24 +328,24 @@ def initialize_key_manager(cooldown_seconds: int = 60):
 
 def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str] = None) -> Callable:
     """创建 LLM 调用函数
-    
+
     Args:
         system_prompt: 系统提示词（可选）
         model: 模型名称（可选，默认使用settings.model_name）
-        
+
     Returns:
         callable: LLM 调用函数
     """
-    
+
     def call_llm(user_prompt: str, output_format: Optional[Dict] = None, temperature: Optional[float] = None, _retry_count: int = 0) -> Any:
         """调用 LLM（支持自动 Key 切换）
-        
+
         Args:
             user_prompt: 用户提示词
             output_format: 输出格式字典（如果指定，则返回 JSON）
             temperature: 温度参数（可选）
             _retry_count: 重试计数（内部使用）
-            
+
         Returns:
             str or dict: LLM 响应内容
         """
@@ -292,16 +357,16 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
         else:
             current_key = settings.groq_api_key
             key_id = None
-        
+
         start_time = time.time()  # 【监控集成】记录开始时间
-        
+
         try:
             # 构建消息列表
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": user_prompt})
-            
+
             # 调用参数
             kwargs = {
                 "model": f"groq/{model or settings.model_name}",  # 使用传入的model或默认值
@@ -309,15 +374,15 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
                 "temperature": temperature if temperature is not None else settings.temperature,
                 "api_key": current_key,  # 使用当前 Key
             }
-            
+
             # 如果需要 JSON 输出
             if output_format:
                 kwargs["response_format"] = {"type": "json_object"}
-            
+
             # 调用 LiteLLM
             response = completion(**kwargs)
             content = response.choices[0].message.content
-            
+
             # 【监控集成】记录成功调用
             if key_id:
                 response_time = time.time() - start_time
@@ -330,13 +395,13 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
                     rate_limited=False,
                     response_headers=response_headers
                 )
-            
+
             # 解析 JSON
             if output_format:
                 return json.loads(content)
-            
+
             return content
-            
+
         except json.JSONDecodeError as e:
             print(f"JSON parsing failed: {e}")
             # 【监控集成】记录失败（JSON解析错误也算失败）
@@ -349,15 +414,15 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
                     rate_limited=False
                 )
             return None
-            
+
         except Exception as e:
             error_msg = str(e)
-            
+
             # 检测是否是速率限制错误
             is_rate_limit = any(keyword in error_msg.lower() for keyword in [
                 'rate', 'limit', 'quota', 'exceeded', 'too many'
             ])
-            
+
             # 【监控集成】记录失败调用
             if key_id:
                 response_time = time.time() - start_time
@@ -367,11 +432,11 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
                     response_time=response_time,
                     rate_limited=is_rate_limit
                 )
-            
+
             if is_rate_limit and api_key_manager:
                 # 标记当前 Key 失败
                 api_key_manager.mark_failure(current_key, error_msg)
-                
+
                 # 限制重试次数（最多重试 Key 数量次）
                 max_retries = len(api_key_manager.keys)
                 if _retry_count < max_retries:
@@ -385,7 +450,7 @@ def create_llm_function(system_prompt: Optional[str] = None, model: Optional[str
                 # 非速率限制错误或没有管理器
                 print(f"LLM call failed: {e}")
                 return None
-    
+
     return call_llm
 
 
