@@ -26,7 +26,8 @@
       "@/*": ["./src/*"]
     },
     /* Type declaration files */
-    "typeRoots": ["./src/styles"]
+    "typeRoots": ["./node_modules/@types", "./src/styles"],
+    "types": ["jest", "node"]
   },
   "include": ["src"],
   "exclude": ["node_modules"],

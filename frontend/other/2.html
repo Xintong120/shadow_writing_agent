@@ -1,0 +1,983 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  MessageSquare, 
+  Search, 
+  Library, 
+  Settings, 
+  Play, 
+  CheckCircle, 
+  Clock, 
+  BarChart2, 
+  ChevronDown, 
+  ChevronUp, 
+  Copy, 
+  Heart, 
+  Share2, 
+  Cpu, 
+  Zap, 
+  RefreshCw,
+  Trash2,
+  Moon,
+  Sun,
+  Globe,
+  Database,
+  ArrowRight,
+  Sparkles,
+  BookOpen,
+  User,
+  LogOut,
+  Shield,
+  Wifi,
+  WifiOff,
+  Activity
+} from 'lucide-react';
+
+/**
+ * 模拟数据 (Mock Data)
+ * 用于展示 UI 效果的静态数据
+ */
+const MOCK_TED_TALKS = [
+  {
+    id: 1,
+    title: "Why AI needs a sense of ethics",
+    speaker: "Technologist X",
+    duration: "12:45",
+    views: "2.1M",
+    description: "An insightful look into how we can program morality into machines...",
+    thumbnail: "bg-blue-100 dark:bg-blue-900/30"
+  },
+  {
+    id: 2,
+    title: "The future of leadership in the digital age",
+    speaker: "Leader Y",
+    duration: "15:20",
+    views: "1.5M",
+    description: "What does it mean to lead when your team is half human, half algorithm?",
+    thumbnail: "bg-indigo-100 dark:bg-indigo-900/30"
+  },
+  {
+    id: 3,
+    title: "How to learn a new language by 2025",
+    speaker: "Linguist Z",
+    duration: "09:30",
+    views: "5.8M",
+    description: "New techniques in cognitive science reveal the secrets of rapid acquisition.",
+    thumbnail: "bg-purple-100 dark:bg-purple-900/30"
+  },
+  {
+    id: 4,
+    title: "Creative thinking in a data-driven world",
+    speaker: "Artist A",
+    duration: "18:10",
+    views: "900K",
+    description: "Why human creativity is becoming more valuable, not less.",
+    thumbnail: "bg-pink-100 dark:bg-pink-900/30"
+  }
+];
+
+const MOCK_RESULTS = [
+  {
+    id: 101,
+    score: 8.5,
+    maxScore: 11,
+    original: "Leadership requires vision to navigate uncertainty.",
+    mimic: "Management demands insight to handle ambiguity.",
+    mapping: [
+      { from: "Leadership", to: "Management" },
+      { from: "requires", to: "demands" },
+      { from: "vision", to: "insight" },
+      { from: "navigate", to: "handle" },
+      { from: "uncertainty", to: "ambiguity" }
+    ]
+  },
+  {
+    id: 102,
+    score: 9.2,
+    maxScore: 11,
+    original: "We must embrace the challenges of the future.",
+    mimic: "We should accept the difficulties of tomorrow.",
+    mapping: [
+      { from: "must", to: "should" },
+      { from: "embrace", to: "accept" },
+      { from: "challenges", to: "difficulties" },
+      { from: "future", to: "tomorrow" }
+    ]
+  }
+];
+
+/**
+ * 登录页面组件 (Login Page)
+ * 提供访客模式和模拟登录功能
+ */
+const LoginPage = ({ onLogin, onGuest }) => {
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden p-8 space-y-8 animate-in fade-in zoom-in duration-500">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-200">
+            <Sparkles size={32} className="text-white" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Shadow<span className="text-indigo-600">Writer</span></h1>
+          <p className="text-slate-500">掌握像 TED 演讲者一样的英语表达</p>
+        </div>
+
+        <div className="space-y-4">
+          <button 
+            onClick={() => onLogin('user')}
+            className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            aria-label="使用账号登录"
+          >
+            <User size={20} />
+            <span>登录账号</span>
+          </button>
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-200"></span>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-slate-400">或者</span>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => onGuest()}
+            className="w-full bg-indigo-50 text-indigo-700 font-bold py-4 rounded-xl hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 border border-indigo-100"
+            aria-label="免登录试用"
+          >
+            <Zap size={20} />
+            <span>免登录试用 (Guest Mode)</span>
+          </button>
+        </div>
+
+        <p className="text-center text-xs text-slate-400">
+          点击登录即代表您同意我们的 <a href="#" className="underline hover:text-indigo-600">服务条款</a> 和 <a href="#" className="underline hover:text-indigo-600">隐私政策</a>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * 导航栏组件 (Navigation)
+ * 响应式设计：桌面端为侧边栏，移动端为底部导航栏
+ * 语义化：使用 <nav> 标签
+ */
+const Navigation = ({ activeTab, setActiveTab, userMode, onLogout }) => {
+  const menuItems = [
+    { id: 'chat', icon: MessageSquare, label: 'AI 创作' },
+    { id: 'history', icon: Library, label: '学习记录' },
+    { id: 'stats', icon: BarChart2, label: '数据统计' },
+    { id: 'settings', icon: Settings, label: '系统设置' },
+  ];
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <nav 
+        className="hidden md:flex w-20 lg:w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col h-screen flex-shrink-0 transition-all duration-300 z-50"
+        aria-label="Main Navigation"
+      >
+        {/* Logo Area */}
+        <div className="p-6 flex items-center justify-center lg:justify-start gap-3">
+          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-500/20">
+            <Sparkles size={20} className="text-white" />
+          </div>
+          <span className="font-bold text-xl hidden lg:block tracking-tight text-slate-900 dark:text-white">
+            Shadow<span className="text-indigo-600">Writer</span>
+          </span>
+        </div>
+        
+        {/* Menu Items */}
+        <div className="flex-1 mt-6 px-4 space-y-2">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 group ${
+                activeTab === item.id 
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              aria-current={activeTab === item.id ? 'page' : undefined}
+            >
+              <item.icon size={22} className={activeTab === item.id ? 'animate-pulse-slow' : 'group-hover:scale-110 transition-transform'} />
+              <span className="hidden lg:block font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* User Profile */}
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-sm font-bold text-white shadow-sm">
+              {userMode === 'guest' ? 'G' : 'JD'}
+            </div>
+            <div className="hidden lg:block flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                {userMode === 'guest' ? 'Guest User' : 'John Doe'}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {userMode === 'guest' ? 'Trial Version' : 'Premium Member'}
+              </p>
+            </div>
+            <button 
+              onClick={onLogout}
+              className="hidden lg:block p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              title="Logout"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Bottom Navigation */}
+      <nav 
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 pb-safe z-50 flex justify-around p-3"
+        aria-label="Mobile Navigation"
+      >
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-colors ${
+              activeTab === item.id 
+                ? 'text-indigo-600 dark:text-indigo-400' 
+                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+            }`}
+          >
+            <item.icon size={24} strokeWidth={activeTab === item.id ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </>
+  );
+};
+
+/**
+ * 搜索输入组件
+ * 增加 ARIA 属性和状态反馈
+ */
+const SearchInput = ({ onSearch, isSearching }) => {
+  const [query, setQuery] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (query.trim()) onSearch(query);
+  };
+
+  return (
+    <div className="w-full max-w-3xl mx-auto">
+      <form onSubmit={handleSubmit} className="relative group" role="search">
+        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+          {isSearching ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-500 border-t-transparent"></div>
+          ) : (
+            <Search className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+          )}
+        </div>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="输入学习主题，例如 'AI Ethics', 'Leadership'..."
+          className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white"
+          aria-label="搜索 TED 演讲主题"
+        />
+        <button 
+          type="submit"
+          className="absolute right-2 top-2 bottom-2 bg-slate-900 dark:bg-indigo-600 text-white px-4 rounded-xl font-medium hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!query.trim() || isSearching}
+        >
+          <span className="hidden sm:inline">开始探索</span>
+          <ArrowRight className="sm:hidden" size={20} />
+        </button>
+      </form>
+      <div className="mt-3 flex flex-wrap gap-2 justify-center text-sm text-slate-500 dark:text-slate-400">
+        <span>热门搜索:</span>
+        {["Public Speaking", "Technology", "Psychology"].map(tag => (
+          <button 
+            key={tag}
+            onClick={() => setQuery(tag)} 
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 underline decoration-dotted transition-colors"
+          >
+            {tag}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * TED 演讲卡片组件
+ * 响应式布局：在小屏幕上调整图片比例
+ */
+const TedCard = ({ talk, isSelected, onToggle }) => {
+  return (
+    <article 
+      onClick={() => onToggle(talk.id)}
+      className={`relative group cursor-pointer bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border transition-all duration-300 flex flex-col h-full ${
+        isSelected 
+          ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-lg translate-y-[-2px]' 
+          : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md'
+      }`}
+      aria-pressed={isSelected}
+    >
+      <div className={`h-36 sm:h-40 ${talk.thumbnail} flex items-center justify-center relative overflow-hidden`}>
+        <div className="absolute inset-0 bg-black/5 dark:bg-black/20 group-hover:bg-transparent transition-colors"></div>
+        <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center z-10 shadow-lg group-hover:scale-110 transition-transform">
+          <Play className="text-slate-900 fill-slate-900 ml-1" size={20} />
+        </div>
+        <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded">
+          {talk.duration}
+        </div>
+      </div>
+      
+      <div className="p-4 flex flex-col flex-1">
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight text-base">{talk.title}</h3>
+          {isSelected && <CheckCircle className="text-indigo-600 dark:text-indigo-400 flex-shrink-0 ml-2 animate-in zoom-in" size={20} />}
+        </div>
+        <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium mb-2">{talk.speaker}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 flex-1">{talk.description}</p>
+        
+        <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500 mt-auto pt-3 border-t border-slate-100 dark:border-slate-700">
+          <span className="flex items-center gap-1" title="Views">
+            <Play size={12} /> {talk.views}
+          </span>
+          <span className="flex items-center gap-1" title="Language">
+            <BookOpen size={12} /> EN
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+};
+
+/**
+ * 影子写作结果卡片
+ * 核心功能组件，展示原文与模仿句
+ */
+const ResultCard = ({ data }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // 根据分数动态生成颜色
+  const getQualityColor = (score) => {
+    if (score >= 9) return "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800";
+    if (score >= 7) return "text-blue-600 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800";
+    return "text-amber-600 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800";
+  };
+
+  return (
+    <section className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-4 shadow-sm hover:shadow-md transition-shadow">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
+        <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold border ${getQualityColor(data.score)}`}>
+          <Sparkles size={14} />
+          <span>质量分数: {data.score}/{data.maxScore}</span>
+        </div>
+        <button 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          aria-expanded={isExpanded}
+          aria-label="展开详细分析"
+        >
+          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="p-5 space-y-5">
+        <div className="relative pl-4 border-l-4 border-slate-300 dark:border-slate-600">
+          <span className="absolute -top-3 left-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white dark:bg-slate-800 px-1">Original</span>
+          <p className="text-slate-600 dark:text-slate-300 text-lg font-serif italic leading-relaxed">"{data.original}"</p>
+        </div>
+        
+        <div className="relative pl-4 border-l-4 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10 py-3 pr-2 rounded-r-lg">
+           <span className="absolute -top-3 left-2 text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider bg-white dark:bg-slate-800 px-1 shadow-sm border border-indigo-100 dark:border-indigo-900/50 rounded-sm">Mimic</span>
+           <p className="text-slate-900 dark:text-white text-lg font-medium leading-relaxed">"{data.mimic}"</p>
+        </div>
+      </div>
+
+      {/* Mapping (Collapsible) */}
+      {isExpanded && (
+        <div className="px-5 pb-5 animate-in slide-in-from-top-2 duration-200">
+          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700">
+            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Cpu size={14} /> 词汇映射分析
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {data.mapping.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-sm bg-white dark:bg-slate-800 p-2.5 rounded border border-slate-100 dark:border-slate-700 shadow-sm">
+                  <span className="text-slate-500 dark:text-slate-400">{item.from}</span>
+                  <ArrowRight size={12} className="text-slate-300 dark:text-slate-600" />
+                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">{item.to}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700 flex items-center justify-end gap-2">
+        {['复制', '收藏', '反馈'].map((action, idx) => (
+          <button 
+            key={action}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-md transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
+          >
+            {idx === 0 ? <Copy size={14} /> : idx === 1 ? <Heart size={14} /> : <MessageSquare size={14} />}
+            {action}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/**
+ * 统计页面组件
+ * 替换 "Work in Progress"
+ */
+const StatsPage = () => {
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4">
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-3">
+        <BarChart2 className="text-indigo-500" />
+        学习数据分析
+      </h1>
+
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: '总练习时长', value: '32h 15m', icon: Clock, color: 'blue' },
+          { label: '模仿句子数', value: '1,245', icon: CheckCircle, color: 'emerald' },
+          { label: '平均准确率', value: '88%', icon: Activity, color: 'rose' },
+          { label: '当前连胜', value: '12 Days', icon: Zap, color: 'amber' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl bg-${stat.color}-50 dark:bg-${stat.color}-900/20 flex items-center justify-center text-${stat.color}-600 dark:text-${stat.color}-400`}>
+              <stat.icon size={24} />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{stat.label}</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Chart Placeholder */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-bold text-slate-800 dark:text-white">能力维度雷达图</h3>
+            <select className="text-xs bg-slate-50 dark:bg-slate-700 border-none rounded-lg px-2 py-1 text-slate-600 dark:text-slate-300">
+              <option>本周</option>
+              <option>本月</option>
+            </select>
+          </div>
+          <div className="h-64 flex items-center justify-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400">
+             <div className="text-center">
+               <div className="relative w-40 h-40 mx-auto opacity-50">
+                  {/* CSS Simulation of Radar Chart */}
+                  <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
+                    <polygon points="50,10 90,35 90,75 50,90 10,75 10,35" fill="none" stroke="currentColor" strokeWidth="1" />
+                    <polygon points="50,25 75,40 75,65 50,75 25,65 25,40" fill="rgba(79, 70, 229, 0.2)" stroke="currentColor" strokeWidth="1" className="text-indigo-500" />
+                    <line x1="50" y1="50" x2="50" y2="10" stroke="currentColor" strokeWidth="0.5" />
+                    <line x1="50" y1="50" x2="90" y2="35" stroke="currentColor" strokeWidth="0.5" />
+                    <line x1="50" y1="50" x2="90" y2="75" stroke="currentColor" strokeWidth="0.5" />
+                    <line x1="50" y1="50" x2="50" y2="90" stroke="currentColor" strokeWidth="0.5" />
+                    <line x1="50" y1="50" x2="10" y2="75" stroke="currentColor" strokeWidth="0.5" />
+                    <line x1="50" y1="50" x2="10" y2="35" stroke="currentColor" strokeWidth="0.5" />
+                  </svg>
+               </div>
+               <span className="text-xs mt-2 block">词汇量 • 语法结构 • 流利度 • 逻辑性 • 情感色彩 • 专业度</span>
+             </div>
+          </div>
+        </div>
+
+        {/* Progress List */}
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <h3 className="font-bold text-slate-800 dark:text-white mb-6">今日目标</h3>
+          <div className="space-y-6">
+            {[
+              { title: "完成 3 个 TED 演讲分析", progress: 66, color: "bg-indigo-500" },
+              { title: "学习 20 个新表达", progress: 40, color: "bg-pink-500" },
+              { title: "保持专注 45 分钟", progress: 100, color: "bg-emerald-500" }
+            ].map((goal, idx) => (
+              <div key={idx}>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-600 dark:text-slate-300">{goal.title}</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{goal.progress}%</span>
+                </div>
+                <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${goal.color} rounded-full transition-all duration-1000`} 
+                    style={{width: `${goal.progress}%`}}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * 设置页面
+ * 包含 API Key 管理和主题切换
+ */
+const SettingsPage = ({ isDarkMode, toggleTheme }) => {
+  const [apiKeys, setApiKeys] = useState([
+    { service: 'Tavily Search API', key: '', status: 'idle' }, // idle, checking, success, error
+    { service: 'OpenAI GPT-4', key: '', status: 'success' }
+  ]);
+
+  const updateKey = (index, value) => {
+    const newKeys = [...apiKeys];
+    newKeys[index].key = value;
+    newKeys[index].status = 'idle'; // Reset status on change
+    setApiKeys(newKeys);
+  };
+
+  const testConnection = (index) => {
+    const newKeys = [...apiKeys];
+    newKeys[index].status = 'checking';
+    setApiKeys(newKeys);
+
+    // Simulate API Check
+    setTimeout(() => {
+      const updatedKeys = [...newKeys];
+      // Randomly succeed or fail for demo
+      updatedKeys[index].status = Math.random() > 0.3 ? 'success' : 'error'; 
+      setApiKeys(updatedKeys);
+    }, 1500);
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4">
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-8">系统设置</h1>
+      
+      <div className="space-y-8">
+        {/* API Configuration */}
+        <section className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
+             <Database size={20} className="text-indigo-500" />
+             API 连接配置
+           </h3>
+           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+             配置外部服务 API Key 以启用智能搜索和影子写作功能。您的 Key 仅存储在本地浏览器中。
+           </p>
+
+           <div className="space-y-4">
+             {apiKeys.map((api, idx) => (
+               <div key={idx} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                 <div className="flex-1 w-full">
+                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
+                     {api.service}
+                   </label>
+                   <div className="relative">
+                     <input 
+                       type="password" 
+                       value={api.key || "sk-........................"} // Mock masked value
+                       onChange={(e) => updateKey(idx, e.target.value)}
+                       className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-10 py-2.5 text-sm text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-mono"
+                     />
+                     <div className="absolute right-3 top-2.5">
+                       {api.status === 'success' && <Wifi size={16} className="text-emerald-500" />}
+                       {api.status === 'error' && <WifiOff size={16} className="text-red-500" />}
+                       {api.status === 'checking' && <RefreshCw size={16} className="text-indigo-500 animate-spin" />}
+                     </div>
+                   </div>
+                 </div>
+                 <button 
+                   onClick={() => testConnection(idx)}
+                   disabled={api.status === 'checking'}
+                   className={`w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
+                     api.status === 'success' 
+                       ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
+                       : api.status === 'error'
+                       ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+                       : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600'
+                   }`}
+                 >
+                   {api.status === 'checking' ? '连接中...' : api.status === 'success' ? '连接正常' : api.status === 'error' ? '连接失败' : '测试连接'}
+                 </button>
+               </div>
+             ))}
+             
+             <button className="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:underline flex items-center gap-1 mt-2">
+               + 添加新的 API 服务
+             </button>
+           </div>
+        </section>
+
+        {/* Preferences */}
+        <section className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
+             <Settings size={20} className="text-indigo-500" />
+             偏好设置
+           </h3>
+           <div className="space-y-5">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-indigo-900/30 text-indigo-400' : 'bg-orange-100 text-orange-500'}`}>
+                    {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
+                  </div>
+                  <div>
+                    <span className="text-slate-900 dark:text-white font-medium block">界面外观</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">切换深色/浅色模式</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={toggleTheme}
+                  className={`w-14 h-7 rounded-full p-1 transition-colors duration-300 relative ${isDarkMode ? 'bg-indigo-600' : 'bg-slate-200'}`}
+                  aria-label="Toggle Dark Mode"
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${isDarkMode ? 'translate-x-7' : 'translate-x-0'}`}></div>
+                </button>
+             </div>
+             
+             <hr className="border-slate-100 dark:border-slate-700" />
+             
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-500">
+                    <Globe size={20} />
+                  </div>
+                  <div>
+                    <span className="text-slate-900 dark:text-white font-medium block">界面语言</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">选择应用显示语言</span>
+                  </div>
+                </div>
+                <select className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-1.5 text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/20">
+                  <option>简体中文</option>
+                  <option>English</option>
+                  <option>日本語</option>
+                </select>
+             </div>
+           </div>
+        </section>
+
+        {/* Cache */}
+        <section className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
+             <Cpu size={20} className="text-indigo-500" />
+             存储管理
+           </h3>
+           <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+             <div>
+               <p className="text-slate-700 dark:text-slate-200 font-medium">本地缓存数据</p>
+               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">已使用 124MB (包含演讲音频和文本)</p>
+             </div>
+             <button className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors text-sm font-medium">
+               <Trash2 size={16} /> 清除缓存
+             </button>
+           </div>
+        </section>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * 主页面组件 - 处理搜索和展示
+ */
+const ChatPage = ({ onStartProcessing }) => {
+  const [searchStatus, setSearchStatus] = useState('idle'); // idle, searching, results
+  const [selectedTalks, setSelectedTalks] = useState([]);
+
+  const handleSearch = (query) => {
+    setSearchStatus('searching');
+    setTimeout(() => {
+      setSearchStatus('results');
+    }, 1500);
+  };
+
+  const toggleTalk = (id) => {
+    if (selectedTalks.includes(id)) {
+      setSelectedTalks(selectedTalks.filter(tid => tid !== id));
+    } else {
+      setSelectedTalks([...selectedTalks, id]);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
+      {/* Hero Section */}
+      <div className={`transition-all duration-700 ease-in-out ${searchStatus === 'idle' ? 'mt-10 sm:mt-20 opacity-100' : 'mt-0 opacity-100'}`}>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">
+            Shadow Writing <span className="text-indigo-600 dark:text-indigo-400">Mastery</span>
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-base sm:text-lg max-w-2xl mx-auto px-4">
+            通过 AI 深度分析 TED 演讲，像大师一样思考和写作。输入你想学习的主题，我们为你定制模仿练习。
+          </p>
+        </div>
+
+        <SearchInput onSearch={handleSearch} isSearching={searchStatus === 'searching'} />
+      </div>
+
+      {/* Results Grid */}
+      {searchStatus === 'results' && (
+        <section className="mt-12 animate-in fade-in slide-in-from-bottom-8 duration-500">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <Library className="text-indigo-500" /> 推荐演讲
+            </h2>
+            
+            {selectedTalks.length > 0 && (
+               <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 animate-in fade-in sticky top-4 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur p-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 sm:border-none sm:shadow-none sm:bg-transparent">
+                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">已选 {selectedTalks.length} 个</span>
+                 <button 
+                  onClick={onStartProcessing}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg font-medium shadow-md shadow-indigo-200 dark:shadow-indigo-900/50 transition-all flex items-center gap-2"
+                 >
+                   <Zap size={18} />
+                   开始影子写作
+                 </button>
+               </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {MOCK_TED_TALKS.map(talk => (
+              <TedCard 
+                key={talk.id} 
+                talk={talk} 
+                isSelected={selectedTalks.includes(talk.id)}
+                onToggle={toggleTalk}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+};
+
+const ProcessingPage = ({ onBack }) => {
+  const [progress, setProgress] = useState(0);
+  const [logs, setLogs] = useState([]);
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    let currentProgress = 0;
+    const interval = setInterval(() => {
+      currentProgress += Math.random() * 15;
+      if (currentProgress > 100) {
+        currentProgress = 100;
+        setIsComplete(true);
+        clearInterval(interval);
+      }
+      setProgress(Math.min(currentProgress, 100));
+      
+      if (Math.random() > 0.7) {
+        const newLog = [
+          "正在分块语义段落...", 
+          "分析语言结构模式...", 
+          "生成话题迁移句子...", 
+          "质量校验通过..."
+        ][Math.floor(Math.random() * 4)];
+        setLogs(prev => [newLog, ...prev].slice(0, 3));
+      }
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8 pb-24 md:pb-8">
+      {/* Header & Status */}
+      <div className="flex items-center justify-between mb-8">
+        <button onClick={onBack} className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white flex items-center gap-1 transition-colors">
+           <ArrowRight className="rotate-180" size={18} /> 返回搜索
+        </button>
+        <div className="flex items-center gap-2 text-sm bg-white dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+           <span className={`w-2 h-2 rounded-full ${isComplete ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
+           <span className="text-slate-600 dark:text-slate-300 font-medium">{isComplete ? '处理完成' : 'WebSocket 连接中...'}</span>
+        </div>
+      </div>
+
+      {/* Progress Panel */}
+      {!isComplete && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm mb-8 text-center animate-in zoom-in-95 duration-300">
+          <div className="relative w-32 h-32 mx-auto mb-6 flex items-center justify-center">
+             <svg className="w-full h-full transform -rotate-90">
+                <circle cx="64" cy="64" r="60" stroke="#e2e8f0" strokeWidth="8" fill="none" className="dark:stroke-slate-700" />
+                <circle 
+                  cx="64" cy="64" r="60" stroke="#6366f1" strokeWidth="8" fill="none" 
+                  strokeDasharray={377}
+                  strokeDashoffset={377 - (377 * progress) / 100}
+                  className="transition-all duration-300 ease-out"
+                />
+             </svg>
+             <span className="absolute text-2xl font-bold text-slate-800 dark:text-white">{Math.round(progress)}%</span>
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">正在进行影子写作...</h3>
+          <div className="h-6 overflow-hidden">
+            <p className="text-slate-500 dark:text-slate-400 text-sm animate-pulse">{logs[0]}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Results List */}
+      {isComplete && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="flex justify-between items-end">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">写作生成结果</h2>
+              <p className="text-slate-500 dark:text-slate-400">基于选定的 TED 演讲生成的模仿练习</p>
+            </div>
+            <button className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+              <Share2 size={18} /> 导出报告
+            </button>
+          </div>
+
+          <div className="space-y-4">
+             {MOCK_RESULTS.map(result => (
+               <ResultCard key={result.id} data={result} />
+             ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const HistoryPage = () => {
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 pb-24 md:pb-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-8">学习历史</h1>
+      
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10">
+        {[
+          { icon: Clock, label: '总学习时长', value: '24.5 小时', color: 'blue' },
+          { icon: CheckCircle, label: '完成句子', value: '1,240 句', color: 'indigo' },
+          { icon: Activity, label: '平均质量分', value: '8.9/11', color: 'emerald' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
+             <div className={`w-12 h-12 rounded-full bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center text-${stat.color}-600 dark:text-${stat.color}-400`}>
+               <stat.icon size={24} />
+             </div>
+             <div>
+               <p className="text-slate-500 dark:text-slate-400 text-sm">{stat.label}</p>
+               <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
+             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* History List */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+          <h3 className="font-bold text-slate-700 dark:text-slate-200">最近的练习</h3>
+          <div className="flex gap-2">
+            <select className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-sm rounded-lg px-3 py-1 outline-none text-slate-600 dark:text-slate-300">
+              <option>所有主题</option>
+              <option>Leadership</option>
+              <option>AI</option>
+            </select>
+          </div>
+        </div>
+        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          {[1, 2, 3, 4, 5].map((item) => (
+            <div key={item} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 font-bold shrink-0">
+                   TED
+                </div>
+                <div>
+                   <h4 className="font-medium text-slate-900 dark:text-white line-clamp-1">Topic: Artificial Intelligence & Ethics</h4>
+                   <p className="text-xs text-slate-500 dark:text-slate-400">练习于 2 小时前 • 包含 15 个句子</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pl-14 sm:pl-0">
+                <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded">Score: 9.2</span>
+                <button className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"><ArrowRight size={18} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Main App Component ---
+
+const ShadowWritingApp = () => {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [authStatus, setAuthStatus] = useState('logged_out'); // logged_out, user, guest
+  const [activeTab, setActiveTab] = useState('chat');
+  const [appState, setAppState] = useState('idle'); // idle, processing
+
+  // 监听 Dark Mode 变化，更新 HTML class
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const handleLogin = (type) => {
+    setAuthStatus(type);
+  };
+
+  const handleLogout = () => {
+    setAuthStatus('logged_out');
+    setActiveTab('chat');
+    setAppState('idle');
+  };
+
+  // 渲染主内容区域
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'chat':
+        return appState === 'processing' 
+          ? <ProcessingPage onBack={() => setAppState('idle')} /> 
+          : <ChatPage onStartProcessing={() => setAppState('processing')} />;
+      case 'history':
+        return <HistoryPage />;
+      case 'stats':
+        return <StatsPage />;
+      case 'settings':
+        return <SettingsPage isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />;
+      default:
+        return <div className="p-10 text-center text-slate-500">页面开发中...</div>;
+    }
+  };
+
+  if (authStatus === 'logged_out') {
+    return <LoginPage onLogin={() => handleLogin('user')} onGuest={() => handleLogin('guest')} />;
+  }
+
+  return (
+    <div className={`flex h-screen font-sans overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+      <Navigation 
+        activeTab={activeTab} 
+        setActiveTab={(tab) => {
+          setActiveTab(tab);
+          if(tab !== 'chat') setAppState('idle');
+        }}
+        userMode={authStatus}
+        onLogout={handleLogout}
+      />
+      
+      <main className="flex-1 overflow-y-auto scroll-smooth w-full relative" role="main">
+        {renderContent()}
+      </main>
+    </div>
+  );
+};
+
+export default ShadowWritingApp;

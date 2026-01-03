@@ -48,18 +48,32 @@ class ChatStorageManager {
         return
       }
 
-      const transaction = this.db.transaction(['messages'], 'readwrite')
-      const store = transaction.objectStore('messages')
-      const request = store.add(message)
+      try {
+        const transaction = this.db.transaction(['messages'], 'readwrite')
+        const store = transaction.objectStore('messages')
+        const request = store.add(message)
 
-      request.onsuccess = () => {
-        console.log('Message saved to IndexedDB:', message.id)
-        resolve()
-      }
+        request.onsuccess = () => {
+          console.log('Message saved to IndexedDB:', message.id, 'content:', message.content.substring(0, 50))
+          resolve()
+        }
 
-      request.onerror = () => {
-        console.error('Failed to save message:', request.error)
-        reject(request.error)
+        request.onerror = (event) => {
+          console.error('Failed to save message to IndexedDB:', request.error, event)
+          reject(new Error(`IndexedDB save failed: ${request.error}`))
+        }
+
+        transaction.oncomplete = () => {
+          console.log('Transaction completed for message:', message.id)
+        }
+
+        transaction.onerror = (event) => {
+          console.error('Transaction failed for message:', message.id, event)
+        }
+
+      } catch (error) {
+        console.error('Exception in saveMessage:', error)
+        resolve() // 不要抛出错误
       }
     })
   }
@@ -77,29 +91,74 @@ class ChatStorageManager {
 
       const transaction = this.db.transaction(['messages'], 'readonly')
       const store = transaction.objectStore('messages')
-      const index = store.index('userId_timestamp')
-      const range = IDBKeyRange.bound([userId, 0], [userId, Date.now()])
 
-      const request = index.openCursor(range, 'next') // 升序：从旧到新
+      // 首先尝试使用索引查询有userId的消息
+      let messages: Message[] = []
+      let queryCompleted = false
 
-      const messages: Message[] = []
+      const tryIndexedQuery = () => {
+        try {
+          const index = store.index('userId_timestamp')
+          const range = IDBKeyRange.bound([userId, 0], [userId, Date.now()])
+          const request = index.openCursor(range, 'next')
 
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest).result
+          request.onsuccess = (event) => {
+            const cursor = (event.target as IDBRequest).result
 
-        if (cursor && messages.length < limit) {
-          messages.push(cursor.value)
-          cursor.continue()
-        } else {
-          console.log(`Loaded ${messages.length} messages from IndexedDB for user ${userId}`)
-          resolve(messages)
+            if (cursor && messages.length < limit) {
+              messages.push(cursor.value)
+              cursor.continue()
+            } else {
+              console.log(`Loaded ${messages.length} messages with userId ${userId}`)
+              if (!queryCompleted) {
+                queryCompleted = true
+                // 如果消息数量太少，尝试加载所有消息
+                if (messages.length < 10) {
+                  loadAllMessages()
+                } else {
+                  resolve(messages)
+                }
+              }
+            }
+          }
+
+          request.onerror = () => {
+            console.log('Indexed query failed, trying alternative approach')
+            loadAllMessages()
+          }
+        } catch (error) {
+          console.log('Index query failed, trying alternative approach')
+          loadAllMessages()
         }
       }
 
-      request.onerror = () => {
-        console.error('Failed to get messages:', request.error)
-        reject(request.error)
+      const loadAllMessages = () => {
+        console.log('Loading all messages from store...')
+        const request = store.openCursor(null, 'next')
+
+        request.onsuccess = (event) => {
+          const cursor = (event.target as IDBRequest).result
+
+          if (cursor && messages.length < limit) {
+            const message = cursor.value
+            // 只加载指定用户的消息或没有userId的消息
+            if (!message.userId || message.userId === userId) {
+              messages.push(message)
+            }
+            cursor.continue()
+          } else {
+            console.log(`Loaded ${messages.length} total messages from IndexedDB`)
+            resolve(messages)
+          }
+        }
+
+        request.onerror = () => {
+          console.error('Failed to load messages:', request.error)
+          reject(request.error)
+        }
       }
+
+      tryIndexedQuery()
     })
   }
 

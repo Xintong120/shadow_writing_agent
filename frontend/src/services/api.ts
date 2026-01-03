@@ -59,15 +59,24 @@ export const startBatchProcess = async (
 export const getTaskStatus = async (
   taskId: string
 ) => {
+  const requestStartTime = Date.now()
+  console.log(`[API] getTaskStatus 开始调用 - taskId: ${taskId} 时间: ${new Date(requestStartTime).toLocaleTimeString()}`)
+
   const response = await fetchAPI<TaskStatusResponse>(`/api/v1/task/${taskId}`, {
     method: 'GET',
   })
 
+  const responseTime = Date.now()
+  const duration = responseTime - requestStartTime
+  console.log(`[API] getTaskStatus 收到响应 - 耗时: ${duration}ms 成功: ${response.success} 时间: ${new Date(responseTime).toLocaleTimeString()}`)
+
   if (!response.success) {
+    console.error(`[API] getTaskStatus 失败 - 错误: ${response.error}`)
     handleError(new Error(response.error || '获取任务状态失败'), 'getTaskStatus')
     throw new Error(response.error || '获取任务状态失败')
   }
 
+  console.log(`[API] getTaskStatus 成功 - 任务状态: ${response.data?.status} 进度: ${response.data?.current}/${response.data?.total}`)
   return response.data
 }
 

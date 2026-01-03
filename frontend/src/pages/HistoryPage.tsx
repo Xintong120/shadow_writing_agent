@@ -1,277 +1,154 @@
-/**
- * 学习历史页面
- *
- * 功能：
- * - 显示学习统计数据
- * - 浏览历史学习记录
- * - 搜索和过滤功能
- * - 连续打卡天数显示
- *
- * ⚠️ 重要：后端不提供的一些数据需要前端计算
- * - 学习时长：按每条记录2分钟估算
- * - 连续打卡天数：根据learned_at时间戳计算
- */
+// frontend/src/pages/HistoryPage.tsx
+// 学习历史页面 - 展示学习记录，支持状态分组和跳转
 
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Box } from '@mantine/core'
-import { Calendar, Clock, BookOpen, TrendingUp, Flame } from 'lucide-react'
-import { api, flattenStats, calculateLearningTime, calculateStreakDays } from '@/services/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/atoms/card'
-import { Badge } from '@/components/atoms/badge'
-import { Button } from '@/components/atoms/button'
-import { Input } from '@/components/atoms/input'
-import type { FlatStats, LearningRecord } from '@/types/api'
+import { useState } from 'react'
+import { Clock, Zap, CheckCircle, ArrowRight, List } from 'lucide-react'
+import { LearningStatus, LearningHistory, HistoryTab } from '@/types/history'
+import { TedTalk } from '@/types/ted'
 
-function HistoryPage() {
-  const navigate = useNavigate()
+// 标签页配置
+const tabs: HistoryTab[] = [
+  { id: 'todo', label: '待学习', icon: Clock, color: 'text-amber-500' },
+  { id: 'in_progress', label: '学习中', icon: Zap, color: 'text-indigo-500' },
+  { id: 'completed', label: '已完成', icon: CheckCircle, color: 'text-emerald-500' },
+]
 
-  const [stats, setStats] = useState<FlatStats | null>(null)
-  const [records, setRecords] = useState<LearningRecord[]>([])
-  const [learningTime, setLearningTime] = useState(0)
-  const [streakDays, setStreakDays] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
+// 模拟历史数据
+const MOCK_HISTORY: LearningHistory[] = [
+  { id: 1, talkId: 1, title: "Why AI needs a sense of ethics", status: 'completed', progress: 100, lastPlayed: '2h ago' },
+  { id: 2, talkId: 2, title: "The future of leadership in the digital age", status: 'in_progress', progress: 45, lastPlayed: '1d ago' },
+  { id: 3, talkId: 3, title: "How to learn a new language by 2025", status: 'todo', progress: 0, lastPlayed: 'Added today' },
+  { id: 4, talkId: 4, title: "Creative thinking in a data-driven world", status: 'todo', progress: 0, lastPlayed: 'Added yesterday' },
+]
 
-  // 加载数据
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true)
-
-        const userId = 'user_123' // 临时使用固定用户ID
-
-        // 并行请求统计和记录
-        const [statsRes, recordsRes] = await Promise.all([
-          api.getStats(userId),
-          api.getLearningRecords(userId, { limit: 50 })
-        ])
-
-        setStats(statsRes)
-        setRecords(recordsRes.records || [])
-
-        // 前端计算缺失的数据
-        const time = calculateLearningTime(recordsRes.records || [])
-        const streak = calculateStreakDays(recordsRes.records?.map(r => r.learned_at) || [])
-
-        setLearningTime(time)
-        setStreakDays(streak)
-
-      } catch (error) {
-        console.error('加载历史数据失败:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
-
-  // 过滤记录
-  const filteredRecords = records.filter(record =>
-    record.ted_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.original.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  if (loading) {
-    return (
-      <Box
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-        }}
-      >
-        <Box style={{ textAlign: 'center' }}>
-          <Box
-            style={{
-              animation: 'spin 1s linear infinite',
-              width: '3rem',
-              height: '3rem',
-              border: '2px solid transparent',
-              borderBottom: `2px solid var(--mantine-color-primary-6)`,
-              borderRadius: '50%',
-              margin: '0 auto 1rem auto',
-            }}
-          />
-          <p>加载学习历史...</p>
-        </Box>
-      </Box>
-    )
+// TED演讲数据映射
+const MOCK_TED_TALKS: Record<number, Omit<TedTalk, 'id'>> = {
+  1: {
+    title: "Why AI needs a sense of ethics",
+    speaker: "Technologist X",
+    duration: "12:45",
+    views: "2.1M",
+    description: "An insightful look into how we can program morality into machines...",
+    thumbnail: "bg-blue-100 dark:bg-blue-900/30"
+  },
+  2: {
+    title: "The future of leadership in the digital age",
+    speaker: "Leader Y",
+    duration: "15:20",
+    views: "1.5M",
+    description: "What does it mean to lead when your team is half human, half algorithm?",
+    thumbnail: "bg-indigo-100 dark:bg-indigo-900/30"
+  },
+  3: {
+    title: "How to learn a new language by 2025",
+    speaker: "Linguist Z",
+    duration: "09:30",
+    views: "5.8M",
+    description: "New techniques in cognitive science reveal the secrets of rapid acquisition.",
+    thumbnail: "bg-purple-100 dark:bg-purple-900/30"
+  },
+  4: {
+    title: "Creative thinking in a data-driven world",
+    speaker: "Artist A",
+    duration: "18:10",
+    views: "900K",
+    description: "Why human creativity is becoming more valuable, not less.",
+    thumbnail: "bg-pink-100 dark:bg-pink-900/30"
   }
+}
+
+interface HistoryPageProps {
+  onNavigateToLearning: (talk: TedTalk) => void
+}
+
+const HistoryPage = ({ onNavigateToLearning }: HistoryPageProps) => {
+  const [activeTab, setActiveTab] = useState<LearningStatus>('todo')
+
+  const filteredHistory = MOCK_HISTORY.filter(item => item.status === activeTab)
 
   return (
-    <Box
-      style={{
-        maxWidth: '1536px', // max-w-6xl
-        margin: '0 auto',
-        padding: '1.5rem',
-      }}
-    >
-      {/* 统计卡片 */}
-      {stats && (
-        <Box
-          style={{
-            display: 'grid',
-            gap: '1rem',
-            gridTemplateColumns: '1fr',
-            marginBottom: '2rem',
-          }}
-        >
-          <Box
-            style={{
-              display: 'grid',
-              gap: '1rem',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            }}
+    <div className="max-w-5xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 pb-24 md:pb-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-8">学习历史</h1>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-xl w-full sm:w-auto inline-flex">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              activeTab === tab.id
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
           >
-            {/* TED 观看数量 */}
-            <Card>
-              <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem' }}>
-                <CardTitle style={{ fontSize: '0.875rem', fontWeight: '500' }}>TED 演讲</CardTitle>
-                <BookOpen className="h-4 w-4" style={{ color: 'var(--mantine-color-dimmed)' }} />
-              </CardHeader>
-              <CardContent>
-                <Box style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.total_teds_watched}</Box>
-                <Box style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>已观看</Box>
-              </CardContent>
-            </Card>
+            <tab.icon size={16} className={activeTab === tab.id ? tab.color : ''} />
+            {tab.label}
+            <span className="ml-1 text-xs opacity-60 bg-slate-100 dark:bg-slate-800 px-1.5 rounded-full">
+              {MOCK_HISTORY.filter(h => h.status === tab.id).length}
+            </span>
+          </button>
+        ))}
+      </div>
 
-            {/* 学习记录数量 */}
-            <Card>
-              <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem' }}>
-                <CardTitle style={{ fontSize: '0.875rem', fontWeight: '500' }}>学习记录</CardTitle>
-                <TrendingUp className="h-4 w-4" style={{ color: 'var(--mantine-color-dimmed)' }} />
-              </CardHeader>
-              <CardContent>
-                <Box style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.total_records}</Box>
-                <Box style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>Shadow Writing</Box>
-              </CardContent>
-            </Card>
+      {/* List */}
+      <div className="grid grid-cols-1 gap-4">
+        {filteredHistory.length > 0 ? (
+          filteredHistory.map((item) => {
+            const talkData = MOCK_TED_TALKS[item.talkId] || MOCK_TED_TALKS[1]
+            const talk: TedTalk = { id: item.talkId, ...talkData }
 
-            {/* 学习时长 */}
-            <Card>
-              <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem' }}>
-                <CardTitle style={{ fontSize: '0.875rem', fontWeight: '500' }}>学习时长</CardTitle>
-                <Clock className="h-4 w-4" style={{ color: 'var(--mantine-color-dimmed)' }} />
-              </CardHeader>
-              <CardContent>
-                <Box style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{learningTime}</Box>
-                <Box style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>分钟（估算）</Box>
-              </CardContent>
-            </Card>
-
-            {/* 连续打卡 */}
-            <Card>
-              <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem' }}>
-                <CardTitle style={{ fontSize: '0.875rem', fontWeight: '500' }}>连续打卡</CardTitle>
-                <Flame className="h-4 w-4" style={{ color: 'var(--mantine-color-dimmed)' }} />
-              </CardHeader>
-              <CardContent>
-                <Box style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{streakDays}</Box>
-                <Box style={{ fontSize: '0.75rem', color: 'var(--mantine-color-dimmed)' }}>天</Box>
-              </CardContent>
-            </Card>
-          </Box>
-        </Box>
-      )}
-
-      {/* 搜索和过滤 */}
-      <Box style={{ marginBottom: '1.5rem' }}>
-        <Input
-          placeholder="搜索 TED 标题或原文..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-          style={{ maxWidth: '28rem' }}
-        />
-      </Box>
-
-      {/* 学习记录列表 */}
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>学习记录</h2>
-
-        {filteredRecords.length === 0 ? (
-          <Card>
-            <CardContent style={{ padding: '2rem 0', textAlign: 'center' }}>
-              <p style={{ color: 'var(--mantine-color-dimmed)' }}>还没有学习记录</p>
-              <Button
-                style={{ marginTop: '1rem' }}
-                onClick={() => navigate('/')}
+            return (
+              <div
+                key={item.id}
+                onClick={() => onNavigateToLearning(talk)}
+                className="group bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500 transition-all cursor-pointer flex items-center gap-5"
               >
-                开始学习
-              </Button>
-            </CardContent>
-          </Card>
+                {/* Thumbnail / Status Icon */}
+                <div className={`w-16 h-16 rounded-xl flex items-center justify-center shrink-0 ${
+                    activeTab === 'completed' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                    activeTab === 'in_progress' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' :
+                    'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+                }`}>
+                    {activeTab === 'completed' ? <CheckCircle size={28} /> :
+                     activeTab === 'in_progress' ? <Zap size={28} /> :
+                     <Clock size={28} />}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-lg text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {item.title}
+                  </h3>
+                  <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    <span>{talk.speaker}</span>
+                    <span>•</span>
+                    <span>{item.lastPlayed}</span>
+                  </div>
+
+                  {/* Progress Bar (Only for In Progress) */}
+                  {activeTab === 'in_progress' && (
+                    <div className="mt-3 w-full max-w-xs h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                       <div className="h-full bg-indigo-500 rounded-full" style={{width: `${item.progress}%`}}></div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-700 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                    <ArrowRight size={20} />
+                </div>
+              </div>
+            )
+          })
         ) : (
-          filteredRecords.map((record) => (
-            <Card key={record.record_id} style={{ transition: 'box-shadow 0.2s ease' }}>
-              <CardContent style={{ padding: '1.5rem' }}>
-                <Box style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <Box style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.25rem' }}>{record.ted_title}</h3>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)', marginBottom: '0.5rem' }}>
-                      {record.ted_speaker && `演讲者：${record.ted_speaker}`}
-                    </p>
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem', color: 'var(--mantine-color-dimmed)' }}>
-                      <Box style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Calendar className="h-4 w-4" />
-                        {new Date(record.learned_at).toLocaleDateString()}
-                      </Box>
-                      {record.quality_score && (
-                        <Badge variant="secondary">
-                          质量评分: {record.quality_score}/8
-                        </Badge>
-                      )}
-                    </Box>
-                  </Box>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      // 这里可以跳转到详情页面，如果有的话
-                      console.log('查看详情:', record.record_id)
-                    }}
-                  >
-                    查看详情
-                  </Button>
-                </Box>
-
-                {/* 原文 */}
-                <Box style={{ marginBottom: '0.75rem' }}>
-                  <h4 style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.25rem' }}>原文：</h4>
-                  <Box style={{ fontSize: '0.875rem', backgroundColor: 'var(--mantine-color-dimmed)', padding: '0.75rem', borderRadius: 'var(--mantine-radius-md)' }}>
-                    {record.original}
-                  </Box>
-                </Box>
-
-                {/* 改写 */}
-                <Box style={{ marginBottom: '0.75rem' }}>
-                  <h4 style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Shadow Writing：</h4>
-                  <Box style={{ fontSize: '0.875rem', backgroundColor: 'var(--mantine-color-dimmed)', padding: '0.75rem', borderRadius: 'var(--mantine-radius-md)' }}>
-                    {record.imitation}
-                  </Box>
-                </Box>
-
-                {/* 词汇映射 */}
-                {record.map && Object.keys(record.map).length > 0 && (
-                  <Box>
-                    <h4 style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.5rem' }}>词汇映射：</h4>
-                    <Box style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {Object.entries(record.map).map(([category, words]) => (
-                        <Badge key={category} variant="outline">
-                          {category}: {words.join(', ')}
-                        </Badge>
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          ))
+          <div className="text-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                 <List size={32} />
+              </div>
+              <p className="text-slate-500 dark:text-slate-400">暂无此状态的记录</p>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 

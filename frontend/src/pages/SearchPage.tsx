@@ -1,352 +1,206 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Box } from '@mantine/core'
-import { toast } from 'sonner'
-import { api } from '@/services/api'
-import { useTasks } from '@/contexts/TaskContext'
-import { useIncompleteTasks } from '@/hooks/useIncompleteTasks'
-import { handleError } from '@/utils/errorHandler'
-import type { TEDCandidate, Message } from '@/types'
+// frontend/src/pages/SearchPage.tsx
+// 搜索主页 - 包含标题、搜索输入和演讲选择功能
+// 已集成后端API：使用 api.searchTED 进行TED搜索，api.startBatchProcess 启动批量处理
 
-// 导入布局组件
-import { LayoutContainer, PageSection } from '@/components/templates/Layout'
+import { useState } from 'react'
+import { Library, Zap } from 'lucide-react'
+import { toast } from 'sonner' // 用于显示用户友好的错误提示
+import SearchInput from '@/components/SearchInput'
+import TedCard from '@/components/TedCard'
+import { TedTalk, SearchStatus, TEDCandidate } from '@/types/ted' // 添加 TEDCandidate 类型
+import { api } from '@/services/api' // 导入API服务
+import { handleError } from '@/utils/errorHandler' // 错误处理工具
+import { useAuth } from '@/contexts/AuthContext' // 用于获取用户认证状态
 
-// 导入已创建的组件
-import ChatInterface from '@/components/organisms/ChatInterface'
-import ContinueLearningCard from '@/components/organisms/ContinueLearningCard'
-import TEDList from '@/components/organisms/TEDList'
-import { QuickSuggestions } from '@/components/molecules/QuickSuggestions'
-import { ChatInput } from '@/components/molecules/ChatInput'
-
-// 导入聊天存储管理器
-import { chatStorage, ChatStorageManager } from '@/utils/chatStorage'
-
-function SearchPage() {
-  const navigate = useNavigate()
-  const { startSearchTask, startBatchTask } = useTasks()
-  
-  // 状态管理
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      userId: 'user_123',
-      role: 'agent',
-      content: '你好！我是你的英语学习助手。告诉我你想学习什么主题，我会帮你找到最合适的TED演讲。',
-      timestamp: Date.now(),
-      type: 'text'
-    }
-  ])
-
-  // 修改：使用Map存储每个搜索主题的TED候选列表
-  const [searchResults, setSearchResults] = useState<Map<string, TEDCandidate[]>>(new Map())
-  const [selectedUrls, setSelectedUrls] = useState<string[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true)
-  const [currentQuery, setCurrentQuery] = useState('')
-  
-  // 获取未完成任务（用于 ContinueLearningCard）
-  const incompleteTasks = useIncompleteTasks()
-
-  // 调试：监听searchResults的变化
-  useEffect(() => {
-    console.log('[DEBUG SearchPage] searchResults变化:', {
-      size: searchResults.size,
-      keys: Array.from(searchResults.keys()),
-      entries: Array.from(searchResults.entries())
-    })
-  }, [searchResults])
-
-  // 初始化：从IndexedDB加载历史消息
-  useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        // 检查IndexedDB是否支持
-        if (!ChatStorageManager.isSupported()) {
-          console.warn('IndexedDB is not supported in this browser')
-          setIsLoadingHistory(false)
-          return
-        }
-
-        await chatStorage.init()
-        const history = await chatStorage.getRecentMessages('user_123', 100)
-
-        if (history.length === 0) {
-          // 首次使用，添加欢迎消息
-          const welcomeMessage: Message = {
-            id: 'welcome',
-            userId: 'user_123',
-            role: 'agent',
-            content: '你好！我是你的英语学习助手。告诉我你想学习什么主题，我会帮你找到最合适的TED演讲。',
-            timestamp: Date.now(),
-            type: 'text'
-          }
-          setMessages([welcomeMessage])
-          await chatStorage.saveMessage(welcomeMessage)
-        } else {
-          setMessages(history)
-        }
-
-        console.log('Chat history loaded from IndexedDB:', history.length, 'messages')
-      } catch (error) {
-        console.error('Failed to load chat history:', error)
-        // 如果加载失败，至少显示欢迎消息
-        const welcomeMessage: Message = {
-          id: 'welcome',
-          userId: 'user_123',
-          role: 'agent',
-          content: '你好！我是你的英语学习助手。告诉我你想学习什么主题，我会帮你找到最合适的TED演讲。',
-          timestamp: Date.now(),
-          type: 'text'
-        }
-        setMessages([welcomeMessage])
-      } finally {
-        setIsLoadingHistory(false)
-      }
-    }
-
-    loadHistory()
-  }, [])
-
-  // 添加消息到对话历史
-  const addMessage = useCallback(async (role: 'user' | 'agent', content: string, type: 'text' | 'ted_results' = 'text') => {
-    const newMessage: Message = {
-      id: `msg_${Date.now()}_${Math.random()}`,
-      userId: 'user_123',
-      role,
-      content,
-      timestamp: Date.now(),
-      type
-    }
-
-    // 更新UI
-    setMessages(prev => [...prev, newMessage])
-
-    // 保存到IndexedDB
-    try {
-      await chatStorage.saveMessage(newMessage)
-    } catch (error) {
-      console.error('Failed to save message to IndexedDB:', error)
-      // 不阻止UI更新，即使存储失败
-    }
-  }, [])
-
-  // 处理用户输入
-  const handleSendMessage = async (userInput: string) => {
-    if (!userInput.trim()) return
-    
-    // 添加用户消息
-    addMessage('user', userInput)
-    setCurrentQuery(userInput)
-    
-    // 解析用户意图（简化版本）
-    const isSearchIntent = /搜索|找|学习|关于|演讲|TED/i.test(userInput)
-    
-    if (isSearchIntent) {
-      await handleSearch(userInput)
-    } else {
-      // 处理其他意图（筛选、优化等）
-      handleFilterOrAction(userInput)
-    }
+// 模拟数据
+const MOCK_TED_TALKS: TedTalk[] = [
+  {
+    id: 1,
+    title: "Why AI needs a sense of ethics",
+    speaker: "Technologist X",
+    duration: "12:45",
+    views: "2.1M",
+    description: "An insightful look into how we can program morality into machines...",
+    thumbnail: "bg-blue-100 dark:bg-blue-900/30"
+  },
+  {
+    id: 2,
+    title: "The future of leadership in the digital age",
+    speaker: "Leader Y",
+    duration: "15:20",
+    views: "1.5M",
+    description: "What does it mean to lead when your team is half human, half algorithm?",
+    thumbnail: "bg-indigo-100 dark:bg-indigo-900/30"
+  },
+  {
+    id: 3,
+    title: "How to learn a new language by 2025",
+    speaker: "Linguist Z",
+    duration: "09:30",
+    views: "5.8M",
+    description: "New techniques in cognitive science reveal the secrets of rapid acquisition.",
+    thumbnail: "bg-purple-100 dark:bg-purple-900/30"
+  },
+  {
+    id: 4,
+    title: "Creative thinking in a data-driven world",
+    speaker: "Artist A",
+    duration: "18:10",
+    views: "900K",
+    description: "Why human creativity is becoming more valuable, not less.",
+    thumbnail: "bg-pink-100 dark:bg-pink-900/30"
   }
+]
 
-  // 执行TED搜索
+interface SearchPageProps {
+  onStartProcessing?: (talks: TedTalk[], taskId?: string) => void
+}
+
+const SearchPage = ({ onStartProcessing }: SearchPageProps = {}) => {
+  // 使用认证 hooks
+  const { authStatus } = useAuth()
+
+  // 用户ID：暂时硬编码，后续可根据 authStatus 动态获取
+  const userId = 'user_123'
+
+  // 搜索相关状态
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle')
+  const [searchResults, setSearchResults] = useState<TEDCandidate[]>([]) // 后端返回的TED候选列表
+  const [isSearching, setIsSearching] = useState(false) // 搜索加载状态
+  const [error, setError] = useState<string | null>(null) // 错误信息
+
+  // 选中的TED URLs（改为string数组，因为使用URL作为唯一标识）
+  const [selectedTalks, setSelectedTalks] = useState<string[]>([])
+
+  // 处理TED搜索 - 调用后端API
   const handleSearch = async (query: string) => {
+    if (!query.trim()) return
+
     setIsSearching(true)
-    
+    setSearchStatus('searching')
+    setError(null) // 清空之前的错误
+
     try {
-      // 显示搜索状态
-      addMessage('agent', `正在为你搜索关于"${query}"的TED演讲... 🔍`, 'text')
-      
-      // 启动搜索任务（全局状态管理）
-      await startSearchTask(query, async () => {
-        const response = await api.searchTED(query, 'user_123')
+      // 调用后端API搜索TED
+      const response = await api.searchTED(query, userId)
 
-        console.log('[DEBUG SearchPage] API响应数据结构:', {
-            query,
-            response: response,
-            candidates: response.candidates,
-            candidatesLength: response.candidates?.length,
-            firstCandidate: response.candidates?.[0],
-            candidateKeys: response.candidates?.[0] ? Object.keys(response.candidates[0]) : 'no candidates'
-        })
+      // 更新搜索结果
+      setSearchResults(response.candidates)
+      setSearchStatus('results')
 
-        // 修复数据格式，确保字段有合理的默认值
-        const normalizedCandidates = response.candidates.map(candidate => ({
-          ...candidate,
-          speaker: candidate.speaker || '未知演讲者',
-          duration: candidate.duration || '未知时长',
-          views: candidate.views || '未知观看数',
-          description: candidate.description || '暂无描述',
-          relevance_score: candidate.relevance_score || 0,
-          reasons: candidate.reasons || []
-        }))
-
-        // 存储到searchResults Map中，以query为key
-        console.log('[DEBUG SearchPage] 存储搜索结果:', {
-          query,
-          normalizedCandidatesLength: normalizedCandidates.length,
-          normalizedCandidates: normalizedCandidates.slice(0, 2) // 只显示前2个用于调试
-        })
-        
-        setSearchResults(prev => {
-          const newMap = new Map(prev)
-          newMap.set(query, normalizedCandidates)
-          console.log('[DEBUG SearchPage] 更新后的searchResults:', {
-            size: newMap.size,
-            keys: Array.from(newMap.keys()),
-            queryInMap: newMap.has(query)
-          })
-          return newMap
-        })
-
-        if (response.candidates.length > 0) {
-            addMessage('agent', `找到了 ${response.total} 个关于"${query}"的演讲！请选择你感兴趣的：`, 'text')
-        } else {
-            addMessage('agent', `抱歉，没有找到关于"${query}"的TED演讲。请尝试其他主题。`, 'text')
-        }
-
-        return response.candidates
-      })
-      
+      // 显示搜索结果提示
+      if (response.candidates.length > 0) {
+        toast.success(`找到 ${response.candidates.length} 个关于"${query}"的TED演讲`)
+      } else {
+        toast.info(`没有找到关于"${query}"的TED演讲，请尝试其他关键词`)
+      }
     } catch (error) {
+      // 处理搜索错误
+      console.error('搜索TED失败:', error)
+      setError('搜索过程中出现错误，请稍后重试')
+      setSearchStatus('idle')
       handleError(error, 'SearchPage.handleSearch')
-      addMessage('agent', '搜索过程中出现错误，请稍后重试。', 'text')
+      toast.error('搜索失败，请检查网络连接')
     } finally {
       setIsSearching(false)
     }
   }
 
-  // 处理筛选或操作
-  const handleFilterOrAction = (userInput: string) => {
-    // 暂时简化：只处理重新搜索和清空选择
-    if (/换|更多|其他/i.test(userInput)) {
-      // 重新搜索当前主题
-      if (currentQuery) {
-        handleSearch(currentQuery)
-      }
-
-    } else if (/清空|重置/i.test(userInput)) {
-      // 清空选择
-      setSelectedUrls([])
-      addMessage('agent', '已清空选择。你可以重新选择演讲。', 'text')
-
+  // 切换TED选择状态（使用URL作为标识）
+  const toggleTalk = (url: string) => {
+    if (selectedTalks.includes(url)) {
+      setSelectedTalks(selectedTalks.filter(selectedUrl => selectedUrl !== url))
     } else {
-      // 默认：当作新搜索主题
-      handleSearch(userInput)
+      setSelectedTalks([...selectedTalks, url])
     }
   }
 
-  // 处理TED选择/取消选择
-  const handleToggleTED = (url: string) => {
-    setSelectedUrls(prev => 
-      prev.includes(url) 
-        ? prev.filter(u => u !== url)
-        : [...prev, url]
-    )
+  // 将TEDCandidate转换为扩展的TedTalk格式（用于前端显示）
+  const candidatesToTedTalks = (candidates: TEDCandidate[]): (TedTalk & { url: string })[] => {
+    return candidates.map((candidate, index) => ({
+      id: index + 1, // 生成临时ID，后续可使用URL哈希
+      title: candidate.title,
+      speaker: candidate.speaker,
+      duration: candidate.duration,
+      views: candidate.views,
+      description: candidate.description,
+      thumbnail: `bg-blue-${100 + (index * 100) % 500} dark:bg-blue-900/30`, // 动态生成背景色
+      url: candidate.url // 添加URL用于选择逻辑
+    }))
   }
 
-  // 启动批量处理
-  const handleStartBatch = async () => {
-    if (selectedUrls.length === 0) {
-      toast.error('请至少选择一个演讲')
+  // 开始批量处理 - 调用后端API启动批量任务
+  const startBatch = async () => {
+    if (selectedTalks.length === 0) {
+      toast.error('请至少选择一个TED演讲')
       return
     }
 
     try {
-      const response = await api.startBatchProcess(selectedUrls, 'user_123')
+      // 调用后端API启动批量处理
+      const response = await api.startBatchProcess(selectedTalks, userId)
 
-      // 启动批量任务（全局状态管理）
-      startBatchTask(response.task_id, selectedUrls)
-
-      // 跳转到处理页面
-      navigate(`/batch/${response.task_id}`)
-
+      // 显示成功消息
       toast.success('开始批量处理...')
 
+      // 将选中的TED转换为TedTalk格式
+      const selectedTedTalks = candidatesToTedTalks(searchResults).filter(talk =>
+        selectedTalks.includes(talk.url)
+      )
+
+      // 调用父组件的处理函数
+      onStartProcessing?.(selectedTedTalks, response.task_id)
+
     } catch (error) {
-      handleError(error, 'SearchPage.handleStartBatch')
+      console.error('启动批量处理失败:', error)
+      handleError(error, 'SearchPage.startBatch')
+      toast.error('启动批量处理失败，请重试')
     }
   }
 
-  // 清空选择
-  const handleClearSelection = () => {
-    setSelectedUrls([])
-  }
-
   return (
-    <Box
-      h="100vh"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'var(--mantine-color-base-1)',
-      }}
-    >
-      {/* 可滚动内容区域 */}
-      <Box style={{ flex: 1, overflow: 'hidden' }}>
-        <Box
-          h="100%"
-          mih="100%"
-          style={{
-            overflowY: 'auto',
-            maxWidth: '1024px',
-            margin: '0 auto',
-            padding: '0.25rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.5rem',
-          }}
-        >
-          {/* 继续学习卡片（条件显示） */}
-          {incompleteTasks.length > 0 && (
-            <ContinueLearningCard />
-          )}
+    <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
+      <div className={`transition-all duration-500 ${searchStatus === 'idle' ? 'mt-20' : 'mt-0'}`}>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">
+            Shadow Writing <span className="text-indigo-600 dark:text-indigo-400">Mastery</span>
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+            AI 驱动的 TED 演讲深度模仿学习系统
+          </p>
+        </div>
+        <SearchInput onSearch={handleSearch} isSearching={searchStatus === 'searching'} />
+      </div>
 
-          {/* 主对话界面 */}
-          <ChatInterface
-            messages={messages}
-            searchResults={searchResults}
-            selectedUrls={selectedUrls}
-            recentSearches={[]}
-            onSendMessage={handleSendMessage}
-            onToggleTED={handleToggleTED}
-            onStartBatch={handleStartBatch}
-            onClearSelection={handleClearSelection}
-            isTyping={false}
-            isSearching={isSearching}
-            isLoadingHistory={isLoadingHistory}
-            disabled={isSearching}
-            className=""
-          />
-
-          
-        </Box>
-      </Box>
-
-      {/* 固定输入区域 */}
-      <Box
-        style={{
-          flexShrink: 0,
-          backgroundColor: 'var(--mantine-color-base-0)',
-          borderTop: '1px solid var(--mantine-color-base-2)',
-          padding: '0.15rem',
-        }}
-      >
-        <Box
-          style={{
-            maxWidth: '1024px',
-            margin: '0 auto',
-          }}
-        >
-          <ChatInput
-            onSend={handleSendMessage}
-            disabled={isSearching}
-            loading={isSearching}
-            placeholder="告诉我你想搜索或者学习的TED演讲主题..."
-          />
-        </Box>
-      </Box>
-    </Box>
+      {searchStatus === 'results' && (
+        <div className="mt-12 animate-in fade-in slide-in-from-bottom-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <Library className="text-indigo-500" /> 推荐演讲
+            </h2>
+            {selectedTalks.length > 0 && (
+              <button
+                onClick={startBatch}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium shadow-md transition-all flex items-center gap-2 animate-in fade-in"
+              >
+                <Zap size={18} />
+                开始处理 ({selectedTalks.length})
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {candidatesToTedTalks(searchResults).map(talk => (
+              <TedCard
+                key={talk.url} // 使用URL作为唯一key
+                talk={talk}
+                isSelected={selectedTalks.includes(talk.url)}
+                onToggle={() => toggleTalk(talk.url)} // 传递URL给toggle函数
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

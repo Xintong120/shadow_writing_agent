@@ -1,0 +1,15 @@
+{
+  "name": "eslint-plugin-theme-consistency",
+  "version": "1.0.0",
+  "description": "ESLint plugin for enforcing theme consistency in React applications",
+  "main": "index.js",
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "theme",
+    "consistency",
+    "mantine"
+  ],
+  "author": "TED Agent Team",
+  "license": "MIT"
+}

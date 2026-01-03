@@ -171,3 +171,9 @@ frontend/plan/
 # Documentation and development directories
 # ========================================
 frontend/docs/
+
+# ========================================
+# Temporary and test directories
+# ========================================
+frontend/other/
+frontend/eslint-rules/

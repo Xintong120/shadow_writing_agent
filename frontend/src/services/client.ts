@@ -1,7 +1,16 @@
 import type { APIResponse } from '@/types'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const IS_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === 'true'
+// 获取环境变量 - 兼容 Vite (import.meta.env) 和 Jest (process.env)
+function getEnv(key: string, defaultValue: string): string {
+  // Node.js / Jest 环境
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key] || defaultValue
+  }
+  return defaultValue
+}
+
+const API_BASE = getEnv('VITE_API_BASE_URL', 'http://localhost:8000')
+const IS_DEBUG = getEnv('VITE_ENABLE_DEBUG', 'false') === 'true'
 
 /**
  * HTTP客户端基础 - 通用请求处理函数

@@ -1,557 +1,170 @@
-import { useState, useEffect } from 'react'
-import { Box, TextInput, Switch, Button, Select, Group, Title, Text, Card, NumberInput, ActionIcon, Divider } from '@mantine/core'
-import { Card as MantineCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/atoms/card'
-import { Button as MantineButton } from '@/components/atoms/button'
-import { Input as MantineInput } from '@/components/atoms/input'
-import { Switch as MantineSwitch } from '@/components/atoms/switch'
-import { Badge as MantineBadge } from '@/components/atoms/badge'
-import { AlertTriangle, Plus, Trash2, TestTube, RotateCcw, Settings } from 'lucide-react'
-import { toast } from 'sonner'
+// frontend/src/pages/SettingsPage.tsx
+// 系统设置页面 - API配置、偏好设置、存储管理
+
+import { useState } from 'react'
+import { Database, Settings, Cpu, Trash2, Moon, Sun, Globe, Wifi, WifiOff, RefreshCw } from 'lucide-react'
 
 interface ApiKey {
-  id: number
-  provider: 'groq' | 'openai' | 'deepseek'
+  service: string
   key: string
-  active: boolean
+  status: 'idle' | 'checking' | 'success' | 'error'
 }
 
-interface SettingsState {
-  // API配置
-  backendApiUrl: string
-  tavilyApiKey: string
-  openaiApiKey: string
-  deepseekApiKey: string
-  apiRotationEnabled: boolean
-  currentApiProvider: string
-  
-  // 外观设置
-  themeMode: 'light' | 'dark' | 'system'
-  fontSize: 'small' | 'medium' | 'large'
-  
-  // 学习偏好
-  autoSaveProgress: boolean
-  showLearningStats: boolean
-  enableKeyboardShortcuts: boolean
-  
-  // LLM配置
-  modelName: string
-  temperature: number
-  maxTokens: number
-  topP: number
-  frequencyPenalty: number
+interface SettingsPageProps {
+  isDarkMode: boolean
+  toggleTheme: () => void
 }
 
-function SettingsPage() {
-  const [settings, setSettings] = useState<SettingsState>({
-    // API配置
-    backendApiUrl: 'http://localhost:8000',
-    tavilyApiKey: '',
-    openaiApiKey: '',
-    deepseekApiKey: '',
-    apiRotationEnabled: false,
-    currentApiProvider: 'groq',
-    
-    // 外观设置
-    themeMode: 'light',
-    fontSize: 'medium',
-    
-    // 学习偏好
-    autoSaveProgress: true,
-    showLearningStats: true,
-    enableKeyboardShortcuts: true,
-    
-    // LLM配置
-    modelName: 'llama-3.3-70b-versatile',
-    temperature: 0.1,
-    maxTokens: 4096,
-    topP: 1.0,
-    frequencyPenalty: 0.0,
-  })
-
+const SettingsPage = ({ isDarkMode, toggleTheme }: SettingsPageProps) => {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    { id: 1, provider: 'groq', key: '', active: true },
-    { id: 2, provider: 'openai', key: '', active: false },
+    { service: 'Tavily Search API', key: '', status: 'idle' },
+    { service: 'OpenAI GPT-4', key: '', status: 'success' }
   ])
 
-  const [loading, setLoading] = useState(false)
-  const [testingApi, setTestingApi] = useState<number | null>(null)
-
-  // 从本地存储加载设置
-  useEffect(() => {
-    const savedSettings = localStorage.getItem('shadow-writing-settings')
-    if (savedSettings) {
-      setSettings({ ...settings, ...JSON.parse(savedSettings) })
-    }
-    
-    const savedApiKeys = localStorage.getItem('shadow-writing-api-keys')
-    if (savedApiKeys) {
-      setApiKeys(JSON.parse(savedApiKeys))
-    }
-  }, [])
-
-  // 更新设置
-  const updateSetting = (key: keyof SettingsState, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
+  const updateKey = (index: number, value: string) => {
+    const newKeys = [...apiKeys]
+    newKeys[index].key = value
+    newKeys[index].status = 'idle'
+    setApiKeys(newKeys)
   }
 
-  // 添加API密钥
-  const addApiKey = () => {
-    const newId = Math.max(...apiKeys.map(k => k.id)) + 1
-    setApiKeys([...apiKeys, { id: newId, provider: 'groq', key: '', active: false }])
+  const testConnection = (index: number) => {
+    const newKeys = [...apiKeys]
+    newKeys[index].status = 'checking'
+    setApiKeys(newKeys)
+
+    // Simulate API Check
+    setTimeout(() => {
+      const updatedKeys = [...newKeys]
+      // Randomly succeed or fail for demo
+      updatedKeys[index].status = Math.random() > 0.3 ? 'success' : 'error'
+      setApiKeys(updatedKeys)
+    }, 1500)
   }
-
-  // 更新API密钥
-  const updateApiKey = (id: number, field: keyof ApiKey, value: any) => {
-    setApiKeys(apiKeys.map(key => 
-      key.id === id ? { ...key, [field]: value } : key
-    ))
-  }
-
-  // 删除API密钥
-  const deleteApiKey = (id: number) => {
-    if (apiKeys.length > 1) {
-      setApiKeys(apiKeys.filter(key => key.id !== id))
-    }
-  }
-
-  // 测试API连接
-  const testApiConnection = async (provider: string, apiKey: string) => {
-    if (!apiKey) {
-      toast.error('请先输入API密钥')
-      return
-    }
-
-    setTestingApi(apiKeys.find(k => k.provider === provider)?.id || null)
-    
-    try {
-      // 模拟API测试
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      toast.success(`${provider.toUpperCase()} API连接测试成功！`)
-    } catch (error) {
-      toast.error(`${provider.toUpperCase()} API连接测试失败`)
-    } finally {
-      setTestingApi(null)
-    }
-  }
-
-  // 轮换API密钥
-  const rotateApiKey = () => {
-    const activeIndex = apiKeys.findIndex(k => k.active)
-    const nextIndex = (activeIndex + 1) % apiKeys.length
-    
-    setApiKeys(apiKeys.map((key, index) => ({
-      ...key,
-      active: index === nextIndex
-    })))
-    
-    toast.success('API密钥已轮换')
-  }
-
-  // 保存设置
-  const saveSettings = async () => {
-    try {
-      setLoading(true)
-      
-      // 保存到本地存储
-      localStorage.setItem('shadow-writing-settings', JSON.stringify(settings))
-      localStorage.setItem('shadow-writing-api-keys', JSON.stringify(apiKeys))
-      
-      // TODO: 保存到后端API
-      // const response = await api.updateSettings(settings)
-      
-      toast.success('设置已保存')
-    } catch (error) {
-      toast.error('保存设置失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // 主题选项
-  const themeOptions = [
-    { value: 'light', label: '浅色模式' },
-    { value: 'dark', label: '深色模式' },
-    { value: 'system', label: '跟随系统' }
-  ]
-
-  // 字体大小选项
-  const fontSizeOptions = [
-    { value: 'small', label: '小' },
-    { value: 'medium', label: '中等' },
-    { value: 'large', label: '大' }
-  ]
-
-  // 模型选项
-  const modelOptions = [
-    { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B Versatile' },
-    { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B Instant' },
-    { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
-    { value: 'gemma2-9b-it', label: 'Gemma2 9B' }
-  ]
 
   return (
-    <Box
-      style={{
-        maxWidth: '1024px',
-        margin: '0 auto',
-        padding: '1.5rem',
-      }}
-    >
-      <Box
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem',
-        }}
-      >
-        <Group>
-          <Settings size={24} />
-          <Title order={1}>设置</Title>
-        </Group>
-        <Text c="dimmed">配置您的Shadow Writing Agent</Text>
+    <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4">
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-8">系统设置</h1>
 
-        {/* API配置 */}
-        <MantineCard>
-          <CardHeader>
-            <CardTitle>API配置</CardTitle>
-            <CardDescription>
-              配置后端API和LLM服务连接信息
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* 后端API地址 */}
-              <TextInput
-                label="后端API地址"
-                placeholder="http://localhost:8000"
-                value={settings.backendApiUrl}
-                onChange={(e) => updateSetting('backendApiUrl', e.target.value)}
-              />
+      <div className="space-y-8">
+        {/* API Configuration */}
+        <section className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
+             <Database size={20} className="text-indigo-500" />
+             API 连接配置
+           </h3>
+           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+             配置外部服务 API Key 以启用智能搜索和影子写作功能。您的 Key 仅存储在本地浏览器中。
+           </p>
 
-              {/* Tavily API Key */}
-              <TextInput
-                label="Tavily API Key (必需)"
-                placeholder="输入 Tavily API Key"
-                type="password"
-                value={settings.tavilyApiKey}
-                onChange={(e) => updateSetting('tavilyApiKey', e.target.value)}
-                description="用于搜索功能的 API Key，必须填写"
-              />
+           <div className="space-y-4">
+             {apiKeys.map((api, idx) => (
+               <div key={idx} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                 <div className="flex-1 w-full">
+                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
+                     {api.service}
+                   </label>
+                   <div className="relative">
+                     <input
+                       type="password"
+                       value={api.key || "sk-........................"}
+                       onChange={(e) => updateKey(idx, e.target.value)}
+                       className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-10 py-2.5 text-sm text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-mono"
+                     />
+                     <div className="absolute right-3 top-2.5">
+                       {api.status === 'success' && <Wifi size={16} className="text-emerald-500" />}
+                       {api.status === 'error' && <WifiOff size={16} className="text-red-500" />}
+                       {api.status === 'checking' && <RefreshCw size={16} className="text-indigo-500 animate-spin" />}
+                     </div>
+                   </div>
+                 </div>
+                 <button
+                   onClick={() => testConnection(idx)}
+                   disabled={api.status === 'checking'}
+                   className={`w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
+                     api.status === 'success'
+                       ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                       : api.status === 'error'
+                       ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+                       : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600'
+                   }`}
+                 >
+                   {api.status === 'checking' ? '连接中...' : api.status === 'success' ? '连接正常' : api.status === 'error' ? '连接失败' : '测试连接'}
+                 </button>
+               </div>
+             ))}
 
-              {/* API密钥管理 */}
-              <Box>
-                <Group justify="space-between" mb="sm">
-                  <Text fw={500}>API密钥管理</Text>
-                  <MantineButton
-                    variant="outline"
-                    size="sm"
-                    leftSection={<Plus size={16} />}
-                    onClick={addApiKey}
-                  >
-                    添加API密钥
-                  </MantineButton>
-                </Group>
+             <button className="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:underline flex items-center gap-1 mt-2">
+               + 添加新的 API 服务
+             </button>
+           </div>
+        </section>
 
-                <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {apiKeys.map((apiKey) => (
-                    <Box
-                      key={apiKey.id}
-                      style={{
-                        padding: '1rem',
-                        border: '1px solid var(--mantine-color-gray-3)',
-                        borderRadius: 'var(--mantine-radius-md)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.75rem',
-                      }}
-                    >
-                      <Group justify="space-between">
-                        <Group>
-                          <Select
-                            placeholder="选择提供商"
-                            data={[
-                              { value: 'groq', label: 'Groq' },
-                              { value: 'openai', label: 'OpenAI' },
-                              { value: 'deepseek', label: 'DeepSeek' }
-                            ]}
-                            value={apiKey.provider}
-                            onChange={(value) => updateApiKey(apiKey.id, 'provider', value)}
-                            style={{ width: 120 }}
-                          />
-                          <MantineBadge variant={apiKey.active ? 'default' : 'outline'}>
-                            {apiKey.active ? '使用中' : '备用'}
-                          </MantineBadge>
-                        </Group>
-                        <Group>
-                          <MantineButton
-                            variant="outline"
-                            size="sm"
-                            leftSection={<TestTube size={14} />}
-                            onClick={() => testApiConnection(apiKey.provider, apiKey.key)}
-                            loading={testingApi === apiKey.id}
-                            disabled={!apiKey.key}
-                          >
-                            测试连接
-                          </MantineButton>
-                          <ActionIcon
-                            variant="outline"
-                            color="red"
-                            onClick={() => deleteApiKey(apiKey.id)}
-                            disabled={apiKeys.length <= 1}
-                          >
-                            <Trash2 size={16} />
-                          </ActionIcon>
-                        </Group>
-                      </Group>
-                      <TextInput
-                        type="password"
-                        placeholder="输入API Key"
-                        value={apiKey.key}
-                        onChange={(e) => updateApiKey(apiKey.id, 'key', e.target.value)}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
+        {/* Preferences */}
+        <section className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
+             <Settings size={20} className="text-indigo-500" />
+             偏好设置
+           </h3>
+           <div className="space-y-5">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-indigo-900/30 text-indigo-400' : 'bg-orange-100 text-orange-500'}`}>
+                    {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
+                  </div>
+                  <div>
+                    <span className="text-slate-900 dark:text-white font-medium block">界面外观</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">切换深色/浅色模式</span>
+                  </div>
+                </div>
+                <button
+                  onClick={toggleTheme}
+                  className={`w-14 h-7 rounded-full p-1 transition-colors duration-300 relative ${isDarkMode ? 'bg-indigo-600' : 'bg-slate-200'}`}
+                  aria-label="Toggle Dark Mode"
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${isDarkMode ? 'translate-x-7' : 'translate-x-0'}`}></div>
+                </button>
+             </div>
 
-              {/* API轮换设置 */}
-              <Box
-                style={{
-                  padding: '1rem',
-                  backgroundColor: 'var(--mantine-color-gray-0)',
-                  borderRadius: 'var(--mantine-radius-md)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box>
-                  <Text fw={500}>启用API轮换</Text>
-                  <Text size="sm" c="dimmed">自动在多个API之间轮换使用</Text>
-                </Box>
-                <Group>
-                  <MantineSwitch
-                    checked={settings.apiRotationEnabled}
-                    onChange={(checked) => updateSetting('apiRotationEnabled', checked)}
-                  />
-                  {settings.apiRotationEnabled && (
-                    <MantineButton
-                      variant="outline"
-                      size="sm"
-                      leftSection={<RotateCcw size={14} />}
-                      onClick={rotateApiKey}
-                    >
-                      轮换API
-                    </MantineButton>
-                  )}
-                </Group>
-              </Box>
-            </Box>
-          </CardContent>
-        </MantineCard>
+             <hr className="border-slate-100 dark:border-slate-700" />
 
-        {/* LLM配置 */}
-        <MantineCard>
-          <CardHeader>
-            <CardTitle>LLM配置</CardTitle>
-            <CardDescription>
-              配置大语言模型参数
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* 模型选择 */}
-              <Select
-                label="模型名称"
-                data={modelOptions}
-                value={settings.modelName}
-                onChange={(value) => updateSetting('modelName', value)}
-                placeholder="选择模型"
-              />
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-500">
+                    <Globe size={20} />
+                  </div>
+                  <div>
+                    <span className="text-slate-900 dark:text-white font-medium block">界面语言</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">选择应用显示语言</span>
+                  </div>
+                </div>
+                <select className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-1.5 text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/20">
+                  <option>简体中文</option>
+                  <option>English</option>
+                  <option>日本語</option>
+                </select>
+             </div>
+           </div>
+        </section>
 
-              {/* 温度 */}
-              <NumberInput
-                label="温度 (Temperature)"
-                description="控制输出随机性，0-2之间"
-                min={0}
-                max={2}
-                step={0.1}
-                value={settings.temperature}
-                onChange={(value) => updateSetting('temperature', value || 0)}
-              />
-
-              {/* 最大令牌数 */}
-              <NumberInput
-                label="最大令牌数"
-                min={1}
-                max={8192}
-                value={settings.maxTokens}
-                onChange={(value) => updateSetting('maxTokens', value || 1)}
-              />
-
-              {/* Top P */}
-              <NumberInput
-                label="Top P"
-                description="控制词汇选择的多样性"
-                min={0}
-                max={1}
-                step={0.1}
-                value={settings.topP}
-                onChange={(value) => updateSetting('topP', value || 0)}
-              />
-
-              {/* 频率惩罚 */}
-              <NumberInput
-                label="频率惩罚"
-                description="减少重复内容的概率"
-                min={-2}
-                max={2}
-                step={0.1}
-                value={settings.frequencyPenalty}
-                onChange={(value) => updateSetting('frequencyPenalty', value || 0)}
-              />
-            </Box>
-          </CardContent>
-        </MantineCard>
-
-        {/* 外观设置 */}
-        <MantineCard>
-          <CardHeader>
-            <CardTitle>外观设置</CardTitle>
-            <CardDescription>
-              自定义应用的外观和主题
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* 主题模式 */}
-              <Box>
-                <Text fw={500} mb="xs">主题模式</Text>
-                <Group>
-                  {themeOptions.map((option) => (
-                    <Box
-                      key={option.value}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => updateSetting('themeMode', option.value)}
-                    >
-                      <MantineBadge
-                        variant={settings.themeMode === option.value ? 'default' : 'outline'}
-                      >
-                        {option.label}
-                      </MantineBadge>
-                    </Box>
-                  ))}
-                </Group>
-                <Text size="sm" c="dimmed" mt="xs">
-                  目前支持浅色和深色模式切换
-                </Text>
-              </Box>
-
-              {/* 字体大小 */}
-              <Box>
-                <Text fw={500} mb="xs">字体大小</Text>
-                <Select
-                  data={fontSizeOptions}
-                  value={settings.fontSize}
-                  onChange={(value) => updateSetting('fontSize', value)}
-                  placeholder="选择字体大小"
-                />
-                <Text size="sm" c="dimmed" mt="xs">
-                  当前：{settings.fontSize === 'small' ? '小' : settings.fontSize === 'large' ? '大' : '中等'}
-                </Text>
-              </Box>
-            </Box>
-          </CardContent>
-        </MantineCard>
-
-        {/* 学习偏好 */}
-        <MantineCard>
-          <CardHeader>
-            <CardTitle>学习偏好</CardTitle>
-            <CardDescription>
-              配置学习相关的行为偏好 <Text span c="orange" fw={500}>[功能开发中]</Text>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* 自动保存学习进度 */}
-              <Group justify="space-between">
-                <Box>
-                  <Text fw={500}>自动保存学习进度</Text>
-                  <Text size="sm" c="dimmed">自动保存您的学习进度到本地</Text>
-                </Box>
-                <MantineSwitch
-                  checked={settings.autoSaveProgress}
-                  onChange={(checked) => updateSetting('autoSaveProgress', checked)}
-                />
-              </Group>
-
-              {/* 显示学习统计 */}
-              <Group justify="space-between">
-                <Box>
-                  <Text fw={500}>显示学习统计</Text>
-                  <Text size="sm" c="dimmed">在历史页面显示详细的学习统计数据</Text>
-                </Box>
-                <MantineSwitch
-                  checked={settings.showLearningStats}
-                  onChange={(checked) => updateSetting('showLearningStats', checked)}
-                />
-              </Group>
-
-              {/* 启用键盘快捷键提示 */}
-              <Group justify="space-between">
-                <Box>
-                  <Text fw={500}>启用键盘快捷键提示</Text>
-                  <Text size="sm" c="dimmed">显示键盘快捷键使用提示</Text>
-                </Box>
-                <MantineSwitch
-                  checked={settings.enableKeyboardShortcuts}
-                  onChange={(checked) => updateSetting('enableKeyboardShortcuts', checked)}
-                />
-              </Group>
-            </Box>
-          </CardContent>
-        </MantineCard>
-
-        {/* 数据管理 */}
-        <MantineCard>
-          <CardHeader>
-            <CardTitle>数据管理</CardTitle>
-            <CardDescription>
-              管理您的学习数据和应用设置
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Box style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-              <MantineButton variant="outline">
-                导出所有学习数据
-              </MantineButton>
-              <MantineButton
-                variant="destructive"
-                disabled
-                leftSection={<AlertTriangle size={16} />}
-              >
-                清空学习历史
-              </MantineButton>
-            </Box>
-            <Text size="sm" c="dimmed">
-              ⚠️ 清空学习历史功能正在开发中，目前不可用
-            </Text>
-          </CardContent>
-        </MantineCard>
-
-        {/* 保存按钮 */}
-        <Group justify="flex-end">
-          <MantineButton
-            onClick={saveSettings}
-            loading={loading}
-            size="lg"
-          >
-            保存设置
-          </MantineButton>
-        </Group>
-      </Box>
-    </Box>
+        {/* Cache */}
+        <section className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
+             <Cpu size={20} className="text-indigo-500" />
+             存储管理
+           </h3>
+           <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+             <div>
+               <p className="text-slate-700 dark:text-slate-200 font-medium">本地缓存数据</p>
+               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">已使用 124MB (包含演讲音频和文本)</p>
+             </div>
+             <button className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors text-sm font-medium">
+               <Trash2 size={16} /> 清除缓存
+             </button>
+           </div>
+        </section>
+      </div>
+    </div>
   )
 }
 
