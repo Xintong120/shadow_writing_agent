@@ -1,18 +1,72 @@
 // frontend/src/pages/PreviewPage.tsx
 // 任务预览页面 - 显示处理完成后的演讲内容预览
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Layout, Play, Zap, BookOpen } from 'lucide-react'
 import { TedTalk } from '@/types/ted'
+import { api } from '@/services/api'
 
 interface PreviewPageProps {
   selectedTalksData: TedTalk[]
   onStartLearning: (talk: TedTalk) => void
+  taskId: string | null
 }
 
-const PreviewPage = ({ selectedTalksData, onStartLearning }: PreviewPageProps) => {
+const PreviewPage = ({ selectedTalksData, onStartLearning, taskId }: PreviewPageProps) => {
+  console.log('[PreviewPage] 组件渲染，selectedTalksData长度:', selectedTalksData.length, 'taskId:', taskId)
+
+  // 数据验证和默认值
+  if (!selectedTalksData || selectedTalksData.length === 0) {
+    console.log('[PreviewPage] selectedTalksData为空，显示加载状态')
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-8 pb-24 h-full flex flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>正在加载演讲数据...</p>
+        </div>
+      </div>
+    )
+  }
+
   const [activePreviewId, setActivePreviewId] = useState(selectedTalksData[0]?.id)
+  const [unitCount, setUnitCount] = useState(0)
+
+  console.log('[PreviewPage] 初始化activePreviewId:', activePreviewId)
   const activeTalk = selectedTalksData.find(t => t.id === activePreviewId) || selectedTalksData[0]
+  console.log('[PreviewPage] 当前activeTalk:', activeTalk, 'activeTalk是否存在:', !!activeTalk)
+
+  // 额外验证activeTalk
+  if (!activeTalk) {
+    console.error('[PreviewPage] activeTalk为null，无法渲染')
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-8 pb-24 h-full flex flex-col items-center justify-center">
+        <p className="text-destructive">数据加载错误，请重新开始</p>
+      </div>
+    )
+  }
+
+  // 获取任务状态以计算单元数量
+  useEffect(() => {
+    if (!taskId) {
+      setUnitCount(0)
+      return
+    }
+
+    const loadTaskStatus = async () => {
+      try {
+        const taskData = await api.getTaskStatus(taskId)
+        const totalUnits = taskData.results?.reduce((sum, urlResult) =>
+          sum + (urlResult.result_count || 0), 0) || 0
+        setUnitCount(totalUnits)
+        console.log('[PreviewPage] 计算单元数量:', totalUnits)
+      } catch (error) {
+        console.error('[PreviewPage] 获取任务状态失败:', error)
+        setUnitCount(0)
+      }
+    }
+
+    loadTaskStatus()
+  }, [taskId])
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 pb-24 h-full flex flex-col">
@@ -68,7 +122,9 @@ const PreviewPage = ({ selectedTalksData, onStartLearning }: PreviewPageProps) =
                    <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
                    <div className="h-2 w-5/6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
                 </div>
-                <p className="text-xs text-slate-400 mt-4 text-center">包含约 15 个影子写作练习单元</p>
+                <p className="text-xs text-slate-400 mt-4 text-center">
+                  包含 {unitCount || '加载中...'} 个影子写作练习单元
+                </p>
               </div>
            </div>
 

@@ -3,6 +3,9 @@ from tavily import TavilyClient
 from app.tools.ted_transcript_tool import extract_ted_transcript
 from app.tools.ted_ai_speaker_extractor import TedAISpeakerExtractor
 import re
+import time
+import requests
+from typing import List, Dict, Any
 
 
 def _enrich_with_ai_assistance(basic_info: dict) -> dict:
@@ -347,87 +350,114 @@ def _is_valid_ted_talk_url(url: str) -> bool:
     return True
 
 
-def ted_tavily_search(query: str, max_results: int = 5) -> list:
+def ted_tavily_search(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     """
-    搜索TED演讲（适配FastAPI环境）
-    
+    搜索TED演讲（适配FastAPI环境，支持重试机制）
+
     Args:
         query: 搜索关键词/主题
         max_results: 最多返回结果数
-        
+
     Returns:
         list: 搜索结果列表，每个结果包含title, url, content, score
-        
+
     Raises:
         ValueError: 如果TAVILY_API_KEY未配置
+        Exception: 搜索失败且重试后仍失败
     """
     # 1. 检查API密钥
     if not settings.tavily_api_key:
         raise ValueError("TAVILY_API_KEY not configured in .env file")
-    
+
     # 2. 初始化Tavily客户端
     try:
         tavily_client = TavilyClient(api_key=settings.tavily_api_key)
         print(f"[TAVILY SEARCH] 正在搜索: '{query}'")
-        
+
     except Exception as e:
         print(f"[ERROR] Tavily客户端初始化失败: {e}")
         raise
-    
-    # 3. 执行搜索
-    try:
-        search_response = tavily_client.search(
-            query=f"TED talk {query}",
-            topic="general",  # 通用主题
-            search_depth="advanced",
-            max_results=max_results,
-            include_domains=["ted.com"]
-        )
-        
-        # 4. 处理搜索结果
-        results = search_response.get('results', [])
-        
-        if not results:
-            print("[WARNING] 未找到任何结果")
-            return []
-        
-        print(f"[SUCCESS] 找到 {len(results)} 个相关TED演讲\n")
-        
-        # 5. 简化并过滤返回结果
-        simplified_results = []
-        filtered_count = 0
-        
-        for i, result in enumerate(results, 1):
-            simplified_result = {
-                "title": result.get('title', ''),
-                "url": result.get('url', ''),
-                "content": result.get('content', ''),
-                "score": result.get('score', 0)
-            }
-            
-            # 验证URL是否为有效的TED演讲
-            if _is_valid_ted_talk_url(simplified_result['url']):
-                # 丰富TED信息（获取speaker、duration、views、description等）
-                enriched_result = _enrich_ted_info(simplified_result)
-                simplified_results.append(enriched_result)
-                
-                # 打印有效结果的日志
-                print(f"  [{len(simplified_results)}] {enriched_result['title']}")
-                print(f"      URL: {enriched_result['url']}")
-                print(f"      相关度: {enriched_result['score']:.2f}")
-                if 'speaker' in enriched_result:
-                    print(f"      演讲者: {enriched_result['speaker']}")
-                print("\n")
+
+    # 3. 执行搜索（带重试机制）
+    max_retries = 3
+    base_delay = 1.0  # 基础延迟1秒
+
+    for attempt in range(max_retries):
+        try:
+            # 如果不是第一次尝试，打印重试信息
+            if attempt > 0:
+                delay = base_delay * (2 ** (attempt - 1))  # 指数退避
+                print(f"[RETRY] 第 {attempt + 1} 次重试，等待 {delay:.1f} 秒...")
+                time.sleep(delay)
+
+            # 执行搜索请求
+            search_response = tavily_client.search(
+                query=f"TED talk {query}",
+                topic="general",  # 通用主题
+                search_depth="advanced",
+                max_results=max_results,
+                include_domains=["ted.com"]
+            )
+
+            # 4. 处理搜索结果
+            results = search_response.get('results', [])
+
+            if not results:
+                print("[WARNING] 未找到任何结果")
+                return []
+
+            print(f"[SUCCESS] 找到 {len(results)} 个相关TED演讲\n")
+
+            # 5. 简化并过滤返回结果
+            simplified_results = []
+            filtered_count = 0
+
+            for i, result in enumerate(results, 1):
+                simplified_result = {
+                    "title": result.get('title', ''),
+                    "url": result.get('url', ''),
+                    "content": result.get('content', ''),
+                    "score": result.get('score', 0)
+                }
+
+                # 验证URL是否为有效的TED演讲
+                if _is_valid_ted_talk_url(simplified_result['url']):
+                    # 丰富TED信息（获取speaker、duration、views、description等）
+                    enriched_result = _enrich_ted_info(simplified_result)
+                    simplified_results.append(enriched_result)
+
+                    # 打印有效结果的日志
+                    print(f"  [{len(simplified_results)}] {enriched_result['title']}")
+                    print(f"      URL: {enriched_result['url']}")
+                    print(f"      相关度: {enriched_result['score']:.2f}")
+                    if 'speaker' in enriched_result:
+                        print(f"      演讲者: {enriched_result['speaker']}")
+                    print("\n")
+                else:
+                    # 跳过无效URL
+                    filtered_count += 1
+                    print(f"  [SKIP] 非演讲URL: {simplified_result['url']}\n")
+
+            if filtered_count > 0:
+                print(f"[INFO] 过滤掉 {filtered_count} 个非演讲URL，返回 {len(simplified_results)} 个有效结果\n")
+
+            return simplified_results
+
+        except (ConnectionAbortedError, ConnectionError, requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
+            # 网络相关错误，进行重试
+            if attempt == max_retries - 1:
+                print(f"[ERROR] 搜索失败，已重试 {max_retries} 次: {e}")
+                raise Exception(f"TED搜索失败（网络连接问题）: {e}")
             else:
-                # 跳过无效URL
-                filtered_count += 1
-                print(f"  [SKIP] 非演讲URL: {simplified_result['url']}\n")
-        
-        if filtered_count > 0:
-            print(f"[INFO] 过滤掉 {filtered_count} 个非演讲URL，返回 {len(simplified_results)} 个有效结果\n")
-        
-        return simplified_results
-        
-    except Exception as e:
-        print(f"[ERROR] 搜索失败: {e}")
-        raise
+                print(f"[WARNING] 网络连接错误 (尝试 {attempt + 1}/{max_retries}): {e}")
+                continue
+
+        except Exception as e:
+            # 非网络错误，直接抛出
+            print(f"[ERROR] 搜索失败: {e}")
+            raise
+
+    # 这行代码理论上不会到达，因为循环中要么成功返回，要么抛出异常
+    # 但为了满足类型检查器的要求，我们添加这个返回语句
+    raise Exception("搜索失败：意外的代码路径")

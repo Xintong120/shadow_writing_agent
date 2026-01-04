@@ -79,16 +79,11 @@ class Settings(BaseSettings):
             keys = [k.strip() for k in api_keys_str.split(",") if k.strip()]
             print(f"从 GROQ_API_KEYS 读取到 {len(keys)} 个 API Key")
         
-        # 方法2: 尝试读取 GROQ_API_KEY_1, GROQ_API_KEY_2... 格式（向后兼容）
+        # 方法2: 尝试读取所有 GROQ_API_KEY_开头的环境变量（向后兼容）
         if not keys:
-            i = 1
-            while True:
-                key = os.getenv(f"GROQ_API_KEY_{i}")
-                if key:
-                    keys.append(key)
-                    i += 1
-                else:
-                    break
+            for key_name, value in os.environ.items():
+                if key_name.startswith('GROQ_API_KEY_') and key_name != 'GROQ_API_KEY' and value:
+                    keys.append(value)
             if keys:
                 print(f"从 GROQ_API_KEY_* 读取到 {len(keys)} 个 API Key")
         

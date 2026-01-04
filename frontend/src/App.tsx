@@ -14,7 +14,7 @@ import StatsPage from '@/pages/StatsPage'
 import Navigation from '@/components/Navigation'
 import { ActiveTab } from '@/types/navigation'
 import { TedTalk } from '@/types/ted'
-import { websocketService } from '@/services/websocket'
+import { sseService } from '@/services/progress'
 
 // Auth Wrapper Component with State Machine
 const AuthWrapper = () => {
@@ -35,30 +35,8 @@ const AuthWrapper = () => {
     }
   }, [isDarkMode])
 
-  // Initialize WebSocket connection on app startup
-  useEffect(() => {
-    console.log('应用启动，初始化WebSocket连接')
-    websocketService.initialize()
-  }, [])
-
   const handleStartProcessing = (talks: TedTalk[], taskId?: string) => {
     console.log('开始处理演讲:', talks, 'taskId:', taskId)
-
-    // 直接连接到正确的taskId WebSocket端点
-    if (taskId) {
-      console.log('建立WebSocket连接到任务:', taskId)
-      websocketService.connect(taskId, {
-        onConnected: () => {
-          console.log('WebSocket连接到任务成功，ProcessingPage将处理消息')
-        },
-        onProgress: () => {}, // ProcessingPage会重新设置回调
-        onStep: () => {},
-        onUrlCompleted: () => {},
-        onCompleted: () => {},
-        onError: () => {},
-        onClose: () => {}
-      })
-    }
 
     setProcessedTalks(talks)
     setCurrentTaskId(taskId || null)
@@ -66,6 +44,7 @@ const AuthWrapper = () => {
   }
 
   const handleProcessingFinish = useCallback(() => {
+    console.log('[App] handleProcessingFinish被调用，设置appState为preview')
     setAppState('preview')
     console.log('处理完成，跳转到预览页面')
   }, [])
@@ -107,8 +86,8 @@ const AuthWrapper = () => {
             : appState === 'processing'
             ? <ProcessingPage taskId={currentTaskId} onFinish={handleProcessingFinish} />
             : appState === 'preview'
-            ? <PreviewPage selectedTalksData={processedTalks} onStartLearning={handleStartLearning} />
-            : currentLearningTalk && <LearningSessionPage talk={currentLearningTalk} onBack={() => setAppState('preview')} />
+            ? <PreviewPage selectedTalksData={processedTalks} onStartLearning={handleStartLearning} taskId={currentTaskId} />
+            : currentTaskId && <LearningSessionPage taskId={currentTaskId} onBack={() => setAppState('preview')} />
         )}
         {activeTab === 'history' && <HistoryPage onNavigateToLearning={handleNavigateToLearning} />}
         {activeTab === 'stats' && <StatsPage />}

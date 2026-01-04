@@ -3,7 +3,7 @@
 
 from typing import List
 from app.task_manager import task_manager
-from app.websocket_manager import ws_manager
+from app.sse_manager import sse_manager
 from app.tools.ted_transcript_tool import extract_ted_transcript
 from app.workflows import create_parallel_shadow_writing_workflow
 from app.enums import TaskStatus, MessageType, ProcessingStep
@@ -12,32 +12,37 @@ from app.enums import TaskStatus, MessageType, ProcessingStep
 async def process_urls_batch(task_id: str, urls: List[str]):
     """
     批量异步处理多个TED URLs
-    
+
     流程：
     1. 遍历每个URL
     2. 提取transcript
     3. 运行Shadow Writing工作流
     4. 实时推送进度
     5. 收集结果
-    
+
     Args:
         task_id: 任务ID
         urls: TED URL列表
     """
+    import time
+    start_time = time.time()
+
     total = len(urls)
     task_manager.update_status(task_id, TaskStatus.PROCESSING)
-    
-    print(f"\n[BATCH PROCESSOR] 开始处理 {total} 个URLs")
-    
+
+    print(f"\n[BATCH PROCESSOR] 开始处理 {total} 个URLs - 开始时间: {time.strftime('%H:%M:%S')}")
+
     # 发送开始消息
-    await ws_manager.broadcast_progress(
+    print(f"[BATCH_PROCESSOR] [{task_id}] 准备发送started消息 - 时间: {time.strftime('%H:%M:%S')}")
+    await sse_manager.add_message(
         task_id,
-        MessageType.STARTED,
         {
+            "type": MessageType.STARTED.value,
             "total": total,
             "message": f"开始处理 {total} 个TED演讲"
         }
     )
+    print(f"[BATCH_PROCESSOR] [{task_id}] started消息发送完成 - 时间: {time.strftime('%H:%M:%S')}")
     
     # 创建Shadow Writing工作流（并行版本）
     workflow = create_parallel_shadow_writing_workflow()
@@ -45,27 +50,30 @@ async def process_urls_batch(task_id: str, urls: List[str]):
     
     # 遍历处理每个URL
     for idx, url in enumerate(urls, 1):
+        url_start_time = time.time()
         try:
-            print(f"\n[BATCH PROCESSOR] 处理 [{idx}/{total}]: {url}")
+            print(f"\n[BATCH PROCESSOR] 处理 [{idx}/{total}]: {url} - 开始时间: {time.strftime('%H:%M:%S')}")
             
             # 更新进度
             task_manager.update_progress(task_id, idx, url)
-            await ws_manager.broadcast_progress(
+            print(f"[BATCH_PROCESSOR] [{task_id}] 准备发送progress消息 - URL {idx}/{total} - 时间: {time.strftime('%H:%M:%S')}")
+            await sse_manager.add_message(
                 task_id,
-                MessageType.PROGRESS,
                 {
+                    "type": MessageType.PROGRESS.value,
                     "current": idx,
                     "total": total,
                     "url": url,
                     "status": f"Processing {idx}/{total}"
                 }
             )
-            
+            print(f"[BATCH_PROCESSOR] [{task_id}] progress消息发送完成 - URL {idx}/{total} - 时间: {time.strftime('%H:%M:%S')}")
+
             # ========== 步骤1: 提取Transcript ==========
-            await ws_manager.broadcast_progress(
+            await sse_manager.add_message(
                 task_id,
-                MessageType.STEP,
                 {
+                    "type": MessageType.STEP.value,
                     "current": idx,
                     "total": total,
                     "step": ProcessingStep.EXTRACTING_TRANSCRIPT.value,
@@ -82,10 +90,10 @@ async def process_urls_batch(task_id: str, urls: List[str]):
             print(f"   提取字幕成功: {len(transcript_data.transcript)} 字符")
             
             # ========== 步骤2: 运行Shadow Writing工作流 ==========
-            await ws_manager.broadcast_progress(
+            await sse_manager.add_message(
                 task_id,
-                MessageType.STEP,
                 {
+                    "type": MessageType.STEP.value,
                     "current": idx,
                     "total": total,
                     "step": ProcessingStep.SHADOW_WRITING.value,
@@ -101,6 +109,7 @@ async def process_urls_batch(task_id: str, urls: List[str]):
                 "ted_title": transcript_data.title,
                 "ted_speaker": transcript_data.speaker,
                 "ted_url": url,
+                "task_id": task_id,  # 添加task_id用于进度推送
                 "semantic_chunks": [],
                 "final_shadow_chunks": [],  # 并行版本：operator.add自动汇总
                 "current_node": "",
@@ -126,8 +135,10 @@ async def process_urls_batch(task_id: str, urls: List[str]):
                 else:
                     processed_results.append(str(item))
             
-            print(f"   Shadow Writing完成: {len(processed_results)} 个结果")
-            
+            url_end_time = time.time()
+            url_duration = url_end_time - url_start_time
+            print(f"   Shadow Writing完成: {len(processed_results)} 个结果 - 耗时: {url_duration:.2f}秒")
+
             # ========== 步骤3: 保存结果 ==========
             result_data = {
                 "url": url,
@@ -144,10 +155,10 @@ async def process_urls_batch(task_id: str, urls: List[str]):
             task_manager.add_result(task_id, result_data)
             
             # ========== 步骤4: 推送完成消息 ==========
-            await ws_manager.broadcast_progress(
+            await sse_manager.add_message(
                 task_id,
-                MessageType.URL_COMPLETED,
                 {
+                    "type": MessageType.URL_COMPLETED.value,
                     "current": idx,
                     "total": total,
                     "url": url,
@@ -162,10 +173,10 @@ async def process_urls_batch(task_id: str, urls: List[str]):
             
             task_manager.add_error(task_id, error_msg)
             
-            await ws_manager.broadcast_progress(
+            await sse_manager.add_message(
                 task_id,
-                MessageType.ERROR,
                 {
+                    "type": MessageType.ERROR.value,
                     "current": idx,
                     "total": total,
                     "url": url,
@@ -175,18 +186,23 @@ async def process_urls_batch(task_id: str, urls: List[str]):
     
     # ========== 全部完成 ==========
     task_manager.complete_task(task_id)
-    
+
     task = task_manager.get_task(task_id)
-    
-    await ws_manager.broadcast_progress(
+    end_time = time.time()
+    total_duration = end_time - start_time
+
+    await sse_manager.add_message(
         task_id,
-        MessageType.COMPLETED,
         {
+            "type": MessageType.COMPLETED.value,
             "total": total,
-            "successful": len(task.results),
-            "failed": len(task.errors),
-            "message": f"全部完成: 成功 {len(task.results)}/{total}"
+            "successful": len(task.results) if task else 0,
+            "failed": len(task.errors) if task else 0,
+            "message": f"全部完成: 成功 {len(task.results) if task else 0}/{total}",
+            "duration": total_duration
         }
     )
-    
-    print(f"\n[BATCH PROCESSOR] 批量处理完成: 成功 {len(task.results)}/{total}")
+
+    print(f"\n[BATCH PROCESSOR] 批量处理完成: 成功 {len(task.results) if task else 0}/{total}")
+    print(f"[BATCH PROCESSOR] 总耗时: {total_duration:.2f} 秒")
+    print(f"[BATCH PROCESSOR] 结束时间: {time.strftime('%H:%M:%S')}")

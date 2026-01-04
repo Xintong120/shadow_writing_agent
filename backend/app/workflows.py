@@ -1,4 +1,3 @@
-# workflows.py
 # 作用：定义所有LangGraph工作流
 
 from langgraph.graph import StateGraph, END, START
@@ -6,7 +5,7 @@ from langgraph.types import Send
 from app.state import Shadow_Writing_State, ChunkProcessState
 # 共用组件
 from app.agents.shared.semantic_chunking import Semantic_Chunking_Agent
-
+""" ----------------------------------------------------------- """
 # 串行工作流agents（已弃用，保留以备回退）
 from app.agents.serial.sentence_shadow_writing import TED_shadow_writing_agent
 from app.agents.serial.validation import validation_agent
@@ -268,21 +267,40 @@ def create_parallel_shadow_writing_workflow():
     def continue_to_pipelines(state: Shadow_Writing_State):
         """
         为每个语义块创建独立的处理流水线
-        
+
         使用Send API动态分发，LangGraph会自动并行处理
         """
         semantic_chunks = state.get("semantic_chunks", [])
-        
+        task_id = state.get("task_id")
+
         print(f"\n[PARALLEL WORKFLOW] 准备并行处理 {len(semantic_chunks)} 个语义块")
-        
+        print(f"[PARALLEL WORKFLOW] task_id: {task_id}")
+        print(f"[PARALLEL WORKFLOW] state keys: {list(state.keys())}")
+
+        # 推送并行处理开始消息
+        if task_id:
+            import asyncio
+            from app.sse_manager import sse_manager
+            asyncio.create_task(
+                sse_manager.add_message(task_id, {
+                    "type": "chunks_processing_started",
+                    "total_chunks": len(semantic_chunks),
+                    "message": f"开始并行处理 {len(semantic_chunks)} 个语义块"
+                })
+            )
+            print(f"[PARALLEL WORKFLOW] 推送并行处理开始消息到task_id: {task_id}")
+
         # 为每个chunk创建一个Send指令
         # 【重要】ChunkProcessState与主State共享final_shadow_chunks字段，使用operator.add自动合并
+        total_chunks = len(semantic_chunks)
         return [
             Send(
                 "chunk_pipeline",
                 {
                     "chunk_text": chunk,
                     "chunk_id": i,
+                    "task_id": task_id,  # 传递task_id用于进度推送
+                    "total_chunks": total_chunks,  # 传递总数用于进度计算
                     # 初始化ChunkProcessState字段
                     "raw_shadow": None,
                     "validated_shadow": None,

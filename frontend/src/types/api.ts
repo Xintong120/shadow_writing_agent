@@ -43,14 +43,21 @@ export interface StartBatchResponse {
   status: string
 }
 
+// 后端实际返回的TaskStatusResponse结构
 export interface TaskStatusResponse {
   task_id: string
-  status: 'pending' | 'running' | 'completed' | 'failed'
-  progress: number
-  current: number
+  status: string  // "pending" | "processing" | "completed" | "failed"
   total: number
-  results?: ShadowWritingResult[]
-  error?: string
+  current: number
+  urls: string[]
+  results: Array<{
+    url: string
+    ted_info?: any
+    results?: ShadowWritingResult[]
+    result_count?: number
+  }>
+  errors: string[]
+  current_url?: string
 }
 
 // ============ Memory 系统相关 ============
@@ -139,8 +146,13 @@ export interface FlatStats {
  * 完整匹配后端 MessageType 枚举
  */
 export interface BatchProgressMessage {
+  id?: string  // SSE消息ID，用于断点续传
   type: 'connected' | 'started' | 'progress' | 'step' |
-        'url_completed' | 'error' | 'completed' | 'task_completed'
+        'url_completed' | 'error' | 'completed' | 'task_completed' |
+        // 新增语义块级别进度消息
+        'chunking_started' | 'chunking_completed' |
+        'chunks_processing_started' | 'chunk_progress' |
+        'chunks_processing_completed'
   taskId?: string
   task_id?: string
   progress?: number
@@ -154,9 +166,18 @@ export interface BatchProgressMessage {
   message?: string
   log?: string
   step?: string  // 处理步骤（如 "extracting_transcript"）
-  timestamp?: string
+
+  // 语义块相关字段
+  text_length?: number  // 文本长度
+  total_chunks?: number  // 总语义块数
+  current_chunk?: number  // 当前语义块编号
+  stage?: string  // 处理阶段：'shadow_writing' | 'validation' | 'quality' | 'completed'
+  chunk_sizes?: number[]  // 各语义块大小
+
+  timestamp?: string | number  // 支持字符串和数字时间戳
   successful?: number  // 成功数量
   failed?: number  // 失败数量
+  duration?: number  // 处理耗时
 }
 
 /**

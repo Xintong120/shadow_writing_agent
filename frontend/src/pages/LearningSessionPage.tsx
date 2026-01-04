@@ -1,56 +1,95 @@
 // frontend/src/pages/LearningSessionPage.tsx
 // 学习会话页面 - 沉浸式学习界面
 
+import { useState, useEffect } from 'react'
 import { ArrowRight, MoreHorizontal } from 'lucide-react'
 import LearningCard from '@/components/LearningCard'
-import { TedTalk } from '@/types/ted'
 import { LearningItem } from '@/types/learning'
+import { api, convertShadowResultsToLearningItems } from '@/services/api'
 
 interface LearningSessionPageProps {
-  talk: TedTalk
+  taskId: string
   onBack: () => void
 }
 
-// 模拟数据 - 默认使用第一个演讲的学习内容
-const MOCK_SHADOW_CONTENT: Record<number, LearningItem[]> = {
-  1: [
-    {
-      id: 101,
-      original: "Leadership requires vision to navigate uncertainty.",
-      mimic: "Management demands insight to handle ambiguity.",
-      mapping: [
-        { from: "Leadership", to: "Management" },
-        { from: "requires", to: "demands" },
-        { from: "vision", to: "insight" },
-        { from: "navigate", to: "handle" }
-      ]
-    },
-    {
-      id: 102,
-      original: "We must embrace the challenges of the future.",
-      mimic: "We should accept the difficulties of tomorrow.",
-      mapping: [
-        { from: "must", to: "should" },
-        { from: "embrace", to: "accept" },
-        { from: "challenges", to: "difficulties" }
-      ]
-    }
-  ],
-  2: [
-    {
-      id: 201,
-      original: "To learn is to change.",
-      mimic: "To acquire knowledge is to transform.",
-      mapping: [
-        { from: "learn", to: "acquire knowledge" },
-        { from: "change", to: "transform" }
-      ]
-    }
-  ]
-}
+const LearningSessionPage = ({ taskId, onBack }: LearningSessionPageProps) => {
+  const [content, setContent] = useState<LearningItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-const LearningSessionPage = ({ talk, onBack }: LearningSessionPageProps) => {
-  const content = MOCK_SHADOW_CONTENT[talk.id] || []
+  // 加载学习内容数据
+  useEffect(() => {
+    if (!taskId) {
+      console.log('[LearningSessionPage] taskId为空，跳过加载')
+      return
+    }
+
+    const loadLearningContent = async () => {
+      try {
+        setLoading(true)
+        console.log('[LearningSessionPage] 开始加载学习内容，taskId:', taskId)
+        const taskData = await api.getTaskStatus(taskId)
+        console.log('[LearningSessionPage] 获取任务数据:', taskData)
+        console.log('[LearningSessionPage] 任务状态:', taskData.status)
+        console.log('[LearningSessionPage] results类型:', typeof taskData.results, '长度:', taskData.results?.length)
+
+        // 扁平化批量结果并转换为LearningItem格式
+        let flatResults: any[] = []
+        if (taskData.results && Array.isArray(taskData.results)) {
+          flatResults = taskData.results.flatMap((urlResult: any) => {
+            console.log('[LearningSessionPage] 处理urlResult:', urlResult.url, 'result_count:', urlResult.result_count)
+            return urlResult.results || []
+          })
+        }
+        console.log('[LearningSessionPage] 扁平化结果数量:', flatResults.length)
+        console.log('[LearningSessionPage] 扁平化结果样例:', flatResults.slice(0, 2))
+
+        const learningItems = convertShadowResultsToLearningItems(flatResults)
+        console.log('[LearningSessionPage] 转换后学习项目数量:', learningItems.length)
+        console.log('[LearningSessionPage] 学习项目样例:', learningItems.slice(0, 2))
+
+        setContent(learningItems)
+
+        if (learningItems.length === 0) {
+          console.log('[LearningSessionPage] 学习内容为空，设置错误')
+          setError('没有找到学习内容')
+        } else {
+          console.log('[LearningSessionPage] 成功加载学习内容')
+        }
+      } catch (err) {
+        console.error('[LearningSessionPage] 加载学习内容失败:', err)
+        setError(err instanceof Error ? err.message : '加载学习内容失败')
+      } finally {
+        console.log('[LearningSessionPage] 设置loading为false')
+        setLoading(false)
+      }
+    }
+
+    loadLearningContent()
+  }, [taskId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>加载学习内容...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || content.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold text-destructive mb-4">加载失败</h1>
+        <p className="text-muted-foreground mb-4">{error || '没有找到学习内容'}</p>
+        <button onClick={onBack}>
+          返回任务列表
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 pb-32">
@@ -64,8 +103,8 @@ const LearningSessionPage = ({ talk, onBack }: LearningSessionPageProps) => {
               <span className="font-medium hidden sm:inline">返回任务列表</span>
            </button>
            <div className="text-center">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{talk.title}</h2>
-              <p className="text-xs text-slate-500">2 / 15 完成</p>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">学习会话</h2>
+              <p className="text-xs text-slate-500">{content.length} 个练习</p>
            </div>
            <button className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
               <MoreHorizontal size={24} />

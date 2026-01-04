@@ -19,6 +19,9 @@ export async function fetchAPI<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<APIResponse<T>> {
+  const startTime = Date.now()
+  console.log(`[API Client] 开始请求: ${options?.method || 'GET'} ${API_BASE}${endpoint}`)
+
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
@@ -28,14 +31,23 @@ export async function fetchAPI<T>(
       },
     })
 
+    const responseTime = Date.now()
+    const duration = responseTime - startTime
+    console.log(`[API Client] 收到响应: ${response.status} ${response.statusText}, 耗时: ${duration}ms`)
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: '请求失败' }))
+      console.error(`[API Client] 请求失败:`, error)
       throw new Error(error.message || `HTTP ${response.status}`)
     }
 
     const data = await response.json()
+    console.log(`[API Client] 响应数据:`, data)
     return { success: true, data }
   } catch (error) {
+    const endTime = Date.now()
+    const duration = endTime - startTime
+    console.error(`[API Client] 请求异常, 总耗时: ${duration}ms, 错误:`, error)
     if (IS_DEBUG) console.error('API Error:', error)
     return {
       success: false,

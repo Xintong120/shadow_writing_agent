@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { websocketService } from '@/services/websocket'
+import { sseService } from '@/services/progress'
 import { api } from '@/services/api'
 import type { BatchProgressMessage } from '@/types'
 
@@ -27,8 +27,8 @@ const ProcessingPage = ({ taskId, onFinish }: ProcessingPageProps) => {
   const [useFallbackProgress, setUseFallbackProgress] = useState(false)
   const [lastProgressUpdate, setLastProgressUpdate] = useState(Date.now())
   const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [wsConnectionStatus, setWsConnectionStatus] = useState<string>('未连接')
-  const [wsError, setWsError] = useState<string | null>(null)
+  const [sseConnectionStatus, setSseConnectionStatus] = useState<string>('未连接')
+  const [sseError, setSseError] = useState<string | null>(null)
 
   useEffect(() => {
     const useEffectStartTime = Date.now()
@@ -42,328 +42,162 @@ const ProcessingPage = ({ taskId, onFinish }: ProcessingPageProps) => {
       return
     }
 
-    console.log('[ProcessingPage] 开始并行执行WebSocket连接和API检查')
+    console.log('[ProcessingPage] 开始SSE连接和API检查')
 
-    // ========== 并行执行：WebSocket连接 ==========
-    console.log('[ProcessingPage] 启动WebSocket连接流程')
-    const setupWebSocket = () => {
-      // 检查是否已经有WebSocket连接
-      const checkConnectionStart = Date.now()
-      const isAlreadyConnected = websocketService.isConnected()
-      const checkConnectionEnd = Date.now()
-      console.log(`[ProcessingPage] WebSocket连接检查完成 - 耗时: ${checkConnectionEnd - checkConnectionStart}ms, 已连接状态:`, isAlreadyConnected)
-      console.log('[ProcessingPage] WebSocket当前taskId:', websocketService.getCurrentTaskId())
+    // 添加初始日志
+    addLog('正在连接服务器...')
 
-      // 如果没有连接，则建立连接
-      if (!isAlreadyConnected) {
-        console.log('[ProcessingPage] 需要建立WebSocket连接，时间:', Date.now())
-        connectWebSocket()
-      } else {
-        console.log('[ProcessingPage] WebSocket已连接，使用现有连接，时间:', Date.now())
-        // WebSocket已经连接，更新回调函数来处理消息
+    // SSE连接回调函数
+    const sseCallbacks = {
+      onConnected: () => {
+        console.log('[ProcessingPage] SSE连接确认')
         setIsConnected(true)
-        setWsConnectionStatus('已连接')
+        setSseConnectionStatus('已连接')
+        setCurrentStep('开始处理...')
         addLog('已连接到服务器')
+      },
 
-        // 更新WebSocket回调函数，让它处理ProcessingPage的消息
-        websocketService.updateCallbacks({
-          onConnected: () => {
-            console.log('[ProcessingPage] WebSocket连接确认')
-            setIsConnected(true)
-            setWsConnectionStatus('已连接')
-            setCurrentStep('开始处理...')
-            addLog('已连接到服务器')
-          },
+      onProgress: (data: BatchProgressMessage) => {
+        console.log('[ProcessingPage] 收到进度消息:', data)
+        setLastProgressUpdate(Date.now())
 
-          onProgress: (data: BatchProgressMessage) => {
-            console.log('[ProcessingPage] 收到进度消息:', data)
-            setLastProgressUpdate(Date.now())
-            setUseFallbackProgress(false)
+        if (data.progress !== undefined) {
+          setProgress(data.progress)
+          addLog(`进度更新: ${data.progress}%`)
+        } else if (data.current !== undefined && data.total !== undefined) {
+          const percentage = Math.round((data.current / data.total) * 100)
+          setProgress(percentage)
+          addLog(`处理进度: ${data.current}/${data.total} (${percentage}%)`)
+        }
 
-            if (data.progress !== undefined) {
-              setProgress(data.progress)
-              addLog(`进度更新: ${data.progress}%`)
-            } else if (data.current !== undefined && data.total !== undefined) {
-              const percentage = Math.round((data.current / data.total) * 100)
-              setProgress(percentage)
-              addLog(`处理进度: ${data.current}/${data.total} (${percentage}%)`)
-            }
+        if (data.url) {
+          addLog(`当前处理: ${data.url}`)
+        }
+      },
 
-            if (data.url) {
-              addLog(`当前处理: ${data.url}`)
-            }
-          },
+      onStep: (data: BatchProgressMessage) => {
+        console.log('[ProcessingPage] 收到步骤消息:', data)
+        if (data.step) {
+          setCurrentStep(data.step)
+          addLog(`执行步骤: ${data.step}`)
+        }
+        if (data.message) addLog(data.message)
+      },
 
-          onStep: (data: BatchProgressMessage) => {
-            console.log('[ProcessingPage] 收到步骤消息:', data)
-            if (data.step) {
-              setCurrentStep(data.step)
-              addLog(`执行步骤: ${data.step}`)
-            }
-            if (data.log) addLog(data.log)
-            if (data.message) addLog(data.message)
-          },
+      // 新增语义块级别进度消息处理
+      onChunkingStarted: (data: BatchProgressMessage) => {
+        console.log('[ProcessingPage] 收到分块开始消息:', data)
+        setCurrentStep('语义分块处理')
+        addLog(`开始语义分块: 文本长度 ${data.text_length} 字符`)
+      },
 
-          onUrlCompleted: (data: BatchProgressMessage) => {
-            if (data.url) addLog(`完成处理: ${data.url}`)
-          },
+      onChunkingCompleted: (data: BatchProgressMessage) => {
+        console.log('[ProcessingPage] 收到分块完成消息:', data)
+        addLog(`语义分块完成: 生成 ${data.total_chunks} 个语义块`)
+        if (data.chunk_sizes) {
+          addLog(`各块大小: ${data.chunk_sizes.join(', ')} 字符`)
+        }
+      },
 
-          onCompleted: (data: BatchProgressMessage) => {
-            console.log('[ProcessingPage] 收到完成消息:', data)
-            setProgress(100)
-            setCurrentStep('处理完成')
-            addLog('所有任务处理完成！')
+      onChunksProcessingStarted: (data: BatchProgressMessage) => {
+        console.log('[ProcessingPage] 收到并行处理开始消息:', data)
+        setCurrentStep('并行处理语义块')
+        addLog(`开始并行处理 ${data.total_chunks} 个语义块`)
+      },
 
-            if (data.successful !== undefined && data.failed !== undefined) {
-              addLog(`处理结果: 成功 ${data.successful} 个, 失败 ${data.failed} 个`)
-            }
+      onChunkProgress: (data: BatchProgressMessage) => {
+        console.log('[ProcessingPage] 收到语义块进度消息:', data)
+        if (data.stage === 'shadow_writing') {
+          addLog(`处理语义块 ${data.current_chunk}/${data.total_chunks}: 生成Shadow Writing`)
+        }
+      },
 
-            setTimeout(() => onFinish?.(), 1000)
-          },
+      onChunksProcessingCompleted: (data: BatchProgressMessage) => {
+        console.log('[ProcessingPage] 收到并行处理完成消息:', data)
+        addLog(`所有 ${data.total_chunks} 个语义块处理完成`)
+      },
 
-          onError: async (errorMsg: string) => {
-            console.error('[ProcessingPage] WebSocket错误:', errorMsg)
-            setError(errorMsg)
-            addLog(`错误: ${errorMsg}`)
-            toast.error(`处理错误: ${errorMsg}`)
-          },
+      onUrlCompleted: (data: BatchProgressMessage) => {
+        if (data.url) addLog(`完成处理: ${data.url}`)
+      },
 
-          onClose: async (code: number, reason: string) => {
-            console.log('[ProcessingPage] WebSocket连接关闭, code:', code, 'reason:', reason)
-            setIsConnected(false)
-            if (code !== 1000) {
-              addLog(`连接断开 (${code}): ${reason}`)
-            }
-          }
-        })
+      onCompleted: (data: BatchProgressMessage) => {
+        console.log('[ProcessingPage] 收到完成消息:', data)
+        console.log('[ProcessingPage] onFinish存在:', !!onFinish)
+        setProgress(100)
+        setCurrentStep('处理完成')
+        addLog('所有任务处理完成！')
+
+        if (data.successful !== undefined && data.failed !== undefined) {
+          addLog(`处理结果: 成功 ${data.successful} 个, 失败 ${data.failed} 个`)
+        }
+
+        console.log('[ProcessingPage] 准备调用onFinish，1秒后跳转')
+        setTimeout(() => {
+          console.log('[ProcessingPage] 执行onFinish调用')
+          onFinish?.()
+        }, 1000)
+      },
+
+      onError: (errorMsg: string) => {
+        console.error('[ProcessingPage] SSE错误:', errorMsg)
+        setSseError(errorMsg)
+        setError(errorMsg)
+        addLog(`错误: ${errorMsg}`)
+        toast.error(`处理错误: ${errorMsg}`)
+      },
+
+      onClose: (code: number, reason: string) => {
+        console.log('[ProcessingPage] SSE连接关闭')
+        setIsConnected(false)
+        if (code !== 1000) {
+          addLog(`连接断开: ${reason}`)
+        }
       }
     }
 
-    // ========== 并行执行：API检查任务状态 ==========
-    const checkTaskStatusAsync = async () => {
-      try {
-        console.log('[ProcessingPage] 开始检查任务状态（异步），时间:', Date.now())
-        console.log('[ProcessingPage] 调用API: api.getTaskStatus，taskId:', taskId)
-        const task = await api.getTaskStatus(taskId)
-        console.log('[ProcessingPage] API调用完成，收到任务数据:', task, '时间:', Date.now())
-        console.log('[ProcessingPage] 任务状态:', task.status, '时间:', Date.now())
+    // 检查是否已有SSE连接
+    const isAlreadyConnected = sseService.isConnected()
+    const currentTaskId = sseService.getCurrentTaskId()
 
+    if (isAlreadyConnected && currentTaskId === taskId) {
+      console.log('[ProcessingPage] SSE已连接且taskId匹配，使用现有连接')
+      sseService.updateCallbacks(sseCallbacks)
+      setIsConnected(true)
+      setSseConnectionStatus('已连接')
+    } else {
+      // 断开现有连接，建立新连接
+      if (isAlreadyConnected) {
+        console.log('[ProcessingPage] 断开现有SSE连接')
+        sseService.disconnect()
+      }
+
+      console.log('[ProcessingPage] 建立新的SSE连接')
+      sseService.connect(taskId, sseCallbacks)
+    }
+
+    // 并行检查任务状态
+    const checkTaskStatus = async () => {
+      try {
+        const task = await api.getTaskStatus(taskId)
         if (task.status === 'completed') {
-          console.log('[ProcessingPage] 任务已完成，设置最终状态，时间:', Date.now())
           setProgress(100)
           setCurrentStep('处理完成')
           addLog('处理已完成')
           setTimeout(() => onFinish?.(), 1000)
         }
-        // 如果任务还没完成，WebSocket连接会处理进度消息
       } catch (error) {
-        console.log('[ProcessingPage] 检查任务状态失败，1秒后重试，时间:', Date.now(), '错误:', error)
-        setTimeout(checkTaskStatusAsync, 1000)
+        console.log('[ProcessingPage] 任务状态检查失败（可能因API key冷却超时）:', error)
+        // 不显示错误，继续等待SSE消息
       }
     }
 
-    // ========== 定义WebSocket连接函数 ==========
-    const connectWebSocket = () => {
-      console.log('[ProcessingPage] 执行connectWebSocket函数')
-      // WebSocket 回调函数
-      const callbacks = {
-        onConnected: () => {
-          const connectedTime = Date.now()
-          console.log(`[ProcessingPage] WebSocket连接确认 - 时间: ${new Date(connectedTime).toLocaleTimeString()}`)
-          console.log('[ProcessingPage] WebSocket连接成功，设置状态')
-          setIsConnected(true)
-          setWsConnectionStatus('已连接')
-          setCurrentStep('开始处理...')
-          console.log('[ProcessingPage] 添加日志: 已连接到服务器')
-          addLog('已连接到服务器')
-
-          // 设置超时检查：如果30秒内没有收到任何消息，检查任务状态
-          console.log('[ProcessingPage] 设置30秒超时检查')
-          const timeout = setTimeout(async () => {
-            console.log('[ProcessingPage] WebSocket超时检查开始')
-            try {
-              const task = await api.getTaskStatus(taskId)
-              console.log('[ProcessingPage] 超时检查结果:', task.status)
-              if (task.status === 'completed') {
-                console.log('[ProcessingPage] 任务已完成，设置进度100%')
-                setProgress(100)
-                setCurrentStep('处理完成')
-                addLog('处理已完成')
-                setTimeout(() => {
-                  console.log('[ProcessingPage] 调用onFinish跳转')
-                  onFinish?.()
-                }, 1000)
-              }
-            } catch (error) {
-              console.error('[ProcessingPage] 超时检查失败:', error)
-            }
-          }, 30000)
-
-          setConnectionTimeout(timeout)
-        },
-
-        onProgress: (data: BatchProgressMessage) => {
-          console.log('[ProcessingPage] 收到进度消息:', data) // 调试日志
-          console.log('[ProcessingPage] 清除超时检查定时器')
-
-          // 收到消息，清除超时检查
-          if (connectionTimeout) {
-            clearTimeout(connectionTimeout)
-            setConnectionTimeout(null)
-          }
-
-          console.log('[ProcessingPage] 更新进度状态')
-          setLastProgressUpdate(Date.now()) // 更新最后进度时间
-          setUseFallbackProgress(false) // 收到真实进度，停止模拟
-
-          // 优先使用直接的progress字段（如果后端发送）
-          if (data.progress !== undefined) {
-            console.log('[ProcessingPage] 设置进度:', data.progress)
-            setProgress(data.progress)
-            addLog(`进度更新: ${data.progress}%`)
-          }
-          // 否则通过current/total计算百分比
-          else if (data.current !== undefined && data.total !== undefined) {
-            const percentage = Math.round((data.current / data.total) * 100)
-            console.log('[ProcessingPage] 计算进度:', percentage, `(${data.current}/${data.total})`)
-            setProgress(percentage)
-            addLog(`处理进度: ${data.current}/${data.total} (${percentage}%)`)
-          }
-
-          // 显示URL信息
-          if (data.url) {
-            console.log('[ProcessingPage] 当前处理URL:', data.url)
-            addLog(`当前处理: ${data.url}`)
-          }
-        },
-
-        onStep: (data: BatchProgressMessage) => {
-          console.log('[ProcessingPage] 收到步骤消息:', data)
-          if (data.step) {
-            setCurrentStep(data.step)
-            addLog(`执行步骤: ${data.step}`)
-          }
-          if (data.log) {
-            addLog(data.log)
-          }
-          if (data.message) {
-            addLog(data.message)
-          }
-        },
-
-        onUrlCompleted: (data: BatchProgressMessage) => {
-          if (data.url) {
-            addLog(`完成处理: ${data.url}`)
-          }
-        },
-
-        onCompleted: (data: BatchProgressMessage) => {
-          console.log('[ProcessingPage] 收到完成消息:', data)
-          console.log('[ProcessingPage] 设置最终状态: progress=100, step=处理完成')
-          setProgress(100)
-          setCurrentStep('处理完成')
-          addLog('所有任务处理完成！')
-
-          if (data.successful !== undefined && data.failed !== undefined) {
-            console.log('[ProcessingPage] 处理结果统计:', { successful: data.successful, failed: data.failed })
-            addLog(`处理结果: 成功 ${data.successful} 个, 失败 ${data.failed} 个`)
-          }
-
-          // 延迟跳转到预览页面
-          console.log('[ProcessingPage] 1秒后调用onFinish跳转')
-          setTimeout(() => {
-            console.log('[ProcessingPage] 执行onFinish回调')
-            onFinish?.()
-          }, 1000)
-        },
-
-        onError: async (errorMsg: string) => {
-          console.error('[ProcessingPage] WebSocket错误:', errorMsg)
-          console.log('[ProcessingPage] 开始降级到API检查任务状态')
-
-          // WebSocket失败时，尝试通过API检查任务状态
-          try {
-            const task = await api.getTaskStatus(taskId)
-            console.log('[ProcessingPage] 通过API获取任务状态:', task)
-
-            if (task.status === 'completed') {
-              console.log('[ProcessingPage] 任务完成，设置最终状态')
-              setProgress(100)
-              setCurrentStep('处理完成')
-              addLog('处理已完成')
-              setTimeout(() => {
-                console.log('[ProcessingPage] 降级模式下调用onFinish')
-                onFinish?.()
-              }, 1500)
-            } else if (task.status === 'failed') {
-              console.log('[ProcessingPage] 任务失败')
-              setError('处理失败')
-              addLog('处理失败')
-            } else {
-              console.log('[ProcessingPage] 任务状态未知')
-              setError('连接服务器失败，请重试')
-              addLog('连接失败，请稍后重试')
-            }
-          } catch (apiError) {
-            console.error('[ProcessingPage] API检查也失败:', apiError)
-            console.log('[ProcessingPage] 设置错误状态')
-            setError(errorMsg)
-            addLog(`错误: ${errorMsg}`)
-            toast.error(`处理错误: ${errorMsg}`)
-          }
-        },
-
-        onClose: async (code: number, reason: string) => {
-          console.log('[ProcessingPage] WebSocket连接关闭, code:', code, 'reason:', reason)
-          setIsConnected(false)
-          if (code !== 1000) { // 非正常关闭
-            console.log('[ProcessingPage] 非正常关闭，开始API检查')
-            addLog(`连接断开 (${code}): ${reason}`)
-
-            // 连接断开时，尝试通过API检查最终状态
-            try {
-              const task = await api.getTaskStatus(taskId)
-              console.log('[ProcessingPage] 连接断开后API检查结果:', task.status)
-              if (task.status === 'completed') {
-                console.log('[ProcessingPage] 设置完成状态')
-                setProgress(100)
-                setCurrentStep('处理完成')
-                addLog('处理已完成')
-                setTimeout(() => {
-                  console.log('[ProcessingPage] 连接断开后调用onFinish')
-                  onFinish?.()
-                }, 1000)
-              }
-            } catch (error) {
-              console.error('[ProcessingPage] 连接断开后API检查失败:', error)
-            }
-          } else {
-            console.log('[ProcessingPage] 正常关闭WebSocket连接')
-          }
-        }
-      }
-
-      console.log('[ProcessingPage] 调用websocketService.connect，taskId:', taskId)
-
-      // 连接WebSocket
-      websocketService.connect(taskId, callbacks)
-
-      // 添加初始日志
-      console.log('[ProcessingPage] 添加初始日志: 正在连接服务器...')
-      addLog('正在连接服务器...')
-    }
-
-    // ========== 执行并行任务 ==========
-    console.log('[ProcessingPage] 同时启动WebSocket连接和API检查')
-    setupWebSocket()
-    checkTaskStatusAsync()
+    checkTaskStatus()
 
     // 清理函数
     return () => {
-      websocketService.disconnect()
-      if (connectionTimeout) {
-        clearTimeout(connectionTimeout)
-      }
+      // 页面卸载时不断开连接，让SSE服务管理连接生命周期
+      console.log('[ProcessingPage] 组件卸载，保持SSE连接')
     }
   }, [taskId])
 
@@ -410,8 +244,8 @@ const ProcessingPage = ({ taskId, onFinish }: ProcessingPageProps) => {
         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">正在生成学习内容</h3>
         <p className="text-slate-500 dark:text-slate-400 mb-4">{currentStep}</p>
         <div className="text-sm text-slate-400 space-y-1">
-          <div>连接状态: {wsConnectionStatus}</div>
-          {wsError && <div className="text-red-400">错误: {wsError}</div>}
+          <div>连接状态: {sseConnectionStatus}</div>
+          {sseError && <div className="text-red-400">错误: {sseError}</div>}
         </div>
       </div>
 

@@ -136,6 +136,50 @@ function calculateStreakDays(learnedAtDates: string[]): number {
   return streak
 }
 
+// ============ LearningItem 相关转换 ============
+
+/**
+ * 将 ShadowWritingResult[] 转换为 LearningItem[]
+ *
+ * 用于 LearningSessionPage 从 mock 数据切换到真实后端数据
+ */
+function convertShadowResultsToLearningItems(
+  shadowResults: ShadowWritingResult[]
+): import('@/types/learning').LearningItem[] {
+  return shadowResults.map((result, index) => ({
+    id: index + 1, // 使用数组索引作为ID
+    original: result.original,
+    mimic: result.imitation, // ShadowWritingResult 用 imitation
+    mapping: convertMapToLearningMapping(result.map), // 转换map格式
+  }))
+}
+
+/**
+ * 将 ShadowWritingResult.map 转换为 LearningItem.mapping 格式
+ *
+ * 输入: Record<string, string[]> 如 {"Concept": ["Leadership", "Management"]}
+ * 输出: Array<{from: string, to: string}> 如 [{from: "Leadership", to: "Management"}]
+ */
+function convertMapToLearningMapping(
+  map: Record<string, string[]>
+): Array<{from: string, to: string}> {
+  const mappings: Array<{from: string, to: string}> = []
+
+  Object.values(map).forEach(items => {
+    // 假设偶数索引是原文词汇，奇数索引是改写词汇
+    for (let i = 0; i < items.length; i += 2) {
+      if (i + 1 < items.length) {
+        mappings.push({
+          from: items[i],
+          to: items[i + 1],
+        })
+      }
+    }
+  })
+
+  return mappings
+}
+
 // ============ 导出所有转换工具 ============
 
 export {
@@ -145,4 +189,6 @@ export {
   flattenBatchResults,
   calculateLearningTime,
   calculateStreakDays,
+  convertShadowResultsToLearningItems,
+  convertMapToLearningMapping,
 }

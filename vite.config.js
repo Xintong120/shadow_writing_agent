@@ -12,11 +12,6 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
-      },
-      // WebSocket代理
-      '/ws': {
-        target: 'ws://localhost:8000',
-        ws: true
       }
     }
   }

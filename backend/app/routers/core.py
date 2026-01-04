@@ -11,7 +11,7 @@ from app.agent import process_ted_text
 from app.tools.ted_txt_parsers import parse_ted_file
 from app.workflows import create_search_workflow
 from app.task_manager import task_manager
-from app.websocket_manager import ws_manager
+from app.sse_manager import sse_manager
 from app.batch_processor import process_urls_batch
 from app.enums import TaskStatus, MessageType
 import time

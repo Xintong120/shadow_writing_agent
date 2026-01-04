@@ -43,42 +43,73 @@ class Semantic_Chunking_Agent:
         
         return chunks
     
-    def process_transcript(self, transcript: str) -> List[str]:
+    def process_transcript(self, transcript: str, task_id: str | None = None) -> List[str]:
         """处理完整的transcript，返回语义块列表"""
         print("\n开始智能语义分块处理...")
         print(f"原始文本长度: {len(transcript)} 字符")
-        
+
+        # 推送分块开始消息
+        if task_id:
+            import asyncio
+            from app.sse_manager import sse_manager
+            asyncio.create_task(
+                sse_manager.add_message(task_id, {
+                    "type": "chunking_started",
+                    "message": f"开始语义分块处理，文本长度: {len(transcript)} 字符",
+                    "text_length": len(transcript)
+                })
+            )
+            print(f"[SEMANTIC CHUNKING] 推送分块开始消息到task_id: {task_id}")
+
         chunks = self.split_into_chunks(transcript)
-        
+
         print(f"分块完成: {len(chunks)} 个语义块")
         for i, chunk in enumerate(chunks, 1):
             print(f"  语义块 {i}: {len(chunk)} 字符")
-        
+
+        # 推送分块完成消息
+        if task_id:
+            import asyncio
+            from app.sse_manager import sse_manager
+            asyncio.create_task(
+                sse_manager.add_message(task_id, {
+                    "type": "chunking_completed",
+                    "total_chunks": len(chunks),
+                    "message": f"语义分块完成，共生成 {len(chunks)} 个语义块",
+                    "chunk_sizes": [len(chunk) for chunk in chunks]
+                })
+            )
+            print(f"[SEMANTIC CHUNKING] 推送分块完成消息到task_id: {task_id}, 块数: {len(chunks)}")
+
         return chunks
     
     def __call__(self, state: Shadow_Writing_State) -> Shadow_Writing_State:
         """使其成为可调用的 LangGraph 节点
-        
+
         Args:
             state: 工作流状态
-            
+
         Returns:
             更新后的状态
         """
         text = state.get("text", "")
-        
+        task_id = state.get("task_id")
+
         print("\n [SEMANTIC CHUNKING NODE] 开始语义分块")
-        
+        print(f"[SEMANTIC CHUNKING NODE] task_id: {task_id}")
+
         if not text:
             return {
+                **state,  # 保留原有状态
                 "semantic_chunks": [],
                 "errors": ["语义分块节点: 无文本内容"]
             }
-        
-        # 调用分块处理
-        chunks = self.process_transcript(text)
-        
+
+        # 调用分块处理，传递task_id用于进度推送
+        chunks = self.process_transcript(text, task_id)
+
         return {
+            **state,  # 保留原有状态
             "semantic_chunks": chunks,
             "processing_logs": [f"语义分块节点: 生成 {len(chunks)} 个语义块"]
         }

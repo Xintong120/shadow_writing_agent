@@ -8,17 +8,35 @@ from app.utils import ensure_dependencies, create_llm_function_native
 def shadow_writing_single_chunk(state: ChunkProcessState) -> dict:
     """
     处理单个语义块的Shadow Writing（并行版本）
-    
+
     【重要】：移除 time.sleep(15) 强制等待
     LangGraph的并发控制 + API Key轮换机制已足够
-    
+
     【Prompt保持不变】：使用与原版完全相同的Shadow Writing prompt
     """
     chunk_text = state.get("chunk_text", "")
     chunk_id = state.get("chunk_id", 0)
-    
+    task_id = state.get("task_id")
+    total_chunks = state.get("total_chunks", 1)  # 从state获取总数，避免除零错误
+
     print(f"\n[Pipeline {chunk_id}] Shadow Writing...")
-    
+    print(f"[Pipeline {chunk_id}] task_id: {task_id}, chunk_length: {len(chunk_text)}, total_chunks: {total_chunks}")
+
+    # 推送单个语义块开始处理消息
+    if task_id and total_chunks > 0:
+        import asyncio
+        from app.sse_manager import sse_manager
+        asyncio.create_task(
+            sse_manager.add_message(task_id, {
+                "type": "chunk_progress",
+                "current_chunk": chunk_id + 1,
+                "total_chunks": total_chunks,
+                "stage": "shadow_writing",
+                "message": f"处理语义块 {chunk_id + 1}/{total_chunks}: 生成Shadow Writing"
+            })
+        )
+        print(f"[Pipeline {chunk_id}] 推送语义块进度消息到task_id: {task_id}, 进度: {chunk_id + 1}/{total_chunks}")
+
     if not chunk_text:
         return {"raw_shadow": None, "error": "Empty chunk"}
     

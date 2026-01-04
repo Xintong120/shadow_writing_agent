@@ -7,6 +7,7 @@ import {
   flattenBatchResults,
   calculateLearningTime,
   calculateStreakDays,
+  convertShadowResultsToLearningItems,
 } from './transforms'
 import type {
   SearchTEDResponse,
@@ -62,22 +63,41 @@ export const getTaskStatus = async (
   const requestStartTime = Date.now()
   console.log(`[API] getTaskStatus 开始调用 - taskId: ${taskId} 时间: ${new Date(requestStartTime).toLocaleTimeString()}`)
 
-  const response = await fetchAPI<TaskStatusResponse>(`/api/v1/task/${taskId}`, {
-    method: 'GET',
-  })
+  // 设置30秒超时
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => {
+    controller.abort()
+    console.log(`[API] getTaskStatus 超时 - taskId: ${taskId} 时间: ${new Date().toLocaleTimeString()}`)
+  }, 30000)
 
-  const responseTime = Date.now()
-  const duration = responseTime - requestStartTime
-  console.log(`[API] getTaskStatus 收到响应 - 耗时: ${duration}ms 成功: ${response.success} 时间: ${new Date(responseTime).toLocaleTimeString()}`)
+  try {
+    const response = await fetchAPI<TaskStatusResponse>(`/api/v1/task/${taskId}`, {
+      method: 'GET',
+      signal: controller.signal,
+    })
 
-  if (!response.success) {
-    console.error(`[API] getTaskStatus 失败 - 错误: ${response.error}`)
-    handleError(new Error(response.error || '获取任务状态失败'), 'getTaskStatus')
-    throw new Error(response.error || '获取任务状态失败')
+    clearTimeout(timeoutId)
+
+    const responseTime = Date.now()
+    const duration = responseTime - requestStartTime
+    console.log(`[API] getTaskStatus 收到响应 - 耗时: ${duration}ms 成功: ${response.success} 时间: ${new Date(responseTime).toLocaleTimeString()}`)
+
+    if (!response.success) {
+      console.error(`[API] getTaskStatus 失败 - 错误: ${response.error}`)
+      handleError(new Error(response.error || '获取任务状态失败'), 'getTaskStatus')
+      throw new Error(response.error || '获取任务状态失败')
+    }
+
+    console.log(`[API] getTaskStatus 成功 - 任务状态: ${response.data?.status} 进度: ${response.data?.current}/${response.data?.total}`)
+    return response.data
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      console.error(`[API] getTaskStatus 超时 - taskId: ${taskId}`)
+      throw new Error('获取任务状态超时，请稍后重试')
+    }
+    throw error
   }
-
-  console.log(`[API] getTaskStatus 成功 - 任务状态: ${response.data?.status} 进度: ${response.data?.current}/${response.data?.total}`)
-  return response.data
 }
 
 // ============ Memory 系统相关 ============
@@ -151,7 +171,7 @@ export const api = {
   healthCheck,
 }
 
-// 导出工具函数（用于 ResultsPage 扁平化数据）
+// 导出工具函数（用于 ResultsPage 扁平化数据和 LearningSessionPage 数据转换）
 export {
   flattenBatchResults,
   convertMapToHighlightMapping,
@@ -159,6 +179,7 @@ export {
   calculateLearningTime,
   calculateStreakDays,
   flattenStats,
+  convertShadowResultsToLearningItems,
 }
 
 export default api

@@ -76,17 +76,21 @@ const SearchPage = ({ onStartProcessing }: SearchPageProps = {}) => {
   const handleSearch = async (query: string) => {
     if (!query.trim()) return
 
+    console.log(`[SearchPage] 开始搜索: "${query}", userId: ${userId}`)
     setIsSearching(true)
     setSearchStatus('searching')
     setError(null) // 清空之前的错误
 
     try {
+      console.log('[SearchPage] 调用api.searchTED...')
       // 调用后端API搜索TED
       const response = await api.searchTED(query, userId)
+      console.log('[SearchPage] API响应:', response)
 
       // 更新搜索结果
       setSearchResults(response.candidates)
       setSearchStatus('results')
+      console.log(`[SearchPage] 设置搜索状态为'results', 结果数量: ${response.candidates.length}`)
 
       // 显示搜索结果提示
       if (response.candidates.length > 0) {
@@ -95,14 +99,15 @@ const SearchPage = ({ onStartProcessing }: SearchPageProps = {}) => {
         toast.info(`没有找到关于"${query}"的TED演讲，请尝试其他关键词`)
       }
     } catch (error) {
+      console.error('[SearchPage] 搜索TED失败:', error)
       // 处理搜索错误
-      console.error('搜索TED失败:', error)
       setError('搜索过程中出现错误，请稍后重试')
       setSearchStatus('idle')
       handleError(error, 'SearchPage.handleSearch')
       toast.error('搜索失败，请检查网络连接')
     } finally {
       setIsSearching(false)
+      console.log('[SearchPage] 搜索完成, isSearching设为false')
     }
   }
 

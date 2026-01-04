@@ -6,9 +6,10 @@ from app.models import Ted_Shadows
 
 class Shadow_Writing_State(TypedDict):
     """shadow writing工作流状态"""
-  
+
     topic: Optional[str]                   # 用户输入的搜索主题
     user_id: Optional[str]                 # 用户ID（用于memory namespace）
+    task_id: Optional[str]                 # 任务ID（用于SSE进度推送）
     
     # Communication结果
     ted_candidates: Optional[List[dict]]   # 搜索到的TED演讲候选列表
