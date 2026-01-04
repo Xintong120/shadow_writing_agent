@@ -44,7 +44,15 @@ const SettingsPage = ({ isDarkMode, toggleTheme }: SettingsPageProps) => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4">
-      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-8">系统设置</h1>
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+          <Settings className="text-indigo-600 dark:text-indigo-400" />
+          系统设置
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-2">
+          配置你的学习环境和偏好设置。
+        </p>
+      </header>
 
       <div className="space-y-8">
         {/* API Configuration */}
