@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 import { Layout, Play, Zap, BookOpen } from 'lucide-react'
 import { TedTalk } from '@/types/ted'
 import { api } from '@/services/api'
+import { taskHistoryStorage } from '@/services/taskHistoryStorage'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface PreviewPageProps {
   selectedTalksData: TedTalk[]
@@ -13,7 +15,11 @@ interface PreviewPageProps {
 }
 
 const PreviewPage = ({ selectedTalksData, onStartLearning, taskId }: PreviewPageProps) => {
+  const { authStatus } = useAuth()
   console.log('[PreviewPage] 组件渲染，selectedTalksData长度:', selectedTalksData.length, 'taskId:', taskId)
+
+  // 获取用户ID
+  const getUserId = () => authStatus === 'guest' ? 'guest_user' : 'user_123'
 
   // 数据验证和默认值
   if (!selectedTalksData || selectedTalksData.length === 0) {
@@ -59,6 +65,11 @@ const PreviewPage = ({ selectedTalksData, onStartLearning, taskId }: PreviewPage
           sum + (urlResult.result_count || 0), 0) || 0
         setUnitCount(totalUnits)
         console.log('[PreviewPage] 计算单元数量:', totalUnits)
+
+        // 注意：PreviewPage不应该自动更新状态
+        // 状态更新应该由用户行为触发：
+        // - 点击"进入学习界面"时更新为'in_progress'
+        // - 在LearningSessionPage完成时更新为'completed'
       } catch (error) {
         console.error('[PreviewPage] 获取任务状态失败:', error)
         setUnitCount(0)

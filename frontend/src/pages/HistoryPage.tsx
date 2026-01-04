@@ -1,10 +1,12 @@
 // frontend/src/pages/HistoryPage.tsx
 // 学习历史页面 - 展示学习记录，支持状态分组和跳转
 
-import { useState } from 'react'
-import { Clock, Zap, CheckCircle, ArrowRight, List } from 'lucide-react'
-import { LearningStatus, LearningHistory, HistoryTab } from '@/types/history'
+import { useState, useEffect } from 'react'
+import { Clock, Zap, CheckCircle, ArrowRight, List, Trash2 } from 'lucide-react'
+import { LearningStatus, LearningHistory, HistoryTab, TaskHistoryItem } from '@/types/history'
 import { TedTalk } from '@/types/ted'
+import { taskHistoryStorage } from '@/services/taskHistoryStorage'
+import { useAuth } from '@/contexts/AuthContext'
 
 // 标签页配置
 const tabs: HistoryTab[] = [
@@ -13,58 +15,82 @@ const tabs: HistoryTab[] = [
   { id: 'completed', label: '已完成', icon: CheckCircle, color: 'text-emerald-500' },
 ]
 
-// 模拟历史数据
-const MOCK_HISTORY: LearningHistory[] = [
-  { id: 1, talkId: 1, title: "Why AI needs a sense of ethics", status: 'completed', progress: 100, lastPlayed: '2h ago' },
-  { id: 2, talkId: 2, title: "The future of leadership in the digital age", status: 'in_progress', progress: 45, lastPlayed: '1d ago' },
-  { id: 3, talkId: 3, title: "How to learn a new language by 2025", status: 'todo', progress: 0, lastPlayed: 'Added today' },
-  { id: 4, talkId: 4, title: "Creative thinking in a data-driven world", status: 'todo', progress: 0, lastPlayed: 'Added yesterday' },
-]
+// 时间格式化工具函数
+const formatTimeAgo = (dateString: string | undefined): string => {
+  if (!dateString) return '未知时间'
 
-// TED演讲数据映射
-const MOCK_TED_TALKS: Record<number, Omit<TedTalk, 'id'>> = {
-  1: {
-    title: "Why AI needs a sense of ethics",
-    speaker: "Technologist X",
-    duration: "12:45",
-    views: "2.1M",
-    description: "An insightful look into how we can program morality into machines...",
-    thumbnail: "bg-blue-100 dark:bg-blue-900/30"
-  },
-  2: {
-    title: "The future of leadership in the digital age",
-    speaker: "Leader Y",
-    duration: "15:20",
-    views: "1.5M",
-    description: "What does it mean to lead when your team is half human, half algorithm?",
-    thumbnail: "bg-indigo-100 dark:bg-indigo-900/30"
-  },
-  3: {
-    title: "How to learn a new language by 2025",
-    speaker: "Linguist Z",
-    duration: "09:30",
-    views: "5.8M",
-    description: "New techniques in cognitive science reveal the secrets of rapid acquisition.",
-    thumbnail: "bg-purple-100 dark:bg-purple-900/30"
-  },
-  4: {
-    title: "Creative thinking in a data-driven world",
-    speaker: "Artist A",
-    duration: "18:10",
-    views: "900K",
-    description: "Why human creativity is becoming more valuable, not less.",
-    thumbnail: "bg-pink-100 dark:bg-pink-900/30"
-  }
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffHours < 1) return '刚刚'
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString()
 }
 
 interface HistoryPageProps {
   onNavigateToLearning: (talk: TedTalk) => void
+  initialTab?: LearningStatus
 }
 
-const HistoryPage = ({ onNavigateToLearning }: HistoryPageProps) => {
-  const [activeTab, setActiveTab] = useState<LearningStatus>('todo')
+const HistoryPage = ({ onNavigateToLearning, initialTab = 'todo' }: HistoryPageProps) => {
+  const { authStatus } = useAuth()
+  const [activeTab, setActiveTab] = useState<LearningStatus>(initialTab)
+  const [historyItems, setHistoryItems] = useState<TaskHistoryItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredHistory = MOCK_HISTORY.filter(item => item.status === activeTab)
+  // 删除历史记录
+  const handleDeleteHistory = async (item: TaskHistoryItem) => {
+    if (confirm(`确定要删除"${item.tedTalk.title}"的学习记录吗？此操作不可恢复。`)) {
+      try {
+        const userId = getUserId()
+        await taskHistoryStorage.deleteTask(item.taskId, item.talkId)
+
+        // 重新加载数据
+        const updatedTasks = await taskHistoryStorage.getTasks(userId)
+        setHistoryItems(updatedTasks)
+
+        console.log(`[HistoryPage] 删除历史记录: ${item.id}`)
+      } catch (err) {
+        console.error('删除历史记录失败:', err)
+        alert('删除失败，请重试')
+      }
+    }
+  }
+
+  // 获取用户ID
+  const getUserId = () => authStatus === 'guest' ? 'guest_user' : 'user_123'
+
+  // 加载历史数据
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        setLoading(true)
+        const userId = getUserId()
+        const tasks = await taskHistoryStorage.getTasks(userId)
+        setHistoryItems(tasks)
+      } catch (err) {
+        console.error('加载历史数据失败:', err)
+        setError('加载历史数据失败')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadHistory()
+  }, [authStatus])
+
+  // 当initialTab改变时更新activeTab
+  useEffect(() => {
+    setActiveTab(initialTab)
+  }, [initialTab])
+
+  // 根据活跃标签过滤数据
+  const filteredHistory = historyItems.filter(item => item.status === activeTab)
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 pb-24 md:pb-8">
@@ -85,7 +111,7 @@ const HistoryPage = ({ onNavigateToLearning }: HistoryPageProps) => {
             <tab.icon size={16} className={activeTab === tab.id ? tab.color : ''} />
             {tab.label}
             <span className="ml-1 text-xs opacity-60 bg-slate-100 dark:bg-slate-800 px-1.5 rounded-full">
-              {MOCK_HISTORY.filter(h => h.status === tab.id).length}
+              {historyItems.filter(h => h.status === tab.id).length}
             </span>
           </button>
         ))}
@@ -93,10 +119,27 @@ const HistoryPage = ({ onNavigateToLearning }: HistoryPageProps) => {
 
       {/* List */}
       <div className="grid grid-cols-1 gap-4">
-        {filteredHistory.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>加载历史记录...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 bg-red-50 dark:bg-red-900/20 rounded-2xl">
+            <p className="text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        ) : filteredHistory.length > 0 ? (
           filteredHistory.map((item) => {
-            const talkData = MOCK_TED_TALKS[item.talkId] || MOCK_TED_TALKS[1]
-            const talk: TedTalk = { id: item.talkId, ...talkData }
+            // 使用item.tedTalk数据构建完整的TedTalk对象
+            const talk: TedTalk = {
+              id: parseInt(item.talkId) || 1,
+              title: item.tedTalk.title,
+              speaker: item.tedTalk.speaker,
+              duration: item.tedTalk.duration,
+              views: item.tedTalk.views,
+              description: item.tedTalk.description,
+              thumbnail: item.tedTalk.thumbnail
+            }
 
             return (
               <div
@@ -116,13 +159,13 @@ const HistoryPage = ({ onNavigateToLearning }: HistoryPageProps) => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-lg text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                    {item.title}
+                  <h3 className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {item.tedTalk.title}
                   </h3>
                   <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    <span>{talk.speaker}</span>
+                    <span>{item.tedTalk.speaker}</span>
                     <span>•</span>
-                    <span>{item.lastPlayed}</span>
+                    <span>{formatTimeAgo(item.lastLearnedAt || item.updatedAt)}</span>
                   </div>
 
                   {/* Progress Bar (Only for In Progress) */}
@@ -133,8 +176,22 @@ const HistoryPage = ({ onNavigateToLearning }: HistoryPageProps) => {
                   )}
                 </div>
 
-                <div className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-700 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                <div className="hidden sm:flex items-center gap-2">
+                  {/* 删除按钮 */}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation() // 阻止事件冒泡
+                      handleDeleteHistory(item)
+                    }}
+                    className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-700 text-slate-400 hover:bg-pink-100 hover:text-pink-600 dark:hover:bg-pink-900/20 dark:hover:text-pink-400 transition-all flex items-center justify-center cursor-pointer"
+                  >
+                    <Trash2 size={18} />
+                  </div>
+
+                  {/* 进入学习按钮 */}
+                  <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-700 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all flex items-center justify-center">
                     <ArrowRight size={20} />
+                  </div>
                 </div>
               </div>
             )

@@ -8,7 +8,9 @@ import { toast } from 'sonner' // 用于显示用户友好的错误提示
 import SearchInput from '@/components/SearchInput'
 import TedCard from '@/components/TedCard'
 import { TedTalk, SearchStatus, TEDCandidate } from '@/types/ted' // 添加 TEDCandidate 类型
+import { TaskHistoryItem } from '@/types/history' // 添加历史记录类型
 import { api } from '@/services/api' // 导入API服务
+import { taskHistoryStorage } from '@/services/taskHistoryStorage' // 导入历史存储服务
 import { handleError } from '@/utils/errorHandler' // 错误处理工具
 import { useAuth } from '@/contexts/AuthContext' // 用于获取用户认证状态
 
@@ -60,8 +62,8 @@ const SearchPage = ({ onStartProcessing }: SearchPageProps = {}) => {
   // 使用认证 hooks
   const { authStatus } = useAuth()
 
-  // 用户ID：暂时硬编码，后续可根据 authStatus 动态获取
-  const userId = 'user_123'
+  // 根据认证状态确定用户ID
+  const userId = authStatus === 'guest' ? 'guest_user' : 'user_123'
 
   // 搜索相关状态
   const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle')
@@ -152,6 +154,38 @@ const SearchPage = ({ onStartProcessing }: SearchPageProps = {}) => {
       const selectedTedTalks = candidatesToTedTalks(searchResults).filter(talk =>
         selectedTalks.includes(talk.url)
       )
+
+      // 为每个演讲创建历史记录（避免重复）
+      const now = new Date().toISOString()
+      for (const talk of selectedTedTalks) {
+        const talkId = talk.url
+        const existingTask = await taskHistoryStorage.getTaskByTalk(userId, talkId)
+
+        if (existingTask) {
+          // 如果已存在，更新基本信息但保持当前状态
+          existingTask.updatedAt = now
+          await taskHistoryStorage.saveTask(existingTask)
+          console.log(`[SearchPage] 更新现有历史记录: ${existingTask.id}`)
+        } else {
+          // 创建新记录，初始状态为todo
+          const historyItem: TaskHistoryItem = {
+            id: `${response.task_id}_${talkId}`,
+            taskId: response.task_id,
+            talkId: talkId,
+            userId: userId,
+            tedTalk: talk,
+            status: 'todo',
+            progress: 0,
+            createdAt: now,
+            updatedAt: now,
+            totalLearningTime: 0,
+            learningSessions: 0
+          }
+
+          await taskHistoryStorage.saveTask(historyItem)
+          console.log(`[SearchPage] 创建历史记录: ${historyItem.id}`)
+        }
+      }
 
       // 调用父组件的处理函数
       onStartProcessing?.(selectedTedTalks, response.task_id)

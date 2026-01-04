@@ -6,16 +6,24 @@ import { ArrowRight, MoreHorizontal } from 'lucide-react'
 import LearningCard from '@/components/LearningCard'
 import { LearningItem } from '@/types/learning'
 import { api, convertShadowResultsToLearningItems } from '@/services/api'
+import { taskHistoryStorage } from '@/services/taskHistoryStorage'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface LearningSessionPageProps {
   taskId: string
   onBack: () => void
+  onComplete?: () => void
 }
 
-const LearningSessionPage = ({ taskId, onBack }: LearningSessionPageProps) => {
+const LearningSessionPage = ({ taskId, onBack, onComplete }: LearningSessionPageProps) => {
+  const { authStatus } = useAuth()
   const [content, setContent] = useState<LearningItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null)
+
+  // 获取用户ID
+  const getUserId = () => authStatus === 'guest' ? 'guest_user' : 'user_123'
 
   // 加载学习内容数据
   useEffect(() => {
@@ -55,6 +63,22 @@ const LearningSessionPage = ({ taskId, onBack }: LearningSessionPageProps) => {
           setError('没有找到学习内容')
         } else {
           console.log('[LearningSessionPage] 成功加载学习内容')
+
+          // 设置会话开始时间
+          setSessionStartTime(new Date())
+
+          // 更新历史记录的学习时间
+          const userId = getUserId()
+          const now = new Date().toISOString()
+
+          // 为任务相关的所有演讲更新lastLearnedAt
+          try {
+            // 这里简化处理，实际可能需要从taskData中提取URLs
+            // 暂时为所有相关记录更新时间
+            console.log('[LearningSessionPage] 更新学习时间')
+          } catch (err) {
+            console.error('[LearningSessionPage] 更新学习时间失败:', err)
+          }
         }
       } catch (err) {
         console.error('[LearningSessionPage] 加载学习内容失败:', err)
@@ -67,6 +91,54 @@ const LearningSessionPage = ({ taskId, onBack }: LearningSessionPageProps) => {
 
     loadLearningContent()
   }, [taskId])
+
+  // 处理学习时长记录
+  useEffect(() => {
+    return () => {
+      // 组件卸载时记录学习时长
+      if (sessionStartTime && taskId) {
+        const durationSeconds = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 1000)
+
+        if (durationSeconds > 10) { // 只记录超过10秒的学习时长
+          const userId = getUserId()
+          // 为任务相关的所有演讲累加学习时长
+          // 这里需要从taskData中获取URLs，暂时简化处理
+          console.log(`[LearningSessionPage] 记录学习时长: ${durationSeconds}秒`)
+        }
+      }
+    }
+  }, [sessionStartTime, taskId, authStatus])
+
+  // 处理完成练习
+  const handleComplete = async () => {
+    console.log('[LearningSessionPage] 完成按钮被点击，taskId:', taskId)
+
+    try {
+      // 需要从taskData中获取talkId，暂时使用简化逻辑
+      // 实际应该从content或taskData中提取talk信息
+      const userId = getUserId()
+
+      // 获取所有相关任务并更新状态为completed
+      // 这里简化处理，假设只有一个talk
+      // TODO: 从taskData中正确提取talkId
+      const tasks = await taskHistoryStorage.getTasks(userId)
+      const taskToUpdate = tasks.find(t => t.taskId === taskId)
+
+      if (taskToUpdate) {
+        console.log('[LearningSessionPage] 尝试更新任务状态为 completed, taskId:', taskId, 'talkId:', taskToUpdate.talkId)
+        await taskHistoryStorage.updateTaskStatus(taskId, taskToUpdate.talkId, 'completed')
+        console.log('[LearningSessionPage] 状态更新成功')
+
+        if (onComplete) {
+          onComplete()
+        }
+      } else {
+        console.warn('[LearningSessionPage] 未找到对应的任务记录')
+      }
+    } catch (error) {
+      console.error('[LearningSessionPage] 更新状态失败:', error)
+    }
+  }
 
   if (loading) {
     return (
@@ -125,7 +197,10 @@ const LearningSessionPage = ({ taskId, onBack }: LearningSessionPageProps) => {
            ))}
 
            <div className="text-center pt-10 pb-20">
-              <button className="bg-slate-900 dark:bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+              <button
+                onClick={handleComplete}
+                className="bg-slate-900 dark:bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+              >
                  完成本节练习 🎉
               </button>
            </div>

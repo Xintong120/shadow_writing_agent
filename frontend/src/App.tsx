@@ -14,7 +14,9 @@ import StatsPage from '@/pages/StatsPage'
 import Navigation from '@/components/Navigation'
 import { ActiveTab } from '@/types/navigation'
 import { TedTalk } from '@/types/ted'
+import { LearningStatus } from '@/types/history'
 import { sseService } from '@/services/progress'
+import { taskHistoryStorage } from '@/services/taskHistoryStorage'
 
 // Auth Wrapper Component with State Machine
 const AuthWrapper = () => {
@@ -25,6 +27,7 @@ const AuthWrapper = () => {
   const [currentLearningTalk, setCurrentLearningTalk] = useState<TedTalk | null>(null)
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [historyInitialTab, setHistoryInitialTab] = useState<LearningStatus>('todo')
 
   // Apply dark mode to document element
   useEffect(() => {
@@ -49,18 +52,53 @@ const AuthWrapper = () => {
     console.log('处理完成，跳转到预览页面')
   }, [])
 
-  const handleStartLearning = (talk: TedTalk) => {
-    console.log('开始学习:', talk)
+  const handleStartLearning = async (talk: TedTalk) => {
+    console.log('[App] handleStartLearning 被调用:', talk, 'taskId:', currentTaskId)
+
+    try {
+      // 更新状态为 in_progress
+      if (currentTaskId) {
+        console.log('[App] 尝试更新任务状态为 in_progress, taskId:', currentTaskId, 'talkId:', talk.id)
+        await taskHistoryStorage.updateTaskStatus(currentTaskId, talk.id.toString(), 'in_progress')
+        console.log('[App] 状态更新成功')
+      } else {
+        console.warn('[App] taskId为空，无法更新状态')
+      }
+    } catch (error) {
+      console.error('[App] 更新状态失败:', error)
+    }
+
     setCurrentLearningTalk(talk)
     setAppState('learning')
     setActiveTab('chat') // 确保切换到 chat 标签显示学习页面
   }
 
-  const handleNavigateToLearning = (talk: TedTalk) => {
-    console.log('导航到学习页面:', talk)
+  const handleNavigateToLearning = async (talk: TedTalk) => {
+    console.log('[App] handleNavigateToLearning 被调用:', talk, 'taskId:', currentTaskId)
+
+    try {
+      // 更新状态为 in_progress
+      if (currentTaskId) {
+        console.log('[App] 尝试更新任务状态为 in_progress, taskId:', currentTaskId, 'talkId:', talk.id)
+        await taskHistoryStorage.updateTaskStatus(currentTaskId, talk.id.toString(), 'in_progress')
+        console.log('[App] 状态更新成功')
+      } else {
+        console.warn('[App] taskId为空，无法更新状态')
+      }
+    } catch (error) {
+      console.error('[App] 更新状态失败:', error)
+    }
+
     setActiveTab('chat')
     setCurrentLearningTalk(talk)
     setAppState('learning')
+  }
+
+  const handleComplete = () => {
+    console.log('[App] handleComplete 被调用，导航到历史页面的completed标签页')
+    setHistoryInitialTab('completed')
+    setActiveTab('history')
+    setAppState('idle')
   }
 
   if (authStatus === 'logged_out') {
@@ -87,9 +125,9 @@ const AuthWrapper = () => {
             ? <ProcessingPage taskId={currentTaskId} onFinish={handleProcessingFinish} />
             : appState === 'preview'
             ? <PreviewPage selectedTalksData={processedTalks} onStartLearning={handleStartLearning} taskId={currentTaskId} />
-            : currentTaskId && <LearningSessionPage taskId={currentTaskId} onBack={() => setAppState('preview')} />
+            : currentTaskId && <LearningSessionPage taskId={currentTaskId} onBack={() => setAppState('preview')} onComplete={handleComplete} />
         )}
-        {activeTab === 'history' && <HistoryPage onNavigateToLearning={handleNavigateToLearning} />}
+        {activeTab === 'history' && <HistoryPage onNavigateToLearning={handleNavigateToLearning} initialTab={historyInitialTab} />}
         {activeTab === 'stats' && <StatsPage />}
         {activeTab === 'settings' && <SettingsPage isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />}
       </main>
