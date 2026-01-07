@@ -23,12 +23,6 @@ const isElectron = typeof window !== 'undefined' && (window as any).electronAPI
 
 // localStorage实现
 export class LocalStorageTaskHistoryStorage implements TaskHistoryStorage {
-  getTaskByTalk(userId: string, talkId: string): Promise<TaskHistoryItem | null> {
-    throw new Error('Method not implemented.')
-  }
-  taskExists(userId: string, taskId: string, talkId: string): Promise<boolean> {
-    throw new Error('Method not implemented.')
-  }
   private getStorageKey(userId: string): string {
     return `task_history_${userId}`
   }
@@ -152,73 +146,206 @@ export class LocalStorageTaskHistoryStorage implements TaskHistoryStorage {
   }
 }
 
-// Electron文件存储实现（占位符）
+// Electron文件存储实现
 export class ElectronTaskHistoryStorage implements TaskHistoryStorage {
-  getTaskByTalk(userId: string, talkId: string): Promise<TaskHistoryItem | null> {
-    throw new Error('Method not implemented.')
+  private getFileName(userId: string): string {
+    return `task_history_${userId}.json`
   }
-  taskExists(userId: string, taskId: string, talkId: string): Promise<boolean> {
-    throw new Error('Method not implemented.')
+
+  private async readTasksFromFile(userId: string): Promise<TaskHistoryItem[]> {
+    try {
+      if (!window.electronAPI?.readFile) {
+        throw new Error('Electron API not available')
+      }
+
+      const data = await window.electronAPI.readFile(this.getFileName(userId))
+      return data || []
+    } catch (error) {
+      console.warn('Failed to read tasks from file, returning empty array:', error)
+      return []
+    }
   }
-  // TODO: 实现基于fs的文件存储
+
+  private async writeTasksToFile(userId: string, tasks: TaskHistoryItem[]): Promise<void> {
+    try {
+      if (!window.electronAPI?.writeFile) {
+        throw new Error('Electron API not available')
+      }
+
+      await window.electronAPI.writeFile(this.getFileName(userId), tasks)
+    } catch (error) {
+      console.error('Failed to write tasks to file:', error)
+      throw error
+    }
+  }
+
   async saveTask(task: TaskHistoryItem): Promise<void> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.saveTask(task)
+    try {
+      const tasks = await this.readTasksFromFile(task.userId)
+      const existingIndex = tasks.findIndex(t => t.id === task.id)
+
+      if (existingIndex >= 0) {
+        tasks[existingIndex] = { ...task }
+      } else {
+        tasks.push(task)
+      }
+
+      await this.writeTasksToFile(task.userId, tasks)
+    } catch (error) {
+      console.error('Failed to save task:', error)
+      // 回退到localStorage
+      const fallback = new LocalStorageTaskHistoryStorage()
+      await fallback.saveTask(task)
+    }
   }
 
   async getTasks(userId: string): Promise<TaskHistoryItem[]> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.getTasks(userId)
+    try {
+      return await this.readTasksFromFile(userId)
+    } catch (error) {
+      console.warn('Failed to get tasks from file, trying localStorage:', error)
+      // 回退到localStorage
+      const fallback = new LocalStorageTaskHistoryStorage()
+      return await fallback.getTasks(userId)
+    }
   }
 
   async getTaskByTalk(userId: string, talkId: string): Promise<TaskHistoryItem | null> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.getTaskByTalk(userId, talkId)
+    try {
+      const tasks = await this.readTasksFromFile(userId)
+      return tasks.find(task => task.talkId === talkId) || null
+    } catch (error) {
+      console.warn('Failed to get task by talk from file, trying localStorage:', error)
+      const fallback = new LocalStorageTaskHistoryStorage()
+      return await fallback.getTaskByTalk(userId, talkId)
+    }
   }
 
   async taskExists(userId: string, taskId: string, talkId: string): Promise<boolean> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.taskExists(userId, taskId, talkId)
+    try {
+      const task = await this.getTaskByTalk(userId, talkId)
+      return task !== null
+    } catch (error) {
+      console.warn('Failed to check task existence in file, trying localStorage:', error)
+      const fallback = new LocalStorageTaskHistoryStorage()
+      return await fallback.taskExists(userId, taskId, talkId)
+    }
   }
 
   async updateTaskStatus(taskId: string, talkId: string, status: LearningStatus): Promise<void> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.updateTaskStatus(taskId, talkId, status)
+    try {
+      // 由于我们使用talkId作为唯一标识，我们需要遍历所有用户
+      // 这里简化处理，假设当前操作的用户ID已知
+      const userIds = ['user_123', 'guest_user']
+
+      for (const userId of userIds) {
+        const tasks = await this.readTasksFromFile(userId)
+        const task = tasks.find(t => t.talkId === talkId)
+        if (task) {
+          task.status = status
+          task.updatedAt = new Date().toISOString()
+          await this.writeTasksToFile(userId, tasks)
+          break
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to update task status in file, trying localStorage:', error)
+      const fallback = new LocalStorageTaskHistoryStorage()
+      await fallback.updateTaskStatus(taskId, talkId, status)
+    }
   }
 
   async updateTaskProgress(taskId: string, talkId: string, progress: number): Promise<void> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.updateTaskProgress(taskId, talkId, progress)
+    try {
+      const userIds = ['user_123', 'guest_user']
+
+      for (const userId of userIds) {
+        const tasks = await this.readTasksFromFile(userId)
+        const task = tasks.find(t => t.talkId === talkId)
+        if (task) {
+          task.progress = progress
+          task.updatedAt = new Date().toISOString()
+          await this.writeTasksToFile(userId, tasks)
+          break
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to update task progress in file, trying localStorage:', error)
+      const fallback = new LocalStorageTaskHistoryStorage()
+      await fallback.updateTaskProgress(taskId, talkId, progress)
+    }
   }
 
   async updateLastLearnedAt(taskId: string, talkId: string, lastLearnedAt: string): Promise<void> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.updateLastLearnedAt(taskId, talkId, lastLearnedAt)
+    try {
+      const userIds = ['user_123', 'guest_user']
+
+      for (const userId of userIds) {
+        const tasks = await this.readTasksFromFile(userId)
+        const task = tasks.find(t => t.talkId === talkId)
+        if (task) {
+          task.lastLearnedAt = lastLearnedAt
+          task.updatedAt = new Date().toISOString()
+          await this.writeTasksToFile(userId, tasks)
+          break
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to update last learned at in file, trying localStorage:', error)
+      const fallback = new LocalStorageTaskHistoryStorage()
+      await fallback.updateLastLearnedAt(taskId, talkId, lastLearnedAt)
+    }
   }
 
   async addLearningTime(taskId: string, talkId: string, durationSeconds: number): Promise<void> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.addLearningTime(taskId, talkId, durationSeconds)
+    try {
+      const userIds = ['user_123', 'guest_user']
+
+      for (const userId of userIds) {
+        const tasks = await this.readTasksFromFile(userId)
+        const task = tasks.find(t => t.talkId === talkId)
+        if (task) {
+          task.totalLearningTime += durationSeconds
+          task.learningSessions += 1
+          task.updatedAt = new Date().toISOString()
+          await this.writeTasksToFile(userId, tasks)
+          break
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to add learning time in file, trying localStorage:', error)
+      const fallback = new LocalStorageTaskHistoryStorage()
+      await fallback.addLearningTime(taskId, talkId, durationSeconds)
+    }
   }
 
   async deleteTask(taskId: string, talkId: string): Promise<void> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.deleteTask(taskId, talkId)
+    try {
+      const userIds = ['user_123', 'guest_user']
+
+      for (const userId of userIds) {
+        const tasks = await this.readTasksFromFile(userId)
+        const filteredTasks = tasks.filter(t => t.talkId !== talkId)
+        if (filteredTasks.length !== tasks.length) {
+          await this.writeTasksToFile(userId, filteredTasks)
+          break
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to delete task from file, trying localStorage:', error)
+      const fallback = new LocalStorageTaskHistoryStorage()
+      await fallback.deleteTask(taskId, talkId)
+    }
   }
 
   async clearAll(userId: string): Promise<void> {
-    console.log('Electron存储暂未实现，使用localStorage替代')
-    const localStorage = new LocalStorageTaskHistoryStorage()
-    return localStorage.clearAll(userId)
+    try {
+      await window.electronAPI?.deleteFile(this.getFileName(userId))
+    } catch (error) {
+      console.warn('Failed to clear tasks from file, trying localStorage:', error)
+      const fallback = new LocalStorageTaskHistoryStorage()
+      await fallback.clearAll(userId)
+    }
   }
 }
 

@@ -1,14 +1,22 @@
 {
-  "name": "ted-agent-frontend",
+  "name": "shadow-writing-agent",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "description": "TED Agent 可视化前端 - React学习项目",
+  "version": "1.0.0",
+  "description": "Shadow Writing Agent - AI写作学习工具",
+  "main": "electron/main.js",
+  "homepage": "./",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "cd frontend && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "electron": "electron .",
+    "electron:dev": "NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "electron:pack": "cross-env ELECTRON=true npm run build && electron-builder",
+    "electron:dist": "cross-env ELECTRON=true npm run build && electron-builder --publish=never",
+    "electron:deploy": "npm run electron:dist && npm run copy-to-desktop",
+    "copy-to-desktop": "powershell -Command \"Copy-Item 'dist/*.exe' ([Environment]::GetFolderPath('Desktop')) -Force\"",
+    "build:all": "npm run build && npm run electron:dist"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
@@ -39,6 +47,10 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
+    "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
+    "electron": "^30.0.2",
+    "electron-builder": "^24.13.3",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.0",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -46,6 +58,24 @@
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.9.3",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.shadowwriting.agent",
+    "productName": "Shadow Writing Agent",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*",
+      "backend/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "zip"
+    }
   }
 }

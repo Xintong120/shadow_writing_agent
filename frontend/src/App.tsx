@@ -1,8 +1,9 @@
-import { BrowserRouter } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { TaskProvider } from '@/contexts/TaskContext'
 import { Toaster } from 'sonner'
+
+// 移除Lazy loading，直接导入组件
 import LoginPage from '@/pages/LoginPage'
 import SearchPage from '@/pages/SearchPage'
 import ProcessingPage from '@/pages/ProcessingPage'
@@ -15,7 +16,6 @@ import Navigation from '@/components/Navigation'
 import { ActiveTab } from '@/types/navigation'
 import { TedTalk } from '@/types/ted'
 import { LearningStatus } from '@/types/history'
-import { sseService } from '@/services/progress'
 import { taskHistoryStorage } from '@/services/taskHistoryStorage'
 
 // Auth Wrapper Component with State Machine
@@ -137,14 +137,12 @@ const AuthWrapper = () => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <TaskProvider>
-          <AuthWrapper />
-          <Toaster position="top-right" />
-        </TaskProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <TaskProvider>
+        <AuthWrapper />
+        <Toaster position="top-right" />
+      </TaskProvider>
+    </AuthProvider>
   )
 }
 

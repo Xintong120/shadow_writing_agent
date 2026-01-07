@@ -204,28 +204,30 @@ def get_settings_dict():
     return {
         # API配置
         "backend_api_url": f"http://{settings.api_host}:{settings.api_port}",
+        "groq_api_key": settings.groq_api_key,
+        "groq_api_keys": settings.groq_api_keys,
         "tavily_api_key": settings.tavily_api_key,
         "openai_api_key": settings.openai_api_key,
         "deepseek_api_key": settings.deepseek_api_key,
         "api_rotation_enabled": settings.api_rotation_enabled,
         "current_api_provider": settings.current_api_provider,
-        
+
         # 外观设置
         "theme_mode": settings.theme_mode,
         "font_size": settings.font_size,
-        
+
         # 学习偏好
         "auto_save_progress": settings.auto_save_progress,
         "show_learning_stats": settings.show_learning_stats,
         "enable_keyboard_shortcuts": settings.enable_keyboard_shortcuts,
-        
+
         # LLM配置
         "model_name": settings.model_name,
         "temperature": settings.temperature,
         "max_tokens": settings.max_tokens,
         "top_p": settings.top_p,
         "frequency_penalty": settings.frequency_penalty,
-        
+
         # 可用API提供商
         "available_providers": settings.get_available_api_providers() if settings else [],
     }

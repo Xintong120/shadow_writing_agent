@@ -15,8 +15,8 @@ import type {
   TaskStatusResponse,
   StatsResponse,
   FlatStats,
-  LearningRecord,
   GetLearningRecordsResponse,
+  ApiKeyTestResponse,
 } from '@/types/api'
 
 // ============ TED 搜索相关 ============
@@ -160,6 +160,66 @@ export const healthCheck = async () => {
   return response.data
 }
 
+// ============ 设置相关 ============
+
+export const testApiKey = async (provider: string, apiKey: string): Promise<ApiKeyTestResponse> => {
+  const response = await fetchAPI<ApiKeyTestResponse>('/api/settings/test-api-key', {
+    method: 'POST',
+    body: JSON.stringify({ provider, api_key: apiKey }),
+  })
+
+  if (!response.success) {
+    handleError(new Error(response.error || '测试API密钥失败'), 'testApiKey')
+    throw new Error(response.error || '测试API密钥失败')
+  }
+
+  return response.data!
+}
+
+export const updateSettings = async (settings: any) => {
+  const response = await fetchAPI('/api/settings/', {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+  })
+
+  if (!response.success) {
+    handleError(new Error(response.error || '更新设置失败'), 'updateSettings')
+    throw new Error(response.error || '更新设置失败')
+  }
+
+  return response.data
+}
+
+export const getSettings = async () => {
+  const response = await fetchAPI('/api/settings/', {
+    method: 'GET',
+  })
+
+  if (!response.success) {
+    handleError(new Error(response.error || '获取设置失败'), 'getSettings')
+    throw new Error(response.error || '获取设置失败')
+  }
+
+  return response.data
+}
+
+export const getProviderModels = async (provider: string, apiKey?: string) => {
+  const url = apiKey
+    ? `/api/config/models/${provider}?api_key=${encodeURIComponent(apiKey)}`
+    : `/api/config/models/${provider}`
+
+  const response = await fetchAPI(url, {
+    method: 'GET',
+  })
+
+  if (!response.success) {
+    handleError(new Error(response.error || '获取模型列表失败'), 'getProviderModels')
+    throw new Error(response.error || '获取模型列表失败')
+  }
+
+  return response.data
+}
+
 // ============ 导出所有API ============
 
 export const api = {
@@ -169,6 +229,10 @@ export const api = {
   getLearningRecords,
   getStats,
   healthCheck,
+  testApiKey,
+  getSettings,
+  updateSettings,
+  getProviderModels,
 }
 
 // 导出工具函数（用于 ResultsPage 扁平化数据和 LearningSessionPage 数据转换）

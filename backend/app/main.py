@@ -56,7 +56,12 @@ def health_check():
 # 启动时验证配置
 @app.on_event("startup")
 async def startup_event():
-    validate_config()
+    # 在Electron环境下跳过API验证（演示模式）
+    import os
+    if os.getenv("ELECTRON_DEMO") != "true":
+        validate_config()
+    else:
+        print("[DEMO] Electron演示模式，跳过API配置验证")
 
     # 初始化 API Key 管理器
     initialize_key_manager(cooldown_seconds=60)

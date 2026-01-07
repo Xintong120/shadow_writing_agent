@@ -4,10 +4,19 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  root: process.cwd().includes('frontend') ? '.' : 'frontend',
+  base: process.env.ELECTRON === 'true' ? './' : '/shadow_writing_agent/',
   plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    minify: 'esbuild', // 恢复默认压缩设置
+    sourcemap: false, // 生产环境不生成源码映射
+    esbuild: {
+      drop: ['console', 'debugger'], // 移除调试代码
     },
   },
   server: {

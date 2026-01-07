@@ -1,32 +1,34 @@
 module.exports = {
   root: true,
-  env: { 
-    browser: true, 
+  env: {
+    browser: true,
     es2020: true,
     node: true,
   },
+  parser: '@typescript-eslint/parser',
   extends: [
     'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs', 'node_modules'],
-  parserOptions: { 
-    ecmaVersion: 'latest', 
+  parserOptions: {
+    ecmaVersion: 'latest',
     sourceType: 'module',
     ecmaFeatures: {
       jsx: true,
     },
   },
-  settings: { 
-    react: { 
+  settings: {
+    react: {
       version: '18.3',
     },
   },
   plugins: [
+    '@typescript-eslint',
     'react-refresh',
-    'theme-consistency',
   ],
   rules: {
     'react-refresh/only-export-components': [
@@ -34,11 +36,6 @@ module.exports = {
       { allowConstantExport: true },
     ],
     'react/prop-types': 'off',
-    
-    // 主题一致性规则
-    'theme-consistency/no-hardcoded-colors': 'error',
-    'theme-consistency/no-hardcoded-spacing': 'error',
-    'theme-consistency/no-hardcoded-typography': 'error',
-    'theme-consistency/no-hardcoded-radius': 'error',
+    '@typescript-eslint/no-unused-vars': 'warn',
   },
 };

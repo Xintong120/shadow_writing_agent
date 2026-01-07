@@ -11,6 +11,35 @@ export interface APIResponse<T = any> {
   message?: string
 }
 
+// ============ 设置相关 ============
+
+export interface ApiKeyTestRequest {
+  provider: string
+  api_key: string
+}
+
+export interface ApiKeyTestResponse {
+  success: boolean
+  message: string
+  provider: string
+  response_time?: number
+}
+
+export interface ModelInfo {
+  id: string
+  name: string
+  description: string
+}
+
+export interface ProviderModelsResponse {
+  success: boolean
+  message: string
+  data: {
+    provider: string
+    models: ModelInfo[]
+  }
+}
+
 export interface SearchResponse {
   candidates: TEDCandidate[]
   query: string

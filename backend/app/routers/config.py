@@ -179,7 +179,7 @@ async def reset_key_rotation():
 
 @router.get("/models")
 async def get_available_models():
-    """获取可用模型列表"""
+    """获取可用模型列表（向后兼容）"""
     return {
         "models": [
             {
@@ -193,6 +193,244 @@ async def get_available_models():
                 "description": "快速响应模型，适合简单任务"
             }
         ]
+    }
+
+@router.get("/models/{provider}")
+async def get_provider_models(provider: str, api_key: Optional[str] = None):
+    """获取指定提供商的可用模型列表"""
+    try:
+        if provider == "openai":
+            return await _get_openai_models(api_key)
+        elif provider == "groq":
+            return await _get_groq_models(api_key)
+        elif provider == "deepseek":
+            return await _get_deepseek_models(api_key)
+        elif provider == "tavily":
+            return _get_tavily_models()
+        else:
+            # 对于未知提供商，返回默认模型列表
+            return {
+                "success": False,
+                "message": f"不支持的提供商: {provider}",
+                "data": {
+                    "provider": provider,
+                    "models": []
+                }
+            }
+    except Exception as e:
+        # 如果API调用失败，返回默认模型列表
+        return {
+            "success": False,
+            "message": f"获取{provider}模型列表失败: {str(e)}",
+            "data": _get_default_models(provider)
+        }
+
+async def _get_openai_models(api_key: Optional[str] = None):
+    """获取OpenAI模型列表"""
+    import httpx
+
+    # 如果有API key，尝试从OpenAI API获取
+    if api_key:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    "https://api.openai.com/v1/models",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json"
+                    }
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    # 过滤出GPT模型
+                    gpt_models = []
+                    for model in data.get("data", []):
+                        model_id = model.get("id", "")
+                        if model_id.startswith("gpt"):
+                            gpt_models.append({
+                                "id": model_id,
+                                "name": model_id.replace("-", " ").title(),
+                                "description": f"OpenAI {model_id} 模型"
+                            })
+
+                    return {
+                        "success": True,
+                        "message": "成功获取OpenAI模型列表",
+                        "data": {
+                            "provider": "openai",
+                            "models": gpt_models
+                        }
+                    }
+        except Exception as e:
+            pass  # 继续使用默认列表
+
+    # 返回默认OpenAI模型列表
+    return {
+        "success": True,
+        "message": "使用默认OpenAI模型列表",
+        "data": {
+            "provider": "openai",
+            "models": [
+                {
+                    "id": "gpt-4",
+                    "name": "GPT-4",
+                    "description": "OpenAI最先进的模型"
+                },
+                {
+                    "id": "gpt-4-turbo",
+                    "name": "GPT-4 Turbo",
+                    "description": "更快的GPT-4版本"
+                },
+                {
+                    "id": "gpt-3.5-turbo",
+                    "name": "GPT-3.5 Turbo",
+                    "description": "快速且经济实惠的模型"
+                }
+            ]
+        }
+    }
+
+async def _get_groq_models(api_key: Optional[str] = None):
+    """获取GROQ模型列表"""
+    import httpx
+
+    # 如果有API key，尝试从GROQ API获取
+    if api_key:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    "https://api.groq.com/openai/v1/models",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json"
+                    }
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    groq_models = []
+                    for model in data.get("data", []):
+                        model_id = model.get("id", "")
+                        groq_models.append({
+                            "id": model_id,
+                            "name": model_id.replace("-", " ").title(),
+                            "description": f"GROQ {model_id} 模型"
+                        })
+
+                    return {
+                        "success": True,
+                        "message": "成功获取GROQ模型列表",
+                        "data": {
+                            "provider": "groq",
+                            "models": groq_models
+                        }
+                    }
+        except Exception as e:
+            pass  # 继续使用默认列表
+
+    # 返回默认GROQ模型列表
+    return {
+        "success": True,
+        "message": "使用默认GROQ模型列表",
+        "data": {
+            "provider": "groq",
+            "models": [
+                {
+                    "id": "llama-3.3-70b-versatile",
+                    "name": "Llama 3.3 70B (推荐)",
+                    "description": "最强大的推理模型，适合复杂任务"
+                },
+                {
+                    "id": "llama-3.1-8b-instant",
+                    "name": "Llama 3.1 8B",
+                    "description": "快速响应模型，适合简单任务"
+                }
+            ]
+        }
+    }
+
+async def _get_deepseek_models(api_key: Optional[str] = None):
+    """获取DeepSeek模型列表"""
+    import httpx
+
+    # 如果有API key，尝试从DeepSeek API获取
+    if api_key:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    "https://api.deepseek.com/v1/models",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json"
+                    }
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    deepseek_models = []
+                    for model in data.get("data", []):
+                        model_id = model.get("id", "")
+                        deepseek_models.append({
+                            "id": model_id,
+                            "name": model_id.replace("-", " ").title(),
+                            "description": f"DeepSeek {model_id} 模型"
+                        })
+
+                    return {
+                        "success": True,
+                        "message": "成功获取DeepSeek模型列表",
+                        "data": {
+                            "provider": "deepseek",
+                            "models": deepseek_models
+                        }
+                    }
+        except Exception as e:
+            pass  # 继续使用默认列表
+
+    # 返回默认DeepSeek模型列表
+    return {
+        "success": True,
+        "message": "使用默认DeepSeek模型列表",
+        "data": {
+            "provider": "deepseek",
+            "models": [
+                {
+                    "id": "deepseek-chat",
+                    "name": "DeepSeek Chat",
+                    "description": "DeepSeek对话模型"
+                },
+                {
+                    "id": "deepseek-coder",
+                    "name": "DeepSeek Coder",
+                    "description": "专为代码生成优化的模型"
+                }
+            ]
+        }
+    }
+
+def _get_tavily_models():
+    """获取Tavily模型列表（固定）"""
+    return {
+        "success": True,
+        "message": "Tavily搜索服务",
+        "data": {
+            "provider": "tavily",
+            "models": [
+                {
+                    "id": "search",
+                    "name": "Search API",
+                    "description": "Tavily搜索服务"
+                }
+            ]
+        }
+    }
+
+def _get_default_models(provider: str):
+    """获取默认模型列表"""
+    return {
+        "provider": provider,
+        "models": []
     }
 
 async def save_config_to_env_file(request: ConfigUpdateRequest):

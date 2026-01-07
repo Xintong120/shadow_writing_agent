@@ -19,6 +19,8 @@ class SettingsUpdateRequest(BaseModel):
     """设置更新请求模型"""
     # API配置
     backend_api_url: Optional[str] = None
+    groq_api_key: Optional[str] = None
+    groq_api_keys: Optional[List[str]] = None
     openai_api_key: Optional[str] = None
     deepseek_api_key: Optional[str] = None
     api_rotation_enabled: Optional[bool] = None
@@ -159,7 +161,7 @@ async def test_api_key(request: ApiKeyTestRequest):
                     timeout=10.0
                 )
                 response_time = time.time() - start_time
-                
+
                 if response.status_code == 200:
                     return ApiKeyTestResponse(
                         success=True,
@@ -171,6 +173,34 @@ async def test_api_key(request: ApiKeyTestRequest):
                     return ApiKeyTestResponse(
                         success=False,
                         message=f"Groq API连接失败: {response.status_code}",
+                        provider=request.provider,
+                        response_time=response_time
+                    ).dict()
+
+        elif request.provider == "tavily":
+            # 测试Tavily Search API
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.tavily.com/search",
+                    json={
+                        "query": "test",
+                        "api_key": request.api_key
+                    },
+                    timeout=10.0
+                )
+                response_time = time.time() - start_time
+
+                if response.status_code == 200:
+                    return ApiKeyTestResponse(
+                        success=True,
+                        message="Tavily API连接成功",
+                        provider=request.provider,
+                        response_time=response_time
+                    ).dict()
+                else:
+                    return ApiKeyTestResponse(
+                        success=False,
+                        message=f"Tavily API连接失败: {response.status_code}",
                         provider=request.provider,
                         response_time=response_time
                     ).dict()
