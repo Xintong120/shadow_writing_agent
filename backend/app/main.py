@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import time
-from app.config import settings, validate_config
+from app.config import ConfigProvider, validate_config
 from app.utils import initialize_key_manager
 from app.sse_manager import sse_manager, start_cleanup_task
 from app.task_manager import task_manager
@@ -19,6 +19,9 @@ from app.routers.settings import router as settings_router
 from app.monitoring.api_key_dashboard import router as monitoring_router
 import asyncio
 
+# 创建配置提供者
+config_provider = ConfigProvider()
+
 # 创建FastAPI应用
 app = FastAPI(
     title="TED Shadow Writing API",
@@ -26,10 +29,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# 将配置提供者存储在应用状态中
+app.state.config_provider = config_provider
+
 # 配置CORS（允许前端跨域访问）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=config_provider.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,8 +54,8 @@ def health_check():
     """健康检查（兼容性保留）"""
     return {
         "status": "ok",
-        "model": settings.model_name,
-        "temperature": settings.temperature,
+        "model": config_provider.get_model_name(),
+        "temperature": config_provider.get_temperature(),
         "note": "Please use /api/v1/health for new implementations"
     }
 

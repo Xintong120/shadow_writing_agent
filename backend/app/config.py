@@ -4,9 +4,10 @@
 #   - 读取环境变量（GROQ_API_KEY）
 #   - 模型配置（model_name: llama-3.1-8b-instant）
 #   - 系统参数配置
+#   - 支持依赖注入的配置管理
 
 from pydantic_settings import BaseSettings
-from typing import Any, List
+from typing import Any, List, Optional
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -146,6 +147,68 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# ==================== 配置提供者 ====================
+
+class ConfigProvider:
+    """配置提供者 - 支持依赖注入的配置管理
+
+    消除全局状态，允许注入不同的配置实例
+    """
+
+    def __init__(self, config_instance: Optional[Settings] = None):
+        """初始化配置提供者
+
+        Args:
+            config_instance: 配置实例，如果为None则使用全局settings
+        """
+        self._config = config_instance or settings
+
+    @property
+    def config(self) -> Settings:
+        """获取配置实例"""
+        return self._config
+
+    def get_cors_origins(self) -> List[str]:
+        """获取CORS配置"""
+        return self._config.cors_origins
+
+    def get_model_name(self) -> str:
+        """获取模型名称"""
+        return self._config.model_name
+
+    def get_temperature(self) -> float:
+        """获取温度参数"""
+        return self._config.temperature
+
+    def get_api_key(self) -> str:
+        """获取API Key"""
+        return self._config.groq_api_key
+
+    def get_api_keys(self) -> List[str]:
+        """获取所有API Keys"""
+        return self._config.groq_api_keys
+
+    def get_system_prompt(self) -> str:
+        """获取系统提示词"""
+        return self._config.system_prompt
+
+    def get_available_providers(self) -> List[str]:
+        """获取可用API提供商"""
+        return self._config.get_available_api_providers()
+
+# 全局配置提供者实例（向后兼容）
+config_provider = ConfigProvider()
+
+# ==================== 依赖注入函数 ====================
+
+def get_config_provider() -> ConfigProvider:
+    """获取配置提供者的依赖函数"""
+    return config_provider
+
+def get_settings_via_provider(provider: ConfigProvider = config_provider) -> Settings:
+    """通过配置提供者获取设置（兼容旧接口）"""
+    return provider.config
+
 # 验证配置
 def validate_config():
     """验证所有必需的配置项"""
@@ -233,14 +296,24 @@ def get_settings_dict():
     }
 
 # 更新设置（从前端接收）
-def update_settings(settings_dict: dict):
-    """更新设置"""
-    global settings
-    
+def update_settings(settings_dict: dict, config_provider: ConfigProvider = config_provider) -> ConfigProvider:
+    """更新设置，返回新的配置提供者实例"""
+    # 创建新的设置实例
+    new_settings = Settings()
+
+    # 复制现有设置
+    for key, value in config_provider.config.__dict__.items():
+        if hasattr(new_settings, key):
+            setattr(new_settings, key, value)
+
+    # 应用更新
     for key, value in settings_dict.items():
-        if hasattr(settings, key):
-            setattr(settings, key, value)
+        if hasattr(new_settings, key):
+            setattr(new_settings, key, value)
         else:
             print(f"[WARNING] Unknown setting: {key}")
-    
+
+    # 返回新的配置提供者
+    new_provider = ConfigProvider(new_settings)
     print("Settings updated successfully")
+    return new_provider

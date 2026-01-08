@@ -1,5 +1,5 @@
 from litellm import completion
-from app.config import settings
+from app.config import settings, get_config_provider
 import json
 import time
 import asyncio
@@ -522,13 +522,16 @@ def create_llm_function_advanced(system_prompt: Optional[str] = None) -> Callabl
 
 # ==================== 依赖注入函数 ====================
 
-def get_settings():
-    """获取全局设置的依赖函数
+def get_settings(provider = Depends(get_config_provider)):
+    """获取设置的依赖函数（支持依赖注入）
+
+    Args:
+        provider: 配置提供者
 
     Returns:
         Settings: 应用配置对象
     """
-    return settings
+    return provider.config
 
 
 def get_llm(settings = Depends(get_settings)) -> Callable:
