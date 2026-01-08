@@ -6,15 +6,17 @@
 #   - 返回结构化结果
 
 from app.workflows import create_parallel_shadow_writing_workflow
+from typing import Callable, Optional
 
 
 # 暴露给main.py的处理函数
 def process_ted_text(
-    text: str, 
+    text: str,
+    llm: Callable,  # 注入的LLM函数
     target_topic: str = "",
-    ted_title: str = None,
-    ted_speaker: str = None,
-    ted_url: str = None
+    ted_title: Optional[str] = None,
+    ted_speaker: Optional[str] = None,
+    ted_url: Optional[str] = None
 ) -> dict:
     """
     处理TED文本的主函数
@@ -30,8 +32,8 @@ def process_ted_text(
         dict: 包含处理结果的字典
     """
     
-    # 创建并行工作流（推荐）
-    workflow = create_parallel_shadow_writing_workflow()
+    # 创建并行工作流（推荐），传入注入的LLM
+    workflow = create_parallel_shadow_writing_workflow(llm=llm)
     # workflow = create_shadow_writing_workflow()  # 旧版串行（已弃用）
     
     # 初始状态（并行版本简化）

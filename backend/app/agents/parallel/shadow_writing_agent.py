@@ -41,8 +41,11 @@ def shadow_writing_single_chunk(state: ChunkProcessState) -> dict:
         return {"raw_shadow": None, "error": "Empty chunk"}
     
     try:
-        ensure_dependencies()
-        llm_function = create_llm_function_native()
+        # 从state获取注入的LLM函数，如果没有则使用默认创建
+        llm_function = state.get("llm_function")
+        if llm_function is None:
+            ensure_dependencies()
+            llm_function = create_llm_function_native()
         
         output_format = {
             "original": "完整原句, str",

@@ -179,15 +179,18 @@ def create_full_workflow():
 # 并行处理工作流（使用Send API + operator.add）
 # ============================================================
 
-def create_chunk_pipeline():
+def create_chunk_pipeline(llm=None):
     """
     创建单个Chunk的处理流水线子图
-    
+
+    Args:
+        llm: 注入的LLM函数
+
     功能：处理单个语义块，完成完整的Shadow Writing流程
-    
+
     流程：
     START → shadow_writing → validation → quality → [correction] → finalize_chunk → END
-    
+
     Returns:
         编译后的子图工作流
     """
@@ -236,20 +239,23 @@ def create_chunk_pipeline():
     return pipeline.compile()
 
 
-def create_parallel_shadow_writing_workflow():
+def create_parallel_shadow_writing_workflow(llm=None):
     """
     创建并行Shadow Writing工作流（使用Send API）
-    
+
     功能：处理TED文本，为每个语义块创建独立的处理流水线
-    
+
+    Args:
+        llm: 注入的LLM函数，如果为None则使用默认创建
+
     流程：
     START → semantic_chunking → [动态分发到多个chunk_pipeline] → aggregate_results → END
-    
+
     关键技术：
     1. 使用Send API动态为每个chunk创建独立流水线
     2. 使用operator.add自动汇总所有结果
     3. 每个chunk独立运行完整的 shadow_writing→validation→quality→correction→finalize 流程
-    
+
     Returns:
         编译后的并行工作流
     """
@@ -260,7 +266,7 @@ def create_parallel_shadow_writing_workflow():
     
     # 2. Chunk处理流水线（子图）
     # 因为子图的final_shadow_chunks使用operator.add，结果会自动合并到主State
-    chunk_pipeline = create_chunk_pipeline()
+    chunk_pipeline = create_chunk_pipeline(llm=llm)
     builder.add_node("chunk_pipeline", chunk_pipeline)
     
     # 4. 动态分发函数（关键）
@@ -301,6 +307,7 @@ def create_parallel_shadow_writing_workflow():
                     "chunk_id": i,
                     "task_id": task_id,  # 传递task_id用于进度推送
                     "total_chunks": total_chunks,  # 传递总数用于进度计算
+                    "llm_function": llm,  # 传递注入的LLM函数
                     # 初始化ChunkProcessState字段
                     "raw_shadow": None,
                     "validated_shadow": None,
