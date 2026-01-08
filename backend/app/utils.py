@@ -6,6 +6,7 @@ import asyncio
 from collections import deque
 from typing import Callable, Optional, Dict, Any
 from app.monitoring.api_key_monitor import api_key_monitor
+from fastapi import Depends
 
 def ensure_dependencies():
     """检查 API key 是否配置"""
@@ -494,26 +495,111 @@ def create_llm_function_light(system_prompt: Optional[str] = None) -> Callable:
 
 def create_llm_function_advanced(system_prompt: Optional[str] = None) -> Callable:
     """创建高级 LLM 调用函数（llama-3.3-70b-versatile）
-    
+
     适用场景：
     - 复杂推理任务
     - 质量评估和打分
     - 错误修正和改进
     - 需要深度理解的任务
-    
+
     特点：
     - 推理能力强
     - 适合复杂任务
     - 响应较慢（约2-3秒）
-    
+
     Args:
         system_prompt: 系统提示词（可选）
-        
+
     Returns:
         callable: LLM 调用函数
-        
+
     Example:
         >>> llm = create_llm_function_advanced()
         >>> result = llm(correction_prompt, correction_format)
     """
     return create_llm_function(system_prompt=system_prompt, model="llama-3.3-70b-versatile")
+
+
+# ==================== 依赖注入函数 ====================
+
+def get_settings():
+    """获取全局设置的依赖函数
+
+    Returns:
+        Settings: 应用配置对象
+    """
+    return settings
+
+
+def get_llm(settings = Depends(get_settings)) -> Callable:
+    """LLM依赖注入函数（标准模型）
+
+    Args:
+        settings: 应用配置
+
+    Returns:
+        Callable: LLM调用函数
+    """
+    return create_llm_function_native()
+
+
+def get_llm_light(settings = Depends(get_settings)) -> Callable:
+    """轻量级LLM依赖注入函数（快速任务）
+
+    Args:
+        settings: 应用配置
+
+    Returns:
+        Callable: LLM调用函数
+    """
+    return create_llm_function_light()
+
+
+def get_llm_advanced(settings = Depends(get_settings)) -> Callable:
+    """高级LLM依赖注入函数（复杂推理）
+
+    Args:
+        settings: 应用配置
+
+    Returns:
+        Callable: LLM调用函数
+    """
+    return create_llm_function_advanced()
+
+
+def get_task_manager():
+    """获取任务管理器的依赖函数
+
+    Returns:
+        TaskManager: 任务管理器实例
+    """
+    from app.task_manager import task_manager
+    return task_manager
+
+
+def get_sse_manager():
+    """获取SSE管理器的依赖函数
+
+    Returns:
+        SSEManager: SSE管理器实例
+    """
+    from app.sse_manager import sse_manager
+    return sse_manager
+
+
+def get_api_monitor():
+    """获取API监控器的依赖函数
+
+    Returns:
+        APIKeyMonitor: API监控器实例
+    """
+    return api_key_monitor
+
+
+def get_concurrency_limiter():
+    """获取并发限制器的依赖函数
+
+    Returns:
+        ConcurrencyLimiter: 并发限制器实例
+    """
+    return concurrency_limiter
