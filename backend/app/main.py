@@ -2,11 +2,13 @@
 # 作用：FastAPI应用入口
 # 功能：应用配置、路由注册、WebSocket端点、中间件配置
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, HTTPException
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 import json
 import time
+import uuid
 from app.config import ConfigProvider, validate_config
 from app.utils import initialize_key_manager
 from app.sse_manager import sse_manager, start_cleanup_task
@@ -17,6 +19,10 @@ from app.routers.memory import router as memory_router
 from app.routers.config import router as config_router
 from app.routers.settings import router as settings_router
 from app.monitoring.api_key_dashboard import router as monitoring_router
+from app.exceptions import (
+    app_exception_handler, http_exception_handler, general_exception_handler,
+    AppException, ErrorCode, ValidationError
+)
 import asyncio
 
 # 创建配置提供者
@@ -40,6 +46,75 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============ 统一错误处理 ============
+
+# 添加请求ID中间件
+@app.middleware("http")
+async def add_request_id(request: Request, call_next):
+    """为每个请求添加唯一ID"""
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+
+    response = await call_next(request)
+
+    # 在响应头中添加请求ID
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+# 添加时间戳中间件
+@app.middleware("http")
+async def add_timestamp(request: Request, call_next):
+    """为响应添加时间戳"""
+    response = await call_next(request)
+
+    # 如果响应是JSONResponse，添加时间戳
+    if hasattr(response, 'body'):
+        try:
+            import json
+            body = json.loads(response.body.decode())
+            if isinstance(body, dict) and "error" in body:
+                body["timestamp"] = time.time()
+                response.body = json.dumps(body).encode()
+        except:
+            pass
+
+    return response
+
+# 注册异常处理器
+app.add_exception_handler(AppException, app_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
+
+# 处理Pydantic验证错误
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """处理请求验证错误"""
+    from app.exceptions import create_error_response, ErrorCode
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.error(
+        f"Validation error: {exc.errors()}",
+        extra={
+            "errors": exc.errors(),
+            "path": request.url.path,
+            "method": request.method
+        }
+    )
+
+    error_response = create_error_response(
+        status_code=422,
+        error_code=ErrorCode.VALIDATION_ERROR,
+        message="Request validation failed",
+        details={"validation_errors": exc.errors()},
+        request_id=getattr(request.state, 'request_id', None)
+    )
+
+    return JSONResponse(
+        status_code=422,
+        content=error_response
+    )
 
 # 注册路由（按功能分组）
 app.include_router(core_router)         # 核心业务路由 (/api/v1/...)

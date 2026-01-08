@@ -2,6 +2,7 @@
 # 核心业务路由 - TED处理、搜索、任务管理
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect, BackgroundTasks, Depends
+from app.exceptions import ConfigurationError, NotFoundError, FileProcessingError
 from app.models import (
     SearchRequest, SearchResponse, TEDCandidate,
     BatchProcessRequest, BatchProcessResponse,
@@ -68,9 +69,9 @@ async def process_file(
 def test_groq_connection(settings: Settings = Depends(get_settings)):
     """测试Groq API连接"""
     if not settings.groq_api_key or settings.groq_api_key == "":
-        raise HTTPException(
-            status_code=500,
-            detail="GROQ_API_KEY未配置"
+        raise ConfigurationError(
+            message="GROQ_API_KEY未配置",
+            config_key="groq_api_key"
         )
 
     return {
@@ -188,7 +189,7 @@ async def get_task_status(
     """
     task = task_mgr.get_task(task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise NotFoundError(resource="task", resource_id=task_id)
 
     return TaskStatusResponse(
         task_id=task.task_id,
