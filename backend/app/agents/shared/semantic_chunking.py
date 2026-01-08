@@ -1,9 +1,10 @@
 import re
-from typing import List
+from typing import List, Dict, Any
 from app.state import Shadow_Writing_State
+from app.agents.base_agent import ShadowWritingAgent, StateType
 
 
-class Semantic_Chunking_Agent:
+class Semantic_Chunking_Agent(ShadowWritingAgent):
     """智能语义分块Agent - 控制块大小在400-600字符"""
     
     def __init__(self):
@@ -83,15 +84,8 @@ class Semantic_Chunking_Agent:
 
         return chunks
     
-    def __call__(self, state: Shadow_Writing_State) -> Shadow_Writing_State:
-        """使其成为可调用的 LangGraph 节点
-
-        Args:
-            state: 工作流状态
-
-        Returns:
-            更新后的状态
-        """
+    def process(self, state: StateType) -> Dict[str, Any]:
+        """实现BaseAgent的process方法，处理语义分块"""
         text = state.get("text", "")
         task_id = state.get("task_id")
 

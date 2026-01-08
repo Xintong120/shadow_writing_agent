@@ -8,6 +8,7 @@ from typing import Callable, Dict, Any
 from fastapi import UploadFile, HTTPException
 from app.agent import process_ted_text
 from app.tools.ted_txt_parsers import parse_ted_file
+from app.exceptions import FileProcessingError
 
 
 class TEDProcessingService:
@@ -37,9 +38,9 @@ class TEDProcessingService:
         """
         # 验证文件类型
         if not file.filename or not file.filename.endswith('.txt'):
-            raise HTTPException(
-                status_code=400,
-                detail="只支持 .txt 文件格式"
+            raise FileProcessingError(
+                message="只支持 .txt 文件格式",
+                filename=file.filename
             )
 
         # 记录处理时间
@@ -60,18 +61,19 @@ class TEDProcessingService:
 
             # 4. 验证解析结果
             if not ted_data:
-                raise HTTPException(
-                    status_code=400,
-                    detail="文件解析失败：请检查文件格式是否正确"
+                raise FileProcessingError(
+                    message="文件解析失败：请检查文件格式是否正确",
+                    filename=file.filename
                 )
 
             # 5. 提取 transcript
             transcript = ted_data.transcript
 
             if not transcript or len(transcript.strip()) < 50:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Transcript 内容太短，至少需要50个字符"
+                raise FileProcessingError(
+                    message="Transcript 内容太短，至少需要50个字符",
+                    filename=file.filename,
+                    details={"transcript_length": len(transcript.strip())}
                 )
 
             # 6. 调用 process_ted_text() 处理（传递 TED 元数据和注入的LLM）
@@ -106,7 +108,7 @@ class TEDProcessingService:
             raise
         except Exception as e:
             # 捕获其他异常
-            raise HTTPException(
-                status_code=500,
-                detail=f"处理文件时发生错误: {str(e)}"
+            raise FileProcessingError(
+                message=f"处理文件时发生错误: {str(e)}",
+                filename=file.filename
             )
