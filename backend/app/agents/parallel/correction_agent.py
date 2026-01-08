@@ -29,8 +29,12 @@ class CorrectionChunkAgent(ChunkProcessingAgent):
             return {"corrected_shadow": validated}
 
         try:
-            ensure_dependencies()
-            llm_function = create_llm_function_native()
+            # 优先使用注入的LLM函数，如果没有则使用全局配置
+            llm_function = state.get("llm_function")
+            if llm_function is None:
+                # Fallback到全局配置，保持向后兼容性
+                ensure_dependencies()
+                llm_function = create_llm_function_native()
 
             # 获取原始数据
             original = validated.original
@@ -49,6 +53,20 @@ class CorrectionChunkAgent(ChunkProcessingAgent):
             quality_reasoning = quality_detail.get('reasoning', '')
             logic_veto = quality_detail.get('logic_veto', False)
 
+            # 计算模板中需要的条件文本
+            logic_veto_text = "(CRITICAL FAILURE)" if logic_veto else ""
+            step3_issues_formatted = "\n".join('- ' + issue for issue in step3_issues) if step3_issues else '- None'
+
+            # 计算各维度反馈
+            step1_feedback = 'GOOD' if step1_grammar >= 2 else 'NEEDS IMPROVEMENT'
+            step2_feedback = 'GOOD' if step2_content >= 1 else 'NEEDS IMPROVEMENT'
+            step3_feedback = 'CRITICAL ISSUE' if step3_logic < 2 else 'ACCEPTABLE'
+            step4_feedback = 'GOOD' if step4_topic >= 1 else 'NEEDS IMPROVEMENT'
+            step5_feedback = 'GOOD' if step5_learning >= 1 else 'NEEDS IMPROVEMENT'
+
+            # 逻辑问题详情
+            logic_problems_detail = "\n".join(step3_issues) if step3_issues else 'Check time sequence, cause-effect, severity matching'
+
             # 渲染correction模板
             correction_prompt = prompt_manager.render_prompt(
                 "correction.main",
@@ -59,11 +77,17 @@ class CorrectionChunkAgent(ChunkProcessingAgent):
                 step1_grammar=step1_grammar,
                 step2_content=step2_content,
                 step3_logic=step3_logic,
-                step3_issues=step3_issues,
+                step3_issues_formatted=step3_issues_formatted,
                 step4_topic=step4_topic,
                 step5_learning=step5_learning,
                 quality_reasoning=quality_reasoning,
-                logic_veto=logic_veto
+                logic_veto_text=logic_veto_text,
+                step1_feedback=step1_feedback,
+                step2_feedback=step2_feedback,
+                step3_feedback=step3_feedback,
+                step4_feedback=step4_feedback,
+                step5_feedback=step5_feedback,
+                logic_problems_detail=logic_problems_detail
             )
 
             correction_format = {
@@ -101,6 +125,9 @@ class CorrectionChunkAgent(ChunkProcessingAgent):
                 else:
                     print(f"[Pipeline {chunk_id}] [FAIL] Correction failed: Invalid result format")
                     return {"corrected_shadow": None, "error": "Invalid correction result"}
+            else:
+                print(f"[Pipeline {chunk_id}] [ERROR] Correction failed: Invalid LLM response")
+                return {"corrected_shadow": None, "error": "Invalid LLM response"}
 
         except Exception as e:
             print(f"[Pipeline {chunk_id}] [ERROR] Correction failed: {e}")

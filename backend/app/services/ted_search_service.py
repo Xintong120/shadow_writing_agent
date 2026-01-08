@@ -10,15 +10,17 @@ from app.memory.service import MemoryService
 class TEDSearchService:
     """TED搜索服务 - 专注TED搜索业务逻辑"""
 
-    def __init__(self, llm: Callable, memory_service: MemoryService):
+    def __init__(self, llm: Callable, memory_service: MemoryService, tavily_service=None):
         """初始化TED搜索服务
 
         Args:
             llm: LLM调用函数
             memory_service: 记忆服务实例
+            tavily_service: Tavily搜索服务实例（可选，用于依赖注入）
         """
         self.llm = llm
         self.memory_service = memory_service
+        self.tavily_service = tavily_service
 
     async def search_talks(self, topic: str, user_id: Optional[str] = None) -> SearchResponse:
         """搜索TED演讲
@@ -33,42 +35,18 @@ class TEDSearchService:
         try:
             print(f"\n[TEDSearchService] 搜索TED演讲: {topic}")
 
-            # 使用Communication Agent搜索
-            workflow = create_search_workflow()
+            # 如果有注入的tavily_service，直接使用；否则使用全局函数（向后兼容）
+            if self.tavily_service:
+                # 使用注入的服务
+                results = self.tavily_service.search_ted_talks(topic, max_results=10)
+            else:
+                # 回退到全局函数（向后兼容）
+                from app.tools.ted_tavily_search import ted_tavily_search
+                results = ted_tavily_search(topic, max_results=10)
 
-            # 初始状态 - 与原有routers/core.py中的逻辑保持一致
-            initial_state = {
-                "topic": topic,
-                "user_id": user_id,
-                "ted_candidates": [],
-                "selected_ted_url": None,
-                "awaiting_user_selection": False,
-                "search_context": {},
-                "file_path": None,
-                "text": "",
-                "target_topic": "",
-                "ted_title": None,
-                "ted_speaker": None,
-                "ted_url": None,
-                "semantic_chunks": [],
-                "raw_shadows_chunks": [],
-                "validated_shadow_chunks": [],
-                "quality_shadow_chunks": [],
-                "failed_quality_chunks": [],
-                "corrected_shadow_chunks": [],
-                "final_shadow_chunks": [],
-                "current_node": "",
-                "processing_logs": [],
-                "errors": [],
-                "error_message": None
-            }
-
-            # 运行工作流
-            result = workflow.invoke(initial_state)
-
-            # 提取候选列表
-            candidates_raw = result.get("ted_candidates", [])
-            search_context = result.get("search_context", {})
+            # 过滤和处理结果
+            candidates_raw = results
+            search_context = {"original_topic": topic}
 
             # 转换为TEDCandidate格式
             candidates = []
@@ -91,11 +69,15 @@ class TEDSearchService:
 
             # 记录搜索历史
             if user_id:
+                alternative_queries = search_context.get("alternative_queries", [])
+                if isinstance(alternative_queries, str):
+                    alternative_queries = [alternative_queries]
+
                 self.memory_service.add_search_history(
                     user_id=user_id,
                     original_query=topic,
                     optimized_query=search_context.get("optimized_query", topic),
-                    alternative_queries=search_context.get("alternative_queries", []),
+                    alternative_queries=alternative_queries,
                     results_count=len(candidates),
                     selected_url=None,  # 搜索阶段还没有选择
                     selected_title=None,

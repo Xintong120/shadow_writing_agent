@@ -1,5 +1,5 @@
 from litellm import completion
-from app.config import settings, get_config_provider
+from app.config import settings, get_config_provider, Settings
 import json
 import time
 import asyncio
@@ -635,21 +635,36 @@ def get_ted_processing_service(
     return TEDProcessingService(llm=llm, memory_service=memory_service)
 
 
+def get_tavily_service(settings: Settings = Depends(get_settings)):
+    """TavilySearchService依赖注入函数
+
+    Args:
+        settings: 应用配置
+
+    Returns:
+        TavilySearchService: Tavily搜索服务实例
+    """
+    from app.services.tavily_service import TavilySearchService
+    return TavilySearchService(settings.tavily_api_key)
+
+
 def get_ted_search_service(
     llm: Callable = Depends(get_llm),
-    memory_service = Depends(get_memory_service)
+    memory_service = Depends(get_memory_service),
+    tavily_service = Depends(get_tavily_service)
 ):
     """TEDSearchService依赖注入函数
 
     Args:
         llm: LLM调用函数
         memory_service: 记忆服务实例
+        tavily_service: Tavily搜索服务实例
 
     Returns:
         TEDSearchService: TED搜索服务实例
     """
     from app.services.ted_search_service import TEDSearchService
-    return TEDSearchService(llm=llm, memory_service=memory_service)
+    return TEDSearchService(llm=llm, memory_service=memory_service, tavily_service=tavily_service)
 
 
 def get_ted_batch_service(

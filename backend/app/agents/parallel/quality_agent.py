@@ -22,8 +22,12 @@ class QualityChunkAgent(ChunkProcessingAgent):
             return {"quality_passed": False, "quality_score": 0.0}
 
         try:
-            ensure_dependencies()
-            llm_function = create_llm_function_native()
+            # 优先使用注入的LLM函数，如果没有则使用全局配置
+            llm_function = state.get("llm_function")
+            if llm_function is None:
+                # Fallback到全局配置，保持向后兼容性
+                ensure_dependencies()
+                llm_function = create_llm_function_native()
 
             # 获取验证通过的Shadow数据
             original = validated.original

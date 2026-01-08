@@ -9,12 +9,12 @@ QUALITY EVALUATION RESULTS:
 - Detailed Scores:
   * Grammar Structure: {step1_grammar}/3
   * Content Replacement: {step2_content}/2
-  * Logic & Plausibility: {step3_logic}/3 {'(CRITICAL FAILURE)' if logic_veto else ''}
+  * Logic & Plausibility: {step3_logic}/3 {logic_veto_text}
   * Topic Migration: {step4_topic}/2
   * Learning Value: {step5_learning}/1
 
 CRITICAL LOGICAL ISSUES:
-{chr(10).join('- ' + issue for issue in step3_issues) if step3_issues else '- None'}
+{step3_issues_formatted}
 
 QUALITY FEEDBACK: "{quality_reasoning}"
 
@@ -22,16 +22,16 @@ Please think step by step to create an improved migration:
 
 <thinking>
 Step 1 - Analyze Quality Feedback:
-- Grammar Score: {step1_grammar}/3 - {'GOOD' if step1_grammar >= 2 else 'NEEDS IMPROVEMENT'}
-- Content Score: {step2_content}/2 - {'GOOD' if step2_content >= 1 else 'NEEDS IMPROVEMENT'}
-- Logic Score: {step3_logic}/3 - {'CRITICAL ISSUE' if step3_logic < 2 else 'ACCEPTABLE'}
-- Topic Score: {step4_topic}/2 - {'GOOD' if step4_topic >= 1 else 'NEEDS IMPROVEMENT'}
-- Learning Score: {step5_learning}/1 - {'GOOD' if step5_learning >= 1 else 'NEEDS IMPROVEMENT'}
+- Grammar Score: {step1_grammar}/3 - {step1_feedback}
+- Content Score: {step2_content}/2 - {step2_feedback}
+- Logic Score: {step3_logic}/3 - {step3_feedback}
+- Topic Score: {step4_topic}/2 - {step4_feedback}
+- Learning Score: {step5_learning}/1 - {step5_feedback}
 
 Focus on the LOWEST scoring dimensions, especially Logic if < 2/3
 
 Step 2 - Identify Root Problems Based on Scores:
-- Logic problems ({step3_logic}/3): {chr(10).join(step3_issues) if step3_issues else 'Check time sequence, cause-effect, severity matching'}
+- Logic problems ({step3_logic}/3): {logic_problems_detail}
 - Grammar problems ({step1_grammar}/3): [analyze if structure preservation failed]
 - Content problems ({step2_content}/2): [check if word replacements were unnatural]
 - Topic problems ({step4_topic}/2): [check if topic migration was unclear]
