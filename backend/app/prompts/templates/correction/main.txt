@@ -1,0 +1,61 @@
+You are a TED sentence migration improvement specialist. Use step-by-step thinking to improve this failed migration.
+
+ORIGINAL SENTENCE: "{original}"
+FAILED MIGRATION: "{imitation}"
+FAILED WORD MAPPING: {word_map}
+
+QUALITY EVALUATION RESULTS:
+- Total Score: {quality_score}/11 (Failed - needs ≥9)
+- Detailed Scores:
+  * Grammar Structure: {step1_grammar}/3
+  * Content Replacement: {step2_content}/2
+  * Logic & Plausibility: {step3_logic}/3 {'(CRITICAL FAILURE)' if logic_veto else ''}
+  * Topic Migration: {step4_topic}/2
+  * Learning Value: {step5_learning}/1
+
+CRITICAL LOGICAL ISSUES:
+{chr(10).join('- ' + issue for issue in step3_issues) if step3_issues else '- None'}
+
+QUALITY FEEDBACK: "{quality_reasoning}"
+
+Please think step by step to create an improved migration:
+
+<thinking>
+Step 1 - Analyze Quality Feedback:
+- Grammar Score: {step1_grammar}/3 - {'GOOD' if step1_grammar >= 2 else 'NEEDS IMPROVEMENT'}
+- Content Score: {step2_content}/2 - {'GOOD' if step2_content >= 1 else 'NEEDS IMPROVEMENT'}
+- Logic Score: {step3_logic}/3 - {'CRITICAL ISSUE' if step3_logic < 2 else 'ACCEPTABLE'}
+- Topic Score: {step4_topic}/2 - {'GOOD' if step4_topic >= 1 else 'NEEDS IMPROVEMENT'}
+- Learning Score: {step5_learning}/1 - {'GOOD' if step5_learning >= 1 else 'NEEDS IMPROVEMENT'}
+
+Focus on the LOWEST scoring dimensions, especially Logic if < 2/3
+
+Step 2 - Identify Root Problems Based on Scores:
+- Logic problems ({step3_logic}/3): {chr(10).join(step3_issues) if step3_issues else 'Check time sequence, cause-effect, severity matching'}
+- Grammar problems ({step1_grammar}/3): [analyze if structure preservation failed]
+- Content problems ({step2_content}/2): [check if word replacements were unnatural]
+- Topic problems ({step4_topic}/2): [check if topic migration was unclear]
+- Learning problems ({step5_learning}/1): [check if pattern is not useful]
+
+Step 3 - Plan Improvements (Focus on Failed Dimensions):
+PRIORITY: Fix Logic issues first if step3_logic < 2!
+- If Logic failed: Fix time sequence, cause-effect, severity matching
+  * Ensure consequences match severity (death→death, injury→injury)
+  * Check "already X" doesn't lead to "will be Y"
+  * Verify cause-effect is logical
+- If Grammar failed: Preserve sentence structure better
+- If Content failed: Use more natural collocations
+- If Topic failed: Choose clearer domain migration
+- If Learning failed: Make pattern more useful/reusable
+
+Step 4 - Create Improved Migration:
+- Write NEW migrated sentence addressing ALL issues above
+- Provide improved word mapping with 2-3 alternatives each
+- Verify: Logic [OK], Grammar [OK], Content [OK], Topic [OK], Learning [OK]
+</thinking>
+
+Based on my analysis above, here is the improved migration that addresses the failed dimensions:
+
+{{"original": "{original}", "imitation": "<improved_migrated_sentence>", "map": {{"word1": ["alt1", "alt2", "alt3"], "word2": ["alt1", "alt2", "alt3"]}}}}
+
+JSON:

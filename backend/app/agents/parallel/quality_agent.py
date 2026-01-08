@@ -5,6 +5,7 @@ from typing import Dict, Any
 from app.state import ChunkProcessState
 from app.utils import ensure_dependencies, create_llm_function_native
 from app.agents.base_agent import ChunkProcessingAgent, StateType
+from app.prompts import prompt_manager
 
 
 class QualityChunkAgent(ChunkProcessingAgent):
@@ -30,53 +31,58 @@ class QualityChunkAgent(ChunkProcessingAgent):
             word_map = validated.map
             paragraph = validated.paragraph
 
-            # 使用与原版完全相同的quality_prompt（简化版本，生产环境应使用完整版本）
-            quality_prompt = f"""
-            You are a Shadow Writing Quality Evaluator. You understand that Shadow Writing is NOT template filling, but learning sentence craftsmanship by "standing in the author's shadow."
-
-            ORIGINAL SENTENCE: "{original}"
-            MIGRATED SENTENCE: "{imitation}"
-            WORD MAPPING: {word_map}
-            SOURCE PARAGRAPH: "{paragraph[:200]}..."
-
-            Evaluate this Shadow Writing attempt. Check if:
-            1. Grammar structure is preserved
-            2. Content words are appropriately replaced
-            3. Logic makes sense
-            4. Topic migration is successful
-
-            Provide evaluation in JSON format:
-            {{
-              "pass": <true/false>,
-              "score": <0-11>,
-              "reasoning": "<brief explanation>"
-            }}
-            """
+            # 使用完整的quality评估模板
+            quality_prompt = prompt_manager.render_prompt(
+                "quality.evaluation",
+                original=original,
+                imitation=imitation,
+                word_map=word_map,
+                paragraph=paragraph[:200] + "..."
+            )
 
             evaluation_format = {
-                "pass": "true if quality is good, bool",
-                "score": "score out of 11, int",
-                "reasoning": "brief explanation, str"
+                "step1_grammar": "Grammar structure score 0-3, int",
+                "step2_content": "Content replacement score 0-2, int",
+                "step3_logic": "Logic & plausibility score 0-3, int",
+                "step3_issues": "List of critical logical issues, array",
+                "step4_topic": "Topic migration score 0-2, int",
+                "step5_learning": "Learning value score 0-1, int",
+                "total_score": "Total score 0-11, int",
+                "pass": "true if quality passes threshold, bool",
+                "reasoning": "brief summary focusing on logic check, str"
             }
 
             result = llm_function(quality_prompt, evaluation_format)
 
             if result and isinstance(result, dict):
                 passed = result.get('pass', False)
-                score = float(result.get('score', 0.0))
+                total_score = float(result.get('total_score', 0.0))
                 reasoning = result.get('reasoning', '')
+                step3_issues = result.get('step3_issues', [])
+
+                # 检查逻辑否决条件
+                logic_veto = len(step3_issues) > 0 and result.get('step3_logic', 0) < 2
 
                 status = "[OK]" if passed else "[ERROR]"
-                print(f"[Pipeline {chunk_id}] {status} Quality: {score}/11")
+                print(f"[Pipeline {chunk_id}] {status} Quality: {total_score}/11")
                 if reasoning:
                     print(f"   推理: {reasoning}")
+                if step3_issues:
+                    print(f"   逻辑问题: {len(step3_issues)} 个")
 
                 return {
                     "quality_passed": passed,
-                    "quality_score": score,
+                    "quality_score": total_score,
                     "quality_detail": {
+                        "step1_grammar": result.get('step1_grammar', 0),
+                        "step2_content": result.get('step2_content', 0),
+                        "step3_logic": result.get('step3_logic', 0),
+                        "step3_issues": step3_issues,
+                        "step4_topic": result.get('step4_topic', 0),
+                        "step5_learning": result.get('step5_learning', 0),
                         "reasoning": reasoning,
-                        "evaluation": result
+                        "evaluation": result,
+                        "logic_veto": logic_veto
                     }
                 }
             else:
