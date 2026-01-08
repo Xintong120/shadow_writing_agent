@@ -1,7 +1,7 @@
 # routers/core.py
 # 核心业务路由 - TED处理、搜索、任务管理
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi import APIRouter, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect, BackgroundTasks, Depends
 from app.models import (
     SearchRequest, SearchResponse, TEDCandidate,
     BatchProcessRequest, BatchProcessResponse,
@@ -14,6 +14,9 @@ from app.task_manager import task_manager
 from app.sse_manager import sse_manager
 from app.batch_processor import process_urls_batch
 from app.enums import TaskStatus, MessageType
+from app.utils import get_settings, get_llm, get_llm_advanced, get_task_manager, get_sse_manager
+from app.config import Settings
+from typing import Callable
 import time
 import os
 import tempfile
@@ -25,19 +28,22 @@ router = APIRouter(prefix="/api/v1", tags=["core"])
 
 # 1. 健康检查接口（移到v1，但保留原有路径兼容性）
 @router.get("/health")
-def health_check():
+def health_check(settings: Settings = Depends(get_settings)):
     """健康检查"""
-    from app.config import settings
     return {
         "status": "ok",
         "model": settings.model_name,
         "temperature": settings.temperature,
-        "version": "v1"
+        "version": "v1",
+        "dependency_injection": "enabled"  # 标记已启用依赖注入
     }
 
 # 2. 文件上传处理接口
 @router.post("/process-file", response_model=dict)
-async def process_file(file: UploadFile = File(...)):
+async def process_file(
+    file: UploadFile = File(...),
+    llm: Callable = Depends(get_llm_advanced)  # 注入高级LLM用于复杂处理
+):
     """
     上传TED txt文件并处理
 
@@ -94,9 +100,10 @@ async def process_file(file: UploadFile = File(...)):
                 detail="Transcript 内容太短，至少需要50个字符"
             )
 
-        # 6. 调用 process_ted_text() 处理（传递 TED 元数据）
+        # 6. 调用 process_ted_text() 处理（传递 TED 元数据和注入的LLM）
         result = process_ted_text(
             text=transcript,
+            llm=llm,  # 传递注入的LLM
             target_topic="",
             ted_title=ted_data.title,
             ted_speaker=ted_data.speaker,
@@ -128,9 +135,8 @@ async def process_file(file: UploadFile = File(...)):
 
 # 3. 测试Groq连接（可选）
 @router.get("/test-groq")
-def test_groq_connection():
+def test_groq_connection(settings: Settings = Depends(get_settings)):
     """测试Groq API连接"""
-    from app.config import settings
     if not settings.groq_api_key or settings.groq_api_key == "":
         raise HTTPException(
             status_code=500,
@@ -140,7 +146,8 @@ def test_groq_connection():
     return {
         "status": "configured",
         "model": settings.model_name,
-        "api_key_length": len(settings.groq_api_key)
+        "api_key_length": len(settings.groq_api_key),
+        "dependency_injection": "enabled"
     }
 
 
@@ -148,7 +155,10 @@ def test_groq_connection():
 
 # 4. 搜索TED演讲
 @router.post("/search-ted", response_model=SearchResponse)
-async def search_ted(request: SearchRequest):
+async def search_ted(
+    request: SearchRequest,
+    llm: Callable = Depends(get_llm)  # 注入LLM用于搜索处理
+):
     """
     搜索TED演讲，返回候选列表
 
@@ -258,7 +268,11 @@ async def search_ted(request: SearchRequest):
 
 # 5. 批量处理选中的TED URLs
 @router.post("/process-batch", response_model=BatchProcessResponse)
-async def process_batch(request: BatchProcessRequest, background_tasks: BackgroundTasks):
+async def process_batch(
+    request: BatchProcessRequest,
+    background_tasks: BackgroundTasks,
+    task_mgr = Depends(get_task_manager)  # 注入任务管理器
+):
     """
     批量处理选中的TED URLs（异步）
 
@@ -288,7 +302,7 @@ async def process_batch(request: BatchProcessRequest, background_tasks: Backgrou
         print(f"\n[API] 批量处理 {len(request.urls)} 个URLs")
 
         # 创建任务
-        task_id = task_manager.create_task(request.urls, request.user_id)
+        task_id = task_mgr.create_task(request.urls, request.user_id or "default")
 
         # 后台异步处理
         background_tasks.add_task(process_urls_batch, task_id, request.urls)
@@ -310,7 +324,10 @@ async def process_batch(request: BatchProcessRequest, background_tasks: Backgrou
 
 # 6. 查询任务状态（备选，供轮询使用）
 @router.get("/task/{task_id}", response_model=TaskStatusResponse)
-async def get_task_status(task_id: str):
+async def get_task_status(
+    task_id: str,
+    task_mgr = Depends(get_task_manager)  # 注入任务管理器
+):
     """
     查询任务状态（轮询方式）
 
@@ -326,7 +343,7 @@ async def get_task_status(task_id: str):
             "current_url": "https://..."
         }
     """
-    task = task_manager.get_task(task_id)
+    task = task_mgr.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
