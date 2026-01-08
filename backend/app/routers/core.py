@@ -7,14 +7,15 @@ from app.models import (
     BatchProcessRequest, BatchProcessResponse,
     TaskStatusResponse
 )
-from app.agent import process_ted_text
-from app.tools.ted_txt_parsers import parse_ted_file
-from app.workflows import create_search_workflow
 from app.task_manager import task_manager
 from app.sse_manager import sse_manager
 from app.batch_processor import process_urls_batch
 from app.enums import TaskStatus, MessageType
-from app.utils import get_settings, get_llm, get_llm_advanced, get_task_manager, get_sse_manager
+from app.utils import (
+    get_settings, get_task_manager, get_sse_manager,
+    get_ted_processing_service, get_ted_search_service, get_ted_batch_service
+)
+from app.services import TEDProcessingService, TEDSearchService, TEDBatchService
 from app.config import Settings
 from typing import Callable
 import time
@@ -42,7 +43,7 @@ def health_check(settings: Settings = Depends(get_settings)):
 @router.post("/process-file", response_model=dict)
 async def process_file(
     file: UploadFile = File(...),
-    llm: Callable = Depends(get_llm_advanced)  # 注入高级LLM用于复杂处理
+    service: TEDProcessingService = Depends(get_ted_processing_service)
 ):
     """
     上传TED txt文件并处理
@@ -60,78 +61,7 @@ async def process_file(
             "processing_time": 12.34
         }
     """
-    # 验证文件类型
-    if not file.filename.endswith('.txt'):
-        raise HTTPException(
-            status_code=400,
-            detail="只支持 .txt 文件格式"
-        )
-
-    # 记录处理时间
-    start_time = time.time()
-
-    try:
-        # 1. 创建临时文件保存上传内容
-        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.txt') as temp_file:
-            # 读取上传的文件内容
-            content = await file.read()
-            temp_file.write(content)
-            temp_file_path = temp_file.name
-
-        # 2. 调用 parse_ted_file() 解析文件
-        ted_data = parse_ted_file(temp_file_path)
-
-        # 3. 删除临时文件
-        os.unlink(temp_file_path)
-
-        # 4. 验证解析结果
-        if not ted_data:
-            raise HTTPException(
-                status_code=400,
-                detail="文件解析失败：请检查文件格式是否正确"
-            )
-
-        # 5. 提取 transcript
-        transcript = ted_data.transcript
-
-        if not transcript or len(transcript.strip()) < 50:
-            raise HTTPException(
-                status_code=400,
-                detail="Transcript 内容太短，至少需要50个字符"
-            )
-
-        # 6. 调用 process_ted_text() 处理（传递 TED 元数据和注入的LLM）
-        result = process_ted_text(
-            text=transcript,
-            llm=llm,  # 传递注入的LLM
-            target_topic="",
-            ted_title=ted_data.title,
-            ted_speaker=ted_data.speaker,
-            ted_url=ted_data.url
-        )
-
-        # 7. 添加 TED 元数据和处理时间
-        result["ted_info"] = {
-            "title": ted_data.title,
-            "speaker": ted_data.speaker,
-            "url": ted_data.url,
-            "duration": ted_data.duration,
-            "views": ted_data.views,
-            "transcript_length": len(transcript)
-        }
-        result["processing_time"] = time.time() - start_time
-
-        return result
-
-    except HTTPException:
-        # 重新抛出 HTTP 异常
-        raise
-    except Exception as e:
-        # 捕获其他异常
-        raise HTTPException(
-            status_code=500,
-            detail=f"处理文件时发生错误: {str(e)}"
-        )
+    return await service.process_single_file(file)
 
 # 3. 测试Groq连接（可选）
 @router.get("/test-groq")
@@ -157,7 +87,7 @@ def test_groq_connection(settings: Settings = Depends(get_settings)):
 @router.post("/search-ted", response_model=SearchResponse)
 async def search_ted(
     request: SearchRequest,
-    llm: Callable = Depends(get_llm)  # 注入LLM用于搜索处理
+    service: TEDSearchService = Depends(get_ted_search_service)
 ):
     """
     搜索TED演讲，返回候选列表
@@ -190,80 +120,7 @@ async def search_ted(
             "total": 10
         }
     """
-    try:
-        print(f"\n[API] 搜索TED演讲: {request.topic}")
-
-        # 使用Communication Agent搜索
-        workflow = create_search_workflow()
-
-        # 初始状态
-        initial_state = {
-            "topic": request.topic,
-            "user_id": request.user_id,
-            "ted_candidates": [],
-            "selected_ted_url": None,
-            "awaiting_user_selection": False,
-            "search_context": {},
-            "file_path": None,
-            "text": "",
-            "target_topic": "",
-            "ted_title": None,
-            "ted_speaker": None,
-            "ted_url": None,
-            "semantic_chunks": [],
-            "raw_shadows_chunks": [],
-            "validated_shadow_chunks": [],
-            "quality_shadow_chunks": [],
-            "failed_quality_chunks": [],
-            "corrected_shadow_chunks": [],
-            "final_shadow_chunks": [],
-            "current_node": "",
-            "processing_logs": [],
-            "errors": [],
-            "error_message": None
-        }
-
-        # 运行工作流
-        result = workflow.invoke(initial_state)
-
-        # 提取候选列表
-        candidates_raw = result.get("ted_candidates", [])
-        search_context = result.get("search_context", {})
-
-        # 转换为TEDCandidate格式
-        candidates = []
-        for c in candidates_raw:
-            try:
-                candidates.append(TEDCandidate(
-                    title=c.get("title", ""),
-                    speaker=c.get("speaker", "Unknown"),
-                    url=c.get("url", ""),
-                    duration=c.get("duration", ""),
-                    views=c.get("views"),
-                    description=c.get("description", ""),
-                    relevance_score=c.get("score", 0.0)
-                ))
-            except Exception as e:
-                print(f"[WARNING] 候选转换失败: {e}")
-                continue
-
-        print(f"[API] 找到 {len(candidates)} 个候选")
-
-        return SearchResponse(
-            success=True,
-            candidates=candidates,
-            search_context=search_context,
-            total=len(candidates)
-        )
-
-    except Exception as e:
-        print(f"[ERROR] 搜索失败: {e}")
-        return SearchResponse(
-            success=False,
-            candidates=[],
-            search_context={"error": str(e)},
-            total=0
-        )
+    return await service.search_talks(request.topic, request.user_id)
 
 
 # 5. 批量处理选中的TED URLs
@@ -271,7 +128,7 @@ async def search_ted(
 async def process_batch(
     request: BatchProcessRequest,
     background_tasks: BackgroundTasks,
-    task_mgr = Depends(get_task_manager)  # 注入任务管理器
+    service: TEDBatchService = Depends(get_ted_batch_service)
 ):
     """
     批量处理选中的TED URLs（异步）
@@ -298,28 +155,14 @@ async def process_batch(
         - 返回task_id后立即返回
         - 使用WebSocket连接 /ws/progress/{task_id} 获取实时进度
     """
-    try:
-        print(f"\n[API] 批量处理 {len(request.urls)} 个URLs")
+    # 创建批量任务
+    response = await service.create_batch_task(request.urls, request.user_id)
 
-        # 创建任务
-        task_id = task_mgr.create_task(request.urls, request.user_id or "default")
+    # 启动异步处理
+    if response.success:
+        await service.start_async_batch_processing(response.task_id, request.urls, background_tasks)
 
-        # 后台异步处理
-        background_tasks.add_task(process_urls_batch, task_id, request.urls)
-
-        return BatchProcessResponse(
-            success=True,
-            task_id=task_id,
-            total=len(request.urls),
-            message=f"Processing started. Connect to /ws/progress/{task_id} for updates."
-        )
-
-    except Exception as e:
-        print(f"[ERROR] 创建任务失败: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to create task: {str(e)}"
-        )
+    return response
 
 
 # 6. 查询任务状态（备选，供轮询使用）

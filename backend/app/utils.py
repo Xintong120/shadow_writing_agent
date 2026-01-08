@@ -603,3 +603,62 @@ def get_concurrency_limiter():
         ConcurrencyLimiter: 并发限制器实例
     """
     return concurrency_limiter
+
+
+def get_memory_service():
+    """获取记忆服务的依赖函数
+
+    Returns:
+        MemoryService: 记忆服务实例
+    """
+    from app.memory.service import MemoryService
+    return MemoryService()
+
+
+def get_ted_processing_service(
+    llm: Callable = Depends(get_llm_advanced),
+    memory_service = Depends(get_memory_service)
+):
+    """TEDProcessingService依赖注入函数
+
+    Args:
+        llm: LLM调用函数
+        memory_service: 记忆服务实例
+
+    Returns:
+        TEDProcessingService: TED处理服务实例
+    """
+    from app.services.ted_processing_service import TEDProcessingService
+    return TEDProcessingService(llm=llm, memory_service=memory_service)
+
+
+def get_ted_search_service(
+    llm: Callable = Depends(get_llm),
+    memory_service = Depends(get_memory_service)
+):
+    """TEDSearchService依赖注入函数
+
+    Args:
+        llm: LLM调用函数
+        memory_service: 记忆服务实例
+
+    Returns:
+        TEDSearchService: TED搜索服务实例
+    """
+    from app.services.ted_search_service import TEDSearchService
+    return TEDSearchService(llm=llm, memory_service=memory_service)
+
+
+def get_ted_batch_service(
+    task_manager = Depends(get_task_manager)
+):
+    """TEDBatchService依赖注入函数
+
+    Args:
+        task_manager: 任务管理器实例
+
+    Returns:
+        TEDBatchService: TED批量服务实例
+    """
+    from app.services.ted_batch_service import TEDBatchService
+    return TEDBatchService(task_manager_instance=task_manager)
